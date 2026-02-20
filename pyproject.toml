@@ -1,0 +1,29 @@
+[project]
+name = "fastapi-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi[standard-no-fastapi-cloud-cli]>=0.129.0",
+    "sqlalchemy>=2.0.46",
+    "streamlit>=1.54.0",
+    "uvicorn>=0.41.0",
+]
+
+[tool.ruff.lint]
+ignore = [
+    "T201",  # Ignore "print" statements, as they are used for debugging purposes.
+    "D103",  # Ignore missing docstring in public function, as some functions may be self-explanatory.
+]
+
+[tool.uv.workspace]
+members = [
+    "app2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.2",
+    "ty>=0.0.17",
+]
