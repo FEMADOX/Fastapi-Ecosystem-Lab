@@ -3,9 +3,9 @@ import uuid
 from starlette.status import HTTP_404_NOT_FOUND
 
 from fastapi import APIRouter, HTTPException
-from FastAPI.src.constants import DB
-from FastAPI.src.database import save_db
-from FastAPI.src.first_steps.schema import Item
+from learn_fastapi.src.constants import DB
+from learn_fastapi.src.database import save_db
+from learn_fastapi.src.first_steps.schema import Item
 
 router = APIRouter(prefix="/items", tags=["items"])
 

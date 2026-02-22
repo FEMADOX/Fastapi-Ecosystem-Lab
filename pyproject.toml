@@ -1,29 +1,48 @@
 [project]
-name = "fastapi-learning"
-version = "0.1.0"
-description = "Add your description here"
+dependencies = [
+  "fastapi[standard-no-fastapi-cloud-cli]>=0.129.0",
+  "httpx>=0.28.1",
+  "pytest>=9.0.2",
+  "sqlalchemy>=2.0.46",
+  "streamlit>=1.54.0",
+  "uvicorn>=0.41.0",
+]
+description = "This project is a learning resource for FastAPI ecosystem, a modern, fast (high-performance) web framework for building APIs with Python 3.14+ based on standard Python type hints."
+name = "fastapi-ecosystem-lab"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
-    "fastapi[standard-no-fastapi-cloud-cli]>=0.129.0",
-    "sqlalchemy>=2.0.46",
-    "streamlit>=1.54.0",
-    "uvicorn>=0.41.0",
-]
+version = "2026.2"
 
 [tool.ruff.lint]
 ignore = [
-    "T201",  # Ignore "print" statements, as they are used for debugging purposes.
-    "D103",  # Ignore missing docstring in public function, as some functions may be self-explanatory.
-]
-
-[tool.uv.workspace]
-members = [
-    "app2",
+  "CPY001", # Ignore "Missing copyright notice" as this is a learning resource and not a production package.
+  "D100", # Ignore missing docstring in public module.
+  "D101", # Ignore missing docstring in public class.
+  "D102", # Ignore missing docstring in public method.
+  "D103", # Ignore missing docstring in public function.
+  "D104", # Ignore missing docstring in public package.
+  "T201", # Ignore "print" statements, as they are used for debugging purposes.
+  "TC001", # Ignore "Move application imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
 ]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.2",
-    "ty>=0.0.17",
+  "ruff>=0.15.2",
+  "ty>=0.0.17",
 ]
+
+[tool.pytest.ini_options]
+addopts = "-v --tb=short"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+testpaths = ["tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [
+  "S101",
+] # Ignore "Use of assert detected. The enclosed code will be removed when compiling to optimized bytecode." in test files, as using "assert" is standard practice in tests.
+"test_*.py" = [
+  "S101",
+] # Ignore "Use of assert detected. The enclosed code will be removed when compiling to optimized bytecode." in test files, as using "assert" is standard practice in tests.
+"tests/*" = [
+  "S101",
+] # Ignore "Use of assert detected. The enclosed code will be removed when compiling to optimized bytecode." in test files, as using "assert" is standard practice in tests.

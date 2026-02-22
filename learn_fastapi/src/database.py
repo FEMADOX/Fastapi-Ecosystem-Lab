@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from FastAPI.src.first_steps.schema import Item
+from learn_fastapi.src.first_steps.schema import Item
 
 DB_PATH = Path(__file__).parent / "database.json"
 
