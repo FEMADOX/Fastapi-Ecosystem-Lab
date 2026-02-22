@@ -34,7 +34,7 @@ dev = [
 [tool.pytest.ini_options]
 addopts = "-v --tb=short"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
-testpaths = ["tests"]
+testpaths = ["**/tests"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = [
