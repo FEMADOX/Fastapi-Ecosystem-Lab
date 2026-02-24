@@ -33,7 +33,7 @@ def sample_item() -> dict:
     """
     return {
         "name": "Test Item",
-        "description": "A test description",
+        "description": "A new test description",
         "price": 9.99,
         "tax": 1.0,
     }

@@ -10,7 +10,7 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 | SQLAlchemy + PostgreSQL                      | 📅 Planned       |
 | Streamlit — dashboards & data apps           | 📅 Planned       |
 | Authentication — JWT, OAuth2                 | 📅 Planned       |
-| Testing — pytest, httpx                      | 📅 Planned       |
+| Testing — pytest, httpx                      | 🔄 In progress   |
 | Docker & deployment                          | 📅 Planned       |
 
 ## 🛠️ Tech Stack

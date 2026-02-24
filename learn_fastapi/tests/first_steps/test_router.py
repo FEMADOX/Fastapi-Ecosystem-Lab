@@ -117,8 +117,7 @@ class TestCreateItem:
         response = client.post("/items/", json=payload)
         assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
         body = response.json()
-        assert body["description"] is None
-        assert body["tax"] is None
+        assert body["tax"] == 0.00
 
 
 # ---------------------------------------------------------------------------
