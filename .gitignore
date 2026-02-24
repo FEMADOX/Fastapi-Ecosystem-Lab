@@ -10,3 +10,4 @@ wheels/
 .venv
 .idea
 fastapi_notes/
+learn_fastapi/src/assets/images/*
