@@ -6,7 +6,6 @@ from starlette.status import HTTP_404_NOT_FOUND
 from learn_fastapi.src.constants import DB
 from learn_fastapi.src.database import save_db
 
-from .annotations import ValidatedItem
 from .schema import Item
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -31,7 +30,7 @@ async def read_item(id_param: int | uuid.UUID) -> Item:
 
 
 @router.post("/")
-async def create_item(item: ValidatedItem) -> Item:
+async def create_item(item: Item) -> Item:
     item_id = uuid.uuid4()
     DB[str(item_id)] = item
     save_db(DB)
@@ -39,7 +38,7 @@ async def create_item(item: ValidatedItem) -> Item:
 
 
 @router.put("/{id_param}")
-async def update_item(id_param: int | uuid.UUID, item: ValidatedItem) -> Item:
+async def update_item(id_param: int | uuid.UUID, item: Item) -> Item:
     item_id = id_param
     DB[str(item_id)] = item
     save_db(DB)
