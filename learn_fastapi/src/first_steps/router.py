@@ -15,11 +15,6 @@ from learn_fastapi.src.first_steps.schema import Image, Item
 router = APIRouter(prefix="/items", tags=["items"])
 
 
-@router.get("/hello-world/")
-async def root() -> dict[str, str]:
-    return {"message": "Hello World"}
-
-
 @router.get("/")
 def read_items() -> dict[str, Item]:
     return DB
@@ -66,10 +61,9 @@ async def submit_an_item_image(
         str, Form(description="The caption for the image")
     ] = "No description provided",
 ) -> Image:
-    # Absolute path relative to this file: learn_fastapi/src/assets/images/
-    image_dir = Path(__file__).parent.parent / "assets" / "images"
+    image_dir = Path(__file__).parent.parent / "static" / "images"
 
-    # Download the image file and save it to disk (assets/images/)
+    # Download the image file and save it to disk (static/images/)
     if image_file and image_file.filename:
         await asyncio.to_thread(image_dir.mkdir, parents=True, exist_ok=True)
         file_path = image_dir / image_file.filename
@@ -81,7 +75,7 @@ async def submit_an_item_image(
         name=image_file.filename,
         description=caption,
         content_type=image_file.content_type,
-        url=f"/assets/images/{image_file.filename}",
+        url=f"/static/images/{image_file.filename}",
     )
 
 

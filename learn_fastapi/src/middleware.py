@@ -1,27 +1,31 @@
 import asyncio
-from collections.abc import AsyncGenerator, Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from watchfiles import DefaultFilter, PythonFilter
+from watchfiles import PythonFilter, awatch
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Callable
+
+    from fastapi import FastAPI
+    from starlette.requests import Request
 
 # Inyecta el script de arel en el HTML del Swagger
-JS_CODE = (Path(__file__).parent / "assets" / "js" / "reloadScript.js").read_text()
+JS_CODE = (Path(__file__).parent / "static" / "js" / "reloadScript.js").read_text()
 RELOAD_SCRIPT = "<script>" + JS_CODE + "</script>"
 
 
 class SwaggerHotReloadMiddleware(BaseHTTPMiddleware):
     async def dispatch(
-        self, request: Request, call_next: Callable
+        self, request: Request, call_next: Callable,
     ) -> HTMLResponse | Response:
         response = await call_next(request)
         if request.url.path == "/docs" and "text/html" in response.headers.get(
-            "content-type", ""
+            "content-type", "",
         ):
             body = b""
             async for chunk in response.body_iterator:
@@ -35,12 +39,7 @@ _clients: list[WebSocket] = []
 
 
 async def _watch_files(match_path: str = ".") -> None:
-    from watchfiles import awatch
-
-    # class PythonFilter(DefaultFilter):
-    #     allowed_extensions = {".py"}
-
-    match_path = Path(match_path)
+    # match_path = Path(match_path)
     async for _ in awatch(match_path, watch_filter=PythonFilter()):
         disconnected = []
         for client in _clients:
@@ -67,16 +66,14 @@ async def _hot_reload_ws(websocket: WebSocket) -> None:
 
 def register_dev_reload(app: FastAPI) -> None:
     app.add_websocket_route("/hot-reload", _hot_reload_ws, name="hot-reload")
-    app.add_middleware(SwaggerHotReloadMiddleware)
+    app.add_middleware(SwaggerHotReloadMiddleware)  # ty:ignore[invalid-argument-type]
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
         task = asyncio.create_task(_watch_files())
         yield
         task.cancel()
-        try:
+        with suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass
 
     app.router.lifespan_context = lifespan

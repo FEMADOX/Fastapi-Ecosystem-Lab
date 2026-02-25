@@ -29,7 +29,7 @@ def save_db(db: dict[str, Item]) -> None:
             with Path(f"{value.image.name}").open("wb") as image_file:
                 image_file.write(value.image.image)
             value.image.url = (
-                Path(__file__).parent / "assets" / "images" / value.image.name
+                Path(__file__).parent / "static" / "images" / value.image.name
             )
         serializable[key] = value.model_dump()
 
