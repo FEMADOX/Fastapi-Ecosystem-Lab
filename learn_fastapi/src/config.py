@@ -1,7 +1,10 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
 
 
 def mount_static_files(app: FastAPI) -> None:

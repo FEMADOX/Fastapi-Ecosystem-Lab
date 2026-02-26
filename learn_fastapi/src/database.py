@@ -16,7 +16,8 @@ def save_db(db: dict[str, Item]) -> None:
     serializable = {}
     for key, value in db.items():
         if not isinstance(value, Item):
-            raise ValueError(f"Value for key {key} is not an instance of Item")
+            msg = f"Value for key {key} is not an instance of Item"
+            raise TypeError(msg)
         serializable[key] = value.model_dump()
 
     with Path.open(DB_PATH, "w") as f:

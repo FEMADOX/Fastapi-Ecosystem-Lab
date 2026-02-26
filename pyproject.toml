@@ -26,7 +26,7 @@ requires = ["hatchling"]
 packages = ["learn_fastapi"]
 
 [tool.ruff.lint]
-ignore = [
+extend-ignore = [
   "CPY001", # Ignore "Missing copyright notice" as this is a learning resource and not a production package.
   "D100", # Ignore missing docstring in public module.
   "D101", # Ignore missing docstring in public class.
@@ -36,9 +36,11 @@ ignore = [
   "T201", # Ignore "print" statements, as they are used for debugging purposes.
   "TC001", # Ignore "Move application imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
 ]
+extend-select = [] # Here you can add additional rules to be checked by Ruff, if desired.
 
 [dependency-groups]
 dev = [
+  "pre-commit>=4.0.0",
   "ruff>=0.15.2",
   "ty>=0.0.17",
 ]

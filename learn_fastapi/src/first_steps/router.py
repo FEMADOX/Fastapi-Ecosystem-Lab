@@ -1,11 +1,9 @@
 import asyncio
 import uuid
 from pathlib import Path
-from typing import Annotated
 
 import aiofiles
 from fastapi import APIRouter, HTTPException, UploadFile
-from fastapi.params import Path as PathParam
 from starlette.status import HTTP_404_NOT_FOUND
 
 from learn_fastapi.src.constants import DB
@@ -104,7 +102,7 @@ async def submit_an_item_image(
 
 
 @router.post("/with-image/")
-async def create_item_with_image(
+async def create_item_with_image(  # noqa: PLR0913, PLR0917
     name: ItemName = "Default Item",
     description: ItemDescription = "No description provided",
     price: ItemPrice = 0.00,

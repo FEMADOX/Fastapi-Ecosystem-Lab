@@ -13,6 +13,7 @@ from learn_fastapi.src.first_steps.router import DB
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+
     from starlette.testclient import TestClient
 
 # ---------------------------------------------------------------------------
@@ -120,7 +121,8 @@ class TestCreateItem:
         response = client.post("/items/", json=payload)
         assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
         body = response.json()
-        assert body["tax"] == 0.00
+        body_tax = 0.00
+        assert body["tax"] == body_tax
 
 
 # ---------------------------------------------------------------------------
