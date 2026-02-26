@@ -1,5 +1,7 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
 from starlette.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -10,6 +12,7 @@ from starlette.status import (
 from learn_fastapi.src.first_steps.router import DB
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from starlette.testclient import TestClient
 
 # ---------------------------------------------------------------------------
@@ -19,11 +22,11 @@ if TYPE_CHECKING:
 
 class TestHelloWorld:
     def test_returns_200(self, client: TestClient) -> None:
-        response = client.get("/items/hello-world/")
+        response = client.get("/")
         assert response.status_code == HTTP_200_OK
 
     def test_response_body(self, client: TestClient) -> None:
-        response = client.get("/items/hello-world/")
+        response = client.get("/")
         assert response.json() == {"message": "Hello World"}
 
 
@@ -175,3 +178,173 @@ class TestDeleteItem:
     def test_delete_non_existing_id_returns_404(self, client: TestClient) -> None:
         response = client.delete("/items/9999")
         assert response.status_code == HTTP_404_NOT_FOUND
+
+
+# ---------------------------------------------------------------------------
+# POST /items/image
+# ---------------------------------------------------------------------------
+
+
+class TestSubmitItemImage:
+    FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
+
+    @pytest.fixture(autouse=True)
+    def cleanup_images(self) -> Generator[None]:
+        image_dir = Path(__file__).parent.parent.parent / "src" / "static" / "images"
+        before = set(image_dir.iterdir()) if image_dir.exists() else set()
+        yield
+        if image_dir.exists():
+            for f in image_dir.iterdir():
+                if f not in before:
+                    f.unlink(missing_ok=True)
+
+    def test_returns_200(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/image",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+        )
+        assert response.status_code == HTTP_200_OK
+
+    def test_response_has_correct_name(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/image",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+        )
+        assert response.json()["name"] == "test.png"
+
+    def test_response_has_correct_url(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/image",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+        )
+        assert response.json()["url"] == "/static/images/test.png"
+
+    def test_response_has_correct_content_type(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/image",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+        )
+        assert response.json()["content_type"] == "image/png"
+
+    def test_custom_caption_stored_as_description(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/image",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+            data={"caption": "My custom caption"},
+        )
+        assert response.json()["description"] == "My custom caption"
+
+    def test_default_caption_when_omitted(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/image",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+        )
+        assert response.json()["description"] == "No description provided"
+
+    def test_missing_file_returns_422(self, client: TestClient) -> None:
+        response = client.post("/items/image")
+        assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
+
+
+# ---------------------------------------------------------------------------
+# POST /items/with-image/
+# ---------------------------------------------------------------------------
+
+
+class TestCreateItemWithImage:
+    FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
+
+    @pytest.fixture(autouse=True)
+    def cleanup_images(self) -> Generator[None]:
+        image_dir = Path(__file__).parent.parent.parent / "src" / "static" / "images"
+        before = set(image_dir.iterdir()) if image_dir.exists() else set()
+        yield
+        if image_dir.exists():
+            for f in image_dir.iterdir():
+                if f not in before:
+                    f.unlink(missing_ok=True)
+
+    def test_returns_200_without_image(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/with-image/",
+            data={
+                "name": "Test Item",
+                "description": "A long enough description",
+                "price": "9.99",
+                "tax": "1.0",
+            },
+        )
+        assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
+
+    def test_response_fields_without_image(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/with-image/",
+            data={
+                "name": "Test Item",
+                "description": "A long enough description",
+                "price": "9.99",
+                "tax": "1.0",
+            },
+        )
+        body = response.json()
+        body_price = 9.99
+        assert body["name"] == "Test Item"
+        assert body["price"] == body_price
+        assert body["image_url"] is None
+
+    def test_returns_200_with_image(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/with-image/",
+            data={
+                "name": "Image Item",
+                "description": "A long enough description",
+                "price": "5.00",
+            },
+            files={"image_file": ("product.png", self.FAKE_PNG, "image/png")},
+        )
+        assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
+
+    def test_image_url_set_when_file_provided(self, client: TestClient) -> None:
+        response = client.post(
+            "/items/with-image/",
+            data={
+                "name": "Image Item",
+                "description": "A long enough description",
+                "price": "5.00",
+            },
+            files={"image_file": ("product.png", self.FAKE_PNG, "image/png")},
+        )
+        assert response.json()["image_url"] == "/static/images/product.png"
+
+    def test_default_values_used_when_no_data_sent(self, client: TestClient) -> None:
+        response = client.post("/items/with-image/")
+        assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
+        body = response.json()
+        body_price = 0.00
+        assert body["name"] == "Default Item"
+        assert body["price"] == body_price
+        assert body["image_url"] is None
+
+    def test_item_persisted_in_db(self, client: TestClient) -> None:
+        client.post(
+            "/items/with-image/",
+            data={
+                "name": "Persisted Item",
+                "description": "A long enough description",
+                "price": "3.00",
+            },
+        )
+        names_in_db = {item.name for item in DB.values()}
+        assert "Persisted Item" in names_in_db
+
+    def test_negative_price_returns_422(self, client: TestClient) -> None:
+        """Price has a ge=0 constraint — a negative value must fail validation."""
+        response = client.post(
+            "/items/with-image/",
+            data={
+                "name": "Bad Price",
+                "description": "A long enough description",
+                "price": "-1.00",
+            },
+        )
+        assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT

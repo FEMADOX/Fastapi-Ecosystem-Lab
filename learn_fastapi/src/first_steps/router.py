@@ -30,7 +30,7 @@ def read_items() -> dict[str, Item]:
 
 
 @router.get("/{id_param}")
-async def read_item(id_param: Annotated[int, PathParam(lt=4)]) -> Item:
+async def read_item(id_param: int) -> Item:
     item = DB.get(str(id_param))
     if item is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
