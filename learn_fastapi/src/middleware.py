@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from fastapi.responses import HTMLResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from watchfiles import PythonFilter, awatch
+from watchfiles import awatch
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable
@@ -21,11 +21,12 @@ RELOAD_SCRIPT = "<script>" + JS_CODE + "</script>"
 
 class SwaggerHotReloadMiddleware(BaseHTTPMiddleware):
     async def dispatch(
-        self, request: Request, call_next: Callable,
+        self, request: Request, call_next: Callable
     ) -> HTMLResponse | Response:
         response = await call_next(request)
         if request.url.path == "/docs" and "text/html" in response.headers.get(
-            "content-type", "",
+            "content-type",
+            "",
         ):
             body = b""
             async for chunk in response.body_iterator:
@@ -39,8 +40,8 @@ _clients: list[WebSocket] = []
 
 
 async def _watch_files(match_path: str = ".") -> None:
-    # match_path = Path(match_path)
-    async for _ in awatch(match_path, watch_filter=PythonFilter()):
+    # async for _ in awatch(match_path, watch_filter=PythonFilter()):
+    async for _ in awatch(match_path):
         disconnected = []
         for client in _clients:
             try:

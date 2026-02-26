@@ -4,12 +4,21 @@ from pathlib import Path
 from typing import Annotated
 
 import aiofiles
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, UploadFile
 from fastapi.params import Path as PathParam
 from starlette.status import HTTP_404_NOT_FOUND
 
 from learn_fastapi.src.constants import DB
 from learn_fastapi.src.database import save_db
+from learn_fastapi.src.first_steps.annotations import (
+    ImageCaption,
+    ImageFile,
+    ImageFileOptional,
+    ItemDescription,
+    ItemName,
+    ItemPrice,
+    ItemTax,
+)
 from learn_fastapi.src.first_steps.schema import Image, Item
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -54,23 +63,30 @@ async def delete_item(id_param: int | uuid.UUID) -> Item:
     return item
 
 
-@router.post("/image")
-async def submit_an_item_image(
-    image_file: Annotated[UploadFile, File(description="The image file to upload")],
-    caption: Annotated[
-        str, Form(description="The caption for the image")
-    ] = "No description provided",
+async def save_image_file(
+    image_file: UploadFile, caption: str = "No description provided"
 ) -> Image:
+    """Save the image to disk and return an Image Model.
+
+    Raises:
+        HTTPException: If the image file does not have a filename.
+
+    Returns:
+        Image: The saved image model.
+
+    """
     image_dir = Path(__file__).parent.parent / "static" / "images"
 
-    # Download the image file and save it to disk (static/images/)
-    if image_file and image_file.filename:
-        await asyncio.to_thread(image_dir.mkdir, parents=True, exist_ok=True)
-        file_path = image_dir / image_file.filename
+    if not image_file.filename:
+        raise HTTPException(status_code=422, detail="Image file must have a filename")
+
+    await asyncio.to_thread(image_dir.mkdir, parents=True, exist_ok=True)
+    file_path = image_dir / image_file.filename
+
+    if not file_path.exists():
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(await image_file.read())
 
-    # Return the image information as a response
     return Image(
         name=image_file.filename,
         description=caption,
@@ -79,31 +95,34 @@ async def submit_an_item_image(
     )
 
 
-# @router.post("/with-image/")
-# async def create_item_with_image(
-#     item_data: Annotated[
-#         str, Form(description="The item data as a JSON string")
-#     ] = """{"name": "Default Item", "description": "This is a default item", "price": 0.00, "tax": 0.00}""",
-#     image_file: Annotated[
-#         UploadFile | None, File(description="Optional image for the item")
-#     ] = None,
-#     caption: Annotated[
-#         str, Form(description="Image description")
-#     ] = "No description provided",
-# ) -> Item:
-#     try:
-#         item = Item.model_validate_json(item_data)
-#     except ValueError as error:
-#         raise HTTPException(status_code=422, detail=f"Invalid item data:) {error}")
-#
-#     if image_file:
-#         item.image = Image(
-#             image=image_file,
-#             name=image_file.filename,
-#             description=caption,
-#         )
-#
-#     item_id = uuid.uuid4()
-#     DB[str(item_id)] = item
-#     save_db(DB)
-#     return item
+@router.post("/image")
+async def submit_an_item_image(
+    image_file: ImageFile,
+    caption: ImageCaption = "No description provided",
+) -> Image:
+    return await save_image_file(image_file, caption)
+
+
+@router.post("/with-image/")
+async def create_item_with_image(
+    name: ItemName = "Default Item",
+    description: ItemDescription = "No description provided",
+    price: ItemPrice = 0.00,
+    tax: ItemTax = 0.00,
+    image_file: ImageFileOptional = None,
+    caption: ImageCaption = "No description provided",
+) -> Item:
+    item = Item(
+        name=name,
+        description=description,
+        price=price,
+        tax=tax,
+    )
+    if image_file:
+        image = await save_image_file(image_file, caption)
+        item.image_url = image.url
+
+    item_id = uuid.uuid4()
+    DB[str(item_id)] = item
+    save_db(DB)
+    return item
