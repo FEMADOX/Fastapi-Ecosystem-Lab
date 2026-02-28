@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 
-from learn_fastapi.src.config import lifespan
+from learn_fastapi.src.config import lifespan, register_dev_reload
 
 from .router import router
 
 app = FastAPI(lifespan=lifespan)
-# register_dev_reload(app)
+register_dev_reload(app)
 
 
 @app.get("/")
