@@ -1,4 +1,4 @@
-from pathlib import Path
+import uuid
 from typing import TYPE_CHECKING
 
 import pytest
@@ -9,15 +9,18 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_CONTENT,
 )
 
-from learn_fastapi.src.first_steps.router import DB
+from learn_fastapi.src.constants import IMAGES_DIR
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
     from starlette.testclient import TestClient
 
+    from learn_fastapi.src.first_steps.models import Item as ItemModel
+
+
 # ---------------------------------------------------------------------------
-# GET /items/hello-world/
+# GET /
 # ---------------------------------------------------------------------------
 
 
@@ -41,22 +44,24 @@ class TestReadItems:
         response = client.get("/items/")
         assert response.status_code == HTTP_200_OK
 
-    def test_returns_dict(self, client: TestClient) -> None:
+    def test_returns_list(self, client: TestClient) -> None:
         response = client.get("/items/")
-        assert isinstance(response.json(), dict)
+        assert isinstance(response.json(), list)
 
-    def test_items_have_required_fields(self, client: TestClient) -> None:
+    def test_items_have_required_fields(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
         items = client.get("/items/").json()
-        for item in items.values():
+        for item in items:
             assert "name" in item
             assert "price" in item
 
-    def test_returns_all_seeded_items(self, client: TestClient) -> None:
+    def test_returns_seeded_item(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
         response = client.get("/items/")
-        data = response.json()
-        # The seeded database.json has at least the 5 initial entries
-        db_max_len = 5
-        assert len(data) >= db_max_len
+        names = [item["name"] for item in response.json()]
+        assert "Foo" in names
 
 
 # ---------------------------------------------------------------------------
@@ -65,22 +70,24 @@ class TestReadItems:
 
 
 class TestReadItem:
-    def test_existing_integer_id(self, client: TestClient) -> None:
-        """Keys '1', '2', '3' are present in the seeded JSON."""
-        response = client.get("/items/1")
+    def test_existing_item(self, client: TestClient, seeded_item: ItemModel) -> None:
+        response = client.get(f"/items/{seeded_item.id}")
         assert response.status_code == HTTP_200_OK
 
-    def test_existing_item_has_correct_name(self, client: TestClient) -> None:
-        response = client.get("/items/1")
+    def test_existing_item_has_correct_name(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
+        response = client.get(f"/items/{seeded_item.id}")
         assert response.json()["name"] == "Foo"
 
     def test_non_existing_id_returns_404(self, client: TestClient) -> None:
-        """An ID that does not exist must return 404 Not Found."""
-        response = client.get("/items/9999")
+        """A valid UUID that does not exist in the DB must return 404."""
+        random_id = uuid.uuid4()
+        response = client.get(f"/items/{random_id}")
         assert response.status_code == HTTP_404_NOT_FOUND
 
     def test_invalid_id_type_returns_422(self, client: TestClient) -> None:
-        """A non-integer, non-UUID value must fail validation."""
+        """A non-UUID value must fail validation."""
         response = client.get("/items/not-an-id")
         assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
 
@@ -108,15 +115,15 @@ class TestCreateItem:
 
     def test_item_persisted_in_db(self, client: TestClient, sample_item: dict) -> None:
         client.post("/items/", json=sample_item)
-        names_in_db = {item.name for item in DB.values()}
-        assert sample_item["name"] in names_in_db
+        names = [item["name"] for item in client.get("/items/").json()]
+        assert sample_item["name"] in names
 
     def test_missing_required_field_returns_422(self, client: TestClient) -> None:
         """Omitting 'price' (required) must trigger a validation error."""
         response = client.post("/items/", json={"name": "Incomplete"})
         assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
 
-    def test_optional_fields_default_to_none(self, client: TestClient) -> None:
+    def test_optional_fields_use_defaults(self, client: TestClient) -> None:
         payload = {"name": "Minimal", "price": 5.0}
         response = client.post("/items/", json=payload)
         assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
@@ -131,16 +138,19 @@ class TestCreateItem:
 
 
 class TestUpdateItem:
-    def test_returns_200(self, client: TestClient, sample_item: dict) -> None:
-        response = client.put("/items/1", json=sample_item)
+    def test_returns_200(
+        self, client: TestClient, sample_item: dict, seeded_item: ItemModel
+    ) -> None:
+        response = client.put(f"/items/{seeded_item.id}", json=sample_item)
         assert response.status_code == HTTP_200_OK
 
     def test_response_reflects_update(
         self,
         client: TestClient,
         sample_item: dict,
+        seeded_item: ItemModel,
     ) -> None:
-        response = client.put("/items/1", json=sample_item)
+        response = client.put(f"/items/{seeded_item.id}", json=sample_item)
         body = response.json()
         assert body["name"] == sample_item["name"]
         assert body["price"] == sample_item["price"]
@@ -149,12 +159,18 @@ class TestUpdateItem:
         self,
         client: TestClient,
         sample_item: dict,
+        seeded_item: ItemModel,
     ) -> None:
-        client.put("/items/1", json=sample_item)
-        assert DB["1"].name == sample_item["name"]
+        client.put(f"/items/{seeded_item.id}", json=sample_item)
+        body = client.get(f"/items/{seeded_item.id}").json()
+        assert body["name"] == sample_item["name"]
 
-    def test_invalid_payload_returns_422(self, client: TestClient) -> None:
-        response = client.put("/items/1", json={"name": "Bad", "price": "not-a-float"})
+    def test_invalid_payload_returns_422(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
+        response = client.put(
+            f"/items/{seeded_item.id}", json={"name": "Bad", "price": "not-a-float"}
+        )
         assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
 
 
@@ -164,26 +180,33 @@ class TestUpdateItem:
 
 
 class TestDeleteItem:
-    def test_returns_200(self, client: TestClient) -> None:
-        response = client.delete("/items/1")
+    def test_returns_200(self, client: TestClient, seeded_item: ItemModel) -> None:
+        response = client.delete(f"/items/{seeded_item.id}")
         assert response.status_code == HTTP_200_OK
 
-    def test_response_is_deleted_item(self, client: TestClient) -> None:
-        response = client.delete("/items/1")
+    def test_response_contains_detail(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
+        response = client.delete(f"/items/{seeded_item.id}")
         body = response.json()
-        assert body["name"] == "Foo"
+        assert body["detail"] == "Item deleted successfully"
+        assert body["status_code"] == HTTP_200_OK
 
-    def test_item_removed_from_db(self, client: TestClient) -> None:
-        client.delete("/items/1")
-        assert "1" not in DB
+    def test_item_removed_from_db(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
+        client.delete(f"/items/{seeded_item.id}")
+        response = client.get(f"/items/{seeded_item.id}")
+        assert response.status_code == HTTP_404_NOT_FOUND
 
     def test_delete_non_existing_id_returns_404(self, client: TestClient) -> None:
-        response = client.delete("/items/9999")
+        random_id = uuid.uuid4()
+        response = client.delete(f"/items/{random_id}")
         assert response.status_code == HTTP_404_NOT_FOUND
 
 
 # ---------------------------------------------------------------------------
-# POST /items/image
+# POST /items/image/{id_param}
 # ---------------------------------------------------------------------------
 
 
@@ -192,59 +215,48 @@ class TestSubmitItemImage:
 
     @pytest.fixture(autouse=True)
     def cleanup_images(self) -> Generator[None]:
-        image_dir = Path(__file__).parent.parent.parent / "src" / "static" / "images"
-        before = set(image_dir.iterdir()) if image_dir.exists() else set()
+        before = set(IMAGES_DIR.iterdir()) if IMAGES_DIR.exists() else set()
         yield
-        if image_dir.exists():
-            for f in image_dir.iterdir():
+        if IMAGES_DIR.exists():
+            for f in IMAGES_DIR.iterdir():
                 if f not in before:
                     f.unlink(missing_ok=True)
 
-    def test_returns_200(self, client: TestClient) -> None:
+    def test_returns_200(self, client: TestClient, seeded_item: ItemModel) -> None:
         response = client.post(
-            "/items/image",
+            f"/items/image/{seeded_item.id}",
             files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
         )
         assert response.status_code == HTTP_200_OK
 
-    def test_response_has_correct_name(self, client: TestClient) -> None:
+    def test_image_url_set(self, client: TestClient, seeded_item: ItemModel) -> None:
         response = client.post(
-            "/items/image",
+            f"/items/image/{seeded_item.id}",
             files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
         )
-        assert response.json()["name"] == "test.png"
+        assert response.json()["image_url"] == "/static/images/test.png"
 
-    def test_response_has_correct_url(self, client: TestClient) -> None:
+    def test_item_name_unchanged(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
         response = client.post(
-            "/items/image",
+            f"/items/image/{seeded_item.id}",
             files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
         )
-        assert response.json()["url"] == "/static/images/test.png"
+        assert response.json()["name"] == "Foo"
 
-    def test_response_has_correct_content_type(self, client: TestClient) -> None:
+    def test_non_existing_id_returns_404(self, client: TestClient) -> None:
+        random_id = uuid.uuid4()
         response = client.post(
-            "/items/image",
+            f"/items/image/{random_id}",
             files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
         )
-        assert response.json()["content_type"] == "image/png"
+        assert response.status_code == HTTP_404_NOT_FOUND
 
-    def test_custom_caption_stored_as_description(self, client: TestClient) -> None:
-        response = client.post(
-            "/items/image",
-            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
-            data={"caption": "My custom caption"},
-        )
-        assert response.json()["description"] == "My custom caption"
-
-    def test_default_caption_when_omitted(self, client: TestClient) -> None:
-        response = client.post(
-            "/items/image",
-            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
-        )
-        assert response.json()["description"] == "No description provided"
-
-    def test_missing_file_returns_422(self, client: TestClient) -> None:
-        response = client.post("/items/image")
+    def test_missing_file_returns_422(
+        self, client: TestClient, seeded_item: ItemModel
+    ) -> None:
+        response = client.post(f"/items/image/{seeded_item.id}")
         assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
 
 
@@ -258,11 +270,10 @@ class TestCreateItemWithImage:
 
     @pytest.fixture(autouse=True)
     def cleanup_images(self) -> Generator[None]:
-        image_dir = Path(__file__).parent.parent.parent / "src" / "static" / "images"
-        before = set(image_dir.iterdir()) if image_dir.exists() else set()
+        before = set(IMAGES_DIR.iterdir()) if IMAGES_DIR.exists() else set()
         yield
-        if image_dir.exists():
-            for f in image_dir.iterdir():
+        if IMAGES_DIR.exists():
+            for f in IMAGES_DIR.iterdir():
                 if f not in before:
                     f.unlink(missing_ok=True)
 
@@ -292,7 +303,7 @@ class TestCreateItemWithImage:
         body_price = 9.99
         assert body["name"] == "Test Item"
         assert body["price"] == body_price
-        assert body["image_url"] is None
+        assert body["image_url"] == ""
 
     def test_returns_200_with_image(self, client: TestClient) -> None:
         response = client.post(
@@ -325,7 +336,7 @@ class TestCreateItemWithImage:
         body_price = 0.00
         assert body["name"] == "Default Item"
         assert body["price"] == body_price
-        assert body["image_url"] is None
+        assert body["image_url"] == ""
 
     def test_item_persisted_in_db(self, client: TestClient) -> None:
         client.post(
@@ -336,8 +347,8 @@ class TestCreateItemWithImage:
                 "price": "3.00",
             },
         )
-        names_in_db = {item.name for item in DB.values()}
-        assert "Persisted Item" in names_in_db
+        names = [item["name"] for item in client.get("/items/").json()]
+        assert "Persisted Item" in names
 
     def test_negative_price_returns_422(self, client: TestClient) -> None:
         """Price has a ge=0 constraint — a negative value must fail validation."""

@@ -1,8 +1,9 @@
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from fastapi.responses import HTMLResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from .constants import JS_DIR
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
     from starlette.requests import Request
 
 # Inyecta el script de arel en el HTML del Swagger
-JS_CODE = (Path(__file__).parent / "static" / "js" / "reloadScript.js").read_text()
+JS_CODE = (JS_DIR / "reloadScript.js").read_text()
 RELOAD_SCRIPT = "<script>" + JS_CODE + "</script>"
 
 

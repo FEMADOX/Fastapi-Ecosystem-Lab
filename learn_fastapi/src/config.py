@@ -1,13 +1,13 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from watchfiles import awatch
 
+from learn_fastapi.src.constants import IMAGES_DIR, STATIC_DIR
 from learn_fastapi.src.database import create_db_and_tables
 from learn_fastapi.src.middleware import SwaggerHotReloadMiddleware
 
@@ -32,11 +32,8 @@ _clients: list[WebSocket] = []
 
 
 def mount_static_files(app: FastAPI) -> None:
-    assets_dir = Path(__file__).parent / "static"
-    images_dir = assets_dir / "images"
-
-    images_dir.mkdir(parents=True, exist_ok=True)
-    app.mount("/static", StaticFiles(directory=assets_dir), name="static")
+    IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 async def _hot_reload_ws(websocket: WebSocket) -> None:
