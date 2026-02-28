@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 
@@ -13,6 +15,11 @@ class Image(BaseModel):
 
 
 class Item(BaseModel):
+    id: UUID | None = Field(
+        description="The id of the item",
+        default=None,
+        exclude=False,
+    )
     name: str = Field(description="The name of the item", min_length=3)
     description: str = Field(
         description="The description of the item",

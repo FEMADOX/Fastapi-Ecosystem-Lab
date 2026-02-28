@@ -1,8 +1,10 @@
 [project]
 dependencies = [
   "aiofiles>=25.1.0",
+  "aiosqlite>=0.22.1",
   "fastapi[standard-no-fastapi-cloud-cli]>=0.129.0",
   "httpx>=0.28.1",
+  "psycopg>=3.3.3",
   "pytest>=9.0.2",
   "python-multipart>=0.0.22",
   "sqlalchemy>=2.0.46",
@@ -38,11 +40,16 @@ extend-ignore = [
 ]
 extend-select = [] # Here you can add additional rules to be checked by Ruff, if desired.
 
+[tool.ty.rules]
+unresolved-import = "ignore"
+
 [dependency-groups]
 dev = [
   "pre-commit>=4.0.0",
   "ruff>=0.15.2",
+  "sqlalchemy-stubs>=0.4",
   "ty>=0.0.17",
+  "types-sqlalchemy>=1.4.53.38",
 ]
 
 [tool.pytest.ini_options]

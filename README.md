@@ -7,7 +7,7 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 | Topic                                        | Status           |
 |:---------------------------------------------|:----------------:|
 | FastAPI — routing, dependencies, middleware  | 🔄 In progress   |
-| SQLAlchemy + PostgreSQL                      | 📅 Planned       |
+| SQLAlchemy + PostgreSQL                      | 🔄 In progress   |
 | Streamlit — dashboards & data apps           | 📅 Planned       |
 | Authentication — JWT, OAuth2                 | 📅 Planned       |
 | Testing — pytest, httpx                      | 🔄 In progress   |

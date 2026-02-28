@@ -1,3 +1,4 @@
-from learn_fastapi.src.database import load_db
+from pathlib import Path
 
-DB = load_db()
+STATIC_DIR = Path(__file__).parent / "static"
+IMAGES_DIR = STATIC_DIR / "images"
