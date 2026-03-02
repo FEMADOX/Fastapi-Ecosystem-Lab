@@ -8,11 +8,9 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite+aiosqlite:///./learn_fastapi/src/{sqlite_file_name}"
+POSTGRES_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/learn_fastapi"
 
-connect_args = {"check_same_thread": False}
-engine = create_async_engine(sqlite_url, connect_args=connect_args)
+engine = create_async_engine(POSTGRES_URL)
 
 AsyncSessionMaker = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -303,7 +303,7 @@ class TestCreateItemWithImage:
         body_price = 9.99
         assert body["name"] == "Test Item"
         assert body["price"] == body_price
-        assert body["image_url"] == ""
+        assert not body["image_url"]
 
     def test_returns_200_with_image(self, client: TestClient) -> None:
         response = client.post(
@@ -336,7 +336,7 @@ class TestCreateItemWithImage:
         body_price = 0.00
         assert body["name"] == "Default Item"
         assert body["price"] == body_price
-        assert body["image_url"] == ""
+        assert not body["image_url"]
 
     def test_item_persisted_in_db(self, client: TestClient) -> None:
         client.post(

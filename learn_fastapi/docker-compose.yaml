@@ -1,0 +1,31 @@
+#  Inicialice a Postgres Database for a FastAPI application using Docker Compose
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: learn_fastapi_db
+    network_mode: host
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: learn_fastapi
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+#    networks:
+#      - learn_fastapi_network
+
+volumes:
+  postgres_data:
+
+#networks:
+#  learn_fastapi_network:
+#    driver: bridge
+#    ipam:
+#      config:
+#        - subnet: 172.25.0.0/16

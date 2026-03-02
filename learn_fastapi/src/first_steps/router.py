@@ -20,7 +20,7 @@ from learn_fastapi.src.first_steps.annotations import (
     ItemTax,
 )
 from learn_fastapi.src.first_steps.models import Item as ItemModel
-from learn_fastapi.src.first_steps.schema import Image, Item
+from learn_fastapi.src.first_steps.schema import Image, Item, ItemUpdate
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -51,15 +51,34 @@ async def create_item(item: Item, session: AsyncSessionDep) -> Item:
 
 
 @router.put("/{id_param}")
-async def update_item(id_param: UUID, session: AsyncSessionDep, item: Item) -> Item:
+async def update_item(
+    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdate
+) -> Item:
     item_db = await session.get(ItemModel, id_param)
     if item_db is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
 
-    item_data = item.model_dump(exclude_unset=True, exclude={"id"})
+    item_data = item_param.model_dump(exclude_unset=True, exclude={"id"})
     await session.execute(
         update(ItemModel).where(ItemModel.id == item_db.id).values(**item_data)
     )
+    await session.commit()
+    await session.refresh(item_db)
+    return item_db
+
+
+# PATCH
+@router.patch("/{id_param}")
+async def patch_item(
+    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdate
+) -> Item:
+    item_db = await session.get(ItemModel, id_param)
+    if item_db is None:
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
+
+    item_data = item_param.model_dump(exclude_unset=True, exclude={"id"})
+    [setattr(item_db, key, value) for key, value in item_data.items()]
+
     await session.commit()
     await session.refresh(item_db)
     return item_db

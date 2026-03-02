@@ -28,8 +28,17 @@ class Item(BaseModel):
     )
     price: float = Field(ge=0, description="The price of the item")
     tax: float = Field(ge=0, description="The tax of the item", default=0.00)
-    # images: list[Image] | list[None] = Field(
-    #     description="The list of images of the item",
-    #     default_factory=list
-    # )
     image_url: str | None = Field(description="The url of the image", default=None)
+
+
+class ItemUpdate(BaseModel):
+    name: str | None = Field(
+        description="The name of the item", min_length=3, default=None
+    )
+    description: str | None = Field(
+        description="The description of the item",
+        default=None,
+        min_length=10,
+    )
+    price: float | None = Field(ge=0, description="The price of the item", default=None)
+    tax: float | None = Field(ge=0, description="The tax of the item", default=None)

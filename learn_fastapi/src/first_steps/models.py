@@ -1,14 +1,10 @@
 import uuid
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import UUID, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from learn_fastapi.src.database import Base
-
-if TYPE_CHECKING:
-    pass
 
 
 class Item(Base):
@@ -21,10 +17,10 @@ class Item(Base):
     tax: Mapped[float] = mapped_column(default=0.00)
     image_url: Mapped[str] = mapped_column(default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.now(tz=UTC)
+        DateTime(timezone=True), nullable=False, default=datetime.now(tz=UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
         default=datetime.now(tz=UTC),
         onupdate=datetime.now(tz=UTC),

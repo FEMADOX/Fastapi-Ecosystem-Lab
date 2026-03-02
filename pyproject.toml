@@ -2,9 +2,10 @@
 dependencies = [
   "aiofiles>=25.1.0",
   "aiosqlite>=0.22.1",
+  "asyncpg>=0.31.0",
   "fastapi[standard-no-fastapi-cloud-cli]>=0.129.0",
   "httpx>=0.28.1",
-  "psycopg>=3.3.3",
+  "psycopg[binary]>=3.3.3",
   "pytest>=9.0.2",
   "python-multipart>=0.0.22",
   "sqlalchemy>=2.0.46",
@@ -29,13 +30,14 @@ packages = ["learn_fastapi"]
 
 [tool.ruff.lint]
 extend-ignore = [
-  "CPY001", # Ignore "Missing copyright notice" as this is a learning resource and not a production package.
-  "D100", # Ignore missing docstring in public module.
-  "D101", # Ignore missing docstring in public class.
-  "D102", # Ignore missing docstring in public method.
-  "D103", # Ignore missing docstring in public function.
-  "D104", # Ignore missing docstring in public package.
-  "T201", # Ignore "print" statements, as they are used for debugging purposes.
+  "ARG001", # Ignore "Unused function argument".
+  "CPY001", # Ignore "Missing copyright notice".
+  "D100", # Ignore "Missing docstring in public module".
+  "D101", # Ignore "Missing docstring in public class".
+  "D102", # Ignore "Missing docstring in public method".
+  "D103", # Ignore "Missing docstring in public function".
+  "D104", # Ignore "Missing docstring in public package".
+  "T201", # Ignore "print statements".
   "TC001", # Ignore "Move application imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
 ]
 extend-select = [] # Here you can add additional rules to be checked by Ruff, if desired.
