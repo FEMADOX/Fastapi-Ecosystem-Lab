@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Mapped
 
 from learn_fastapi.src.database import Base
-from learn_fastapi.src.first_steps.annotations import (
+
+from .annotations import (
     float_default,
     int_pk,
     str_default,

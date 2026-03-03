@@ -32,33 +32,33 @@ learn_fastapi/
 ### `first_steps`
 
 | Concept                                  | Where                                                                  |
-| ---------------------------------------- | ---------------------------------------------------------------------- |
-| `APIRouter` with prefix & tags           | [`router.py`](src/first_steps/router.py)                               |
-| Pydantic model with `Field` validation   | [`schema.py`](src/first_steps/schema.py)                               |
-| `Annotated` aliases                      | [`annotations.py`](src/first_steps/annotations.py)                     |
-| Cross-field business rule validation     | [`validators.py`](src/first_steps/validators.py)                       |
+|------------------------------------------|------------------------------------------------------------------------|
+| `APIRouter` with prefix & tags           | [`router.py`](src/items/router.py)                               |
+| Pydantic model with `Field` validation   | [`schema.py`](src/items/schema.py)                               |
+| `Annotated` aliases                      | [`annotations.py`](src/items/annotations.py)                     |
+| Cross-field business rule validation     | [`validators.py`](src/items/validators.py)                       |
 | JSON file as persistent in-memory store  | [`database.py`](src/database.py)                                       |
-| Full CRUD: GET / POST / PUT / DELETE     | [`router.py`](src/first_steps/router.py)                               |
-| HTTP status codes via `starlette.status` | [`router.py`](src/first_steps/router.py)                               |
-| `HTTPException` for 404 responses        | [`router.py`](src/first_steps/router.py)                               |
+| Full CRUD: GET / POST / PUT / DELETE     | [`router.py`](src/items/router.py)                               |
+| HTTP status codes via `starlette.status` | [`router.py`](src/items/router.py)                               |
+| `HTTPException` for 404 responses        | [`router.py`](src/items/router.py)                               |
 | Integration tests with `TestClient`      | [`tests/first_steps/test_router.py`](tests/first_steps/test_router.py) |
 
 ## API Endpoints
 
 Base prefix: `/items`
 
-| Method   | Path               | Description                               | Body Params                                                     |
-| -------- | ------------------ | ----------------------------------------- | --------------------------------------------------------------- |
-| `GET`    | `/hello-world/`    | Health-check / hello world                |                                                                 |
-| `GET`    | `/`                | List all items                            |                                                                 |
-| `GET`    | `/{id_param}`      | Get item by `UUID`                        |                                                                 |
-| `POST`   | `/`                | Create a new item                         | `Item`                                                          |
-| `PUT`    | `/{id_param}`      | Replace fields of an existing item        | `ItemUpdate`                                                    |
-| `PATCH`  | `/{id_param}`      | Partially update an existing item         | `ItemUpdate`                                                    |
-| `DELETE` | `/{id_param}`      | Delete an item                            |                                                                 |
-| `POST`   | `/image/{id_param}`| Upload/update image for an item           | `image_file` (`UploadFile`), `caption`                          |
-| `GET`    | `/image/`          | Get image file by filename                |                                                                 |
-| `POST`   | `/with-image/`     | Create item with optional image upload    | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
+| Method   | Path                | Description                            |                           Body Params                           |
+|:---------|:--------------------|:---------------------------------------|:---------------------------------------------------------------:|
+| `GET`    | `/hello-world/`     | Health-check / hello world             |                                                                 |
+| `GET`    | `/`                 | List all items                         |                                                                 |
+| `GET`    | `/{id_param}`       | Get item by `UUID`                     |                                                                 |
+| `POST`   | `/`                 | Create a new item                      |                             `Item`                              |
+| `PUT`    | `/{id_param}`       | Replace fields of an existing item     |                          `ItemUpdate`                           |
+| `PATCH`  | `/{id_param}`       | Partially update an existing item      |                          `ItemUpdate`                           |
+| `DELETE` | `/{id_param}`       | Delete an item                         |                                                                 |
+| `POST`   | `/image/{id_param}` | Upload/update image for an item        |             `image_file` (`UploadFile`), `caption`              |
+| `GET`    | `/image/`           | Get image file by filename             |                                                                 |
+| `POST`   | `/with-image/`      | Create item with optional image upload | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
 
 ## Running
 

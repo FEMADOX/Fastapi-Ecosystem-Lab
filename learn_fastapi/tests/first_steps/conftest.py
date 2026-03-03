@@ -6,8 +6,8 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from learn_fastapi.src.database import Base, get_session
-from learn_fastapi.src.first_steps.models import Item as ItemModel
-from learn_fastapi.src.first_steps.my_app import app
+from learn_fastapi.src.items.models import Item as ItemModel
+from learn_fastapi.src.main import app
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -66,7 +66,7 @@ async def _seed_item() -> ItemModel:
 
 @pytest.fixture(autouse=True)
 async def setup_test_db() -> AsyncGenerator[None]:
-    """Create all tables before each test and drop them afterwards.
+    """Create all tables before each test and drop them afterward.
 
     This guarantees a completely clean database state for every test,
     preventing pollution between tests.
@@ -83,8 +83,8 @@ async def setup_test_db() -> AsyncGenerator[None]:
 
 
 @pytest.fixture
-async def client() -> AsyncClient:
-    """Return a TestClient bound to the first_steps learn_fastapi app.
+async def client() -> AsyncGenerator[AsyncClient]:
+    """Return a TestClient bound to the items learn_fastapi app.
 
     Yields:
         AsyncClient: An AsyncClient instance for the app.

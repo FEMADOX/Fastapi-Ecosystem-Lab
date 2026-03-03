@@ -4,14 +4,14 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 
 ## 🗺️ What's covered
 
-| Topic                                        | Status           |
-|:---------------------------------------------|:----------------:|
-| FastAPI — routing, dependencies, middleware  | ✅ Completed     |
-| SQLAlchemy + PostgreSQL                      | ✅ Completed     |
-| Streamlit — dashboards & data apps           | 📅 Planned       |
-| Authentication — JWT, OAuth2                 | 📅 Planned       |
-| Testing — pytest, httpx                      | ✅ Completed     |
-| Docker & deployment                          | 📅 Planned       |
+| Topic                                        |   Status    |
+|:---------------------------------------------|-------------|
+| FastAPI — routing, dependencies, middleware  | ✅ Completed |
+| SQLAlchemy + PostgreSQL                      | ✅ Completed |
+| Streamlit — dashboards & data apps           | 📅 Planned  |
+| Authentication — JWT, OAuth2                 | 🔁 Process  |
+| Testing — pytest, httpx                      | ✅ Completed |
+| Docker & deployment                          | 🔁 Process  |
 
 ## 🛠️ Tech Stack
 

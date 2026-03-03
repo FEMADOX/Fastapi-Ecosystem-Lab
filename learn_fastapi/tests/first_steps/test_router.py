@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from httpx import AsyncClient
 
-    from learn_fastapi.src.first_steps.models import Item as ItemModel
+    from learn_fastapi.src.items.models import Item as ItemModel
 
 
 # ---------------------------------------------------------------------------

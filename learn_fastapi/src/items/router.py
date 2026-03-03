@@ -9,7 +9,8 @@ from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND
 
 from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.database import AsyncSessionDep
-from learn_fastapi.src.first_steps.annotations import (
+
+from .annotations import (
     ImageCaption,
     ImageFile,
     ImageFilename,
@@ -19,14 +20,14 @@ from learn_fastapi.src.first_steps.annotations import (
     ItemPrice,
     ItemTax,
 )
-from learn_fastapi.src.first_steps.models import Item
-from learn_fastapi.src.first_steps.schema import (
+from .models import Item
+from .schema import (
     ImageSchema,
     ItemSchema,
     ItemUpdateSchema,
 )
 
-router = APIRouter(prefix="/items", tags=["items"])
+router = APIRouter()
 
 
 @router.get("/")
