@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-class Image(BaseModel):
+class ImageSchema(BaseModel):
     name: str | None = Field(description="The filename of the image", default=None)
     description: str = Field(
         description="The description of the image", default="No description provided"
@@ -14,7 +14,7 @@ class Image(BaseModel):
     url: str = Field(description="The url of the image", default="")
 
 
-class Item(BaseModel):
+class ItemSchema(BaseModel):
     id: UUID | None = Field(
         description="The id of the item",
         default=None,
@@ -31,7 +31,7 @@ class Item(BaseModel):
     image_url: str | None = Field(description="The url of the image", default=None)
 
 
-class ItemUpdate(BaseModel):
+class ItemUpdateSchema(BaseModel):
     name: str | None = Field(
         description="The name of the item", min_length=3, default=None
     )

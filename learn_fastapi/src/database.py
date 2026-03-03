@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -12,9 +12,11 @@ POSTGRES_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/learn_fast
 
 engine = create_async_engine(POSTGRES_URL)
 
-AsyncSessionMaker = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
+AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 async def create_db_and_tables() -> None:
@@ -27,9 +29,9 @@ async def drop_db_and_tables() -> None:
         await conn.run_sync(Base.metadata.drop_all)
 
 
-async def get_async_session() -> AsyncGenerator[AsyncSession]:
-    async with AsyncSessionMaker() as session:
+async def get_session() -> AsyncGenerator[AsyncSession]:
+    async with AsyncSessionLocal() as session:
         yield session
 
 
-AsyncSessionDep = Annotated[AsyncSession, Depends(get_async_session)]
+AsyncSessionDep = Annotated[AsyncSession, Depends(get_session)]

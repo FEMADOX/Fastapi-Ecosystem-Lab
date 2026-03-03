@@ -1,27 +1,25 @@
-import uuid
-from datetime import UTC, datetime
-
-from sqlalchemy import UUID, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped
 
 from learn_fastapi.src.database import Base
+from learn_fastapi.src.first_steps.annotations import (
+    float_default,
+    int_pk,
+    str_default,
+    str_indexed,
+    str_url,
+    timestamp_created,
+    timestamp_updated,
+)
 
 
 class Item(Base):
     __tablename__ = "items"
 
-    id: Mapped[UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(index=True)
-    description: Mapped[str] = mapped_column(default="No description provided")
-    price: Mapped[float] = mapped_column(default=0.00)
-    tax: Mapped[float] = mapped_column(default=0.00)
-    image_url: Mapped[str] = mapped_column(default="")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=datetime.now(tz=UTC)
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=datetime.now(tz=UTC),
-        onupdate=datetime.now(tz=UTC),
-    )
+    id: Mapped[int_pk]
+    name: Mapped[str_indexed]
+    description: Mapped[str_default]
+    price: Mapped[float_default]
+    tax: Mapped[float_default]
+    image_url: Mapped[str_url]
+    created_at: Mapped[timestamp_created]
+    updated_at: Mapped[timestamp_updated]

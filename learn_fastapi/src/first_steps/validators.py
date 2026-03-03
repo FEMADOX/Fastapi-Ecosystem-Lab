@@ -8,10 +8,10 @@
 #   If any of these checks fail, a `ValueError` is raised with an appropriate message.
 #   If all checks pass, the original `Item` instance is returned.
 
-from .schema import Item
+from .schema import ItemSchema
 
 
-def validate_item(item: Item) -> Item:
+def validate_item(item: ItemSchema) -> ItemSchema:
     if len(item.name) < 3:
         msg = "Name must be at least 3 characters long"
         raise ValueError(msg)

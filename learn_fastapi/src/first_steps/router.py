@@ -19,8 +19,12 @@ from learn_fastapi.src.first_steps.annotations import (
     ItemPrice,
     ItemTax,
 )
-from learn_fastapi.src.first_steps.models import Item as ItemModel
-from learn_fastapi.src.first_steps.schema import Image, Item, ItemUpdate
+from learn_fastapi.src.first_steps.models import Item
+from learn_fastapi.src.first_steps.schema import (
+    ImageSchema,
+    ItemSchema,
+    ItemUpdateSchema,
+)
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -28,22 +32,22 @@ router = APIRouter(prefix="/items", tags=["items"])
 @router.get("/")
 async def read_items(
     session: AsyncSessionDep, offset: int = 0, limit: int = 10
-) -> list[Item]:
-    list_items = await session.execute(select(ItemModel).offset(offset).limit(limit))
+) -> list[ItemSchema]:
+    list_items = await session.execute(select(Item).offset(offset).limit(limit))  # ty:ignore[invalid-argument-type]
     return list_items.scalars().all()
 
 
 @router.get("/{id_param}")
-async def read_item(id_param: UUID, session: AsyncSessionDep) -> Item:
-    item = await session.get(ItemModel, id_param)
+async def read_item(id_param: UUID, session: AsyncSessionDep) -> ItemSchema:
+    item = await session.get(Item, id_param)
     if item is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
     return item
 
 
 @router.post("/")
-async def create_item(item: Item, session: AsyncSessionDep) -> Item:
-    item_db = ItemModel(**item.model_dump(exclude={"id"}))
+async def create_item(item: ItemSchema, session: AsyncSessionDep) -> ItemSchema:
+    item_db = Item(**item.model_dump(exclude={"id"}))
     session.add(item_db)
     await session.commit()
     await session.refresh(item_db)
@@ -52,15 +56,15 @@ async def create_item(item: Item, session: AsyncSessionDep) -> Item:
 
 @router.put("/{id_param}")
 async def update_item(
-    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdate
-) -> Item:
-    item_db = await session.get(ItemModel, id_param)
+    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdateSchema
+) -> ItemSchema:
+    item_db = await session.get(Item, id_param)
     if item_db is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
 
     item_data = item_param.model_dump(exclude_unset=True, exclude={"id"})
     await session.execute(
-        update(ItemModel).where(ItemModel.id == item_db.id).values(**item_data)
+        update(Item).where(Item.id == item_db.id).values(**item_data)  # ty:ignore[invalid-argument-type]
     )
     await session.commit()
     await session.refresh(item_db)
@@ -70,9 +74,9 @@ async def update_item(
 # PATCH
 @router.patch("/{id_param}")
 async def patch_item(
-    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdate
-) -> Item:
-    item_db = await session.get(ItemModel, id_param)
+    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdateSchema
+) -> ItemSchema:
+    item_db = await session.get(Item, id_param)
     if item_db is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
 
@@ -86,7 +90,7 @@ async def patch_item(
 
 @router.delete("/{id_param}")
 async def delete_item(id_param: UUID, session: AsyncSessionDep) -> dict[str, str | int]:
-    item = await session.get(ItemModel, id_param)
+    item = await session.get(Item, id_param)
     if item is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
     await session.delete(item)
@@ -96,14 +100,14 @@ async def delete_item(id_param: UUID, session: AsyncSessionDep) -> dict[str, str
 
 async def save_image_file(
     image_file: UploadFile, caption: str = "No description provided"
-) -> Image:
+) -> ImageSchema:
     """Save the image to disk and return an Image Model.
+
+    Returns:
+        ImageSchema: The saved image model.
 
     Raises:
         HTTPException: If the image file does not have a filename.
-
-    Returns:
-        Image: The saved image model.
 
     """
     if not image_file.filename:
@@ -116,7 +120,7 @@ async def save_image_file(
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(await image_file.read())
 
-    return Image(
+    return ImageSchema(
         name=image_file.filename,
         description=caption,
         content_type=image_file.content_type,
@@ -130,17 +134,15 @@ async def submit_an_item_image(
     session: AsyncSessionDep,
     image_file: ImageFile,
     caption: ImageCaption = "No description provided",
-) -> Item:
-    item_db = await session.get(ItemModel, id_param)
+) -> ItemSchema:
+    item_db = await session.get(Item, id_param)
 
     if item_db is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
 
-    image_file = await save_image_file(image_file, caption)
+    image = await save_image_file(image_file, caption)
     await session.execute(
-        update(ItemModel)
-        .where(ItemModel.id == item_db.id)
-        .values(image_url=image_file.url)
+        update(Item).where(Item.id == item_db.id).values(image_url=image.url)  # ty:ignore[invalid-argument-type]
     )
     await session.commit()
     await session.refresh(item_db)
@@ -171,15 +173,15 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
     tax: ItemTax = 0.00,
     image_file: ImageFileOptional = None,
     caption: ImageCaption = "No description provided",
-) -> Item:
-    result = await session.execute(select(ItemModel).where(ItemModel.name == name))
+) -> ItemSchema:
+    result = await session.execute(select(Item).where(Item.name == name))  # ty:ignore[invalid-argument-type]
     result = result.scalar_one_or_none()
     if result is not None:
         raise HTTPException(
             status_code=422, detail=f"An item with name '{name}' already exists"
         )
 
-    item_db = ItemModel(
+    item_db = Item(
         name=name,
         description=description,
         price=price,

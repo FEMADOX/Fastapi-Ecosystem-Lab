@@ -1,17 +1,16 @@
-import asyncio
 import tempfile
 from typing import TYPE_CHECKING
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from starlette.testclient import TestClient
 
-from learn_fastapi.src.database import Base, get_async_session
+from learn_fastapi.src.database import Base, get_session
 from learn_fastapi.src.first_steps.models import Item as ItemModel
 from learn_fastapi.src.first_steps.my_app import app
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Generator
+    from collections.abc import AsyncGenerator
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +32,7 @@ async def _override_get_async_session() -> AsyncGenerator[AsyncSession]:
         yield session
 
 
-app.dependency_overrides[get_async_session] = _override_get_async_session
+app.dependency_overrides[get_session] = _override_get_async_session
 
 
 async def _create_tables() -> None:
@@ -66,30 +65,35 @@ async def _seed_item() -> ItemModel:
 
 
 @pytest.fixture(autouse=True)
-def setup_test_db() -> Generator:
+async def setup_test_db() -> AsyncGenerator[None]:
     """Create all tables before each test and drop them afterwards.
 
     This guarantees a completely clean database state for every test,
     preventing pollution between tests.
 
     Yields:
-        Generator: Yields control to the test, then tears down the schema.
+        AsyncGenerator: Yields control to the test, then tears down the schema.
 
     """
-    asyncio.run(_create_tables())
+    async with _test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
-    asyncio.run(_drop_tables())
+    async with _test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture
-def client() -> TestClient:
+async def client() -> AsyncClient:
     """Return a TestClient bound to the first_steps learn_fastapi app.
 
-    Returns:
-        TestClient: A TestClient instance for the app.
+    Yields:
+        AsyncClient: An AsyncClient instance for the app.
 
     """
-    return TestClient(app)
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as async_client:
+        yield async_client
 
 
 @pytest.fixture
@@ -109,7 +113,7 @@ def sample_item() -> dict:
 
 
 @pytest.fixture
-def seeded_item(setup_test_db: None) -> ItemModel:
+async def seeded_item(setup_test_db: None) -> ItemModel:
     """Insert a single 'Foo' item into the test DB and return the ORM instance.
 
     Depends on setup_test_db to ensure tables exist before seeding.
@@ -121,4 +125,14 @@ def seeded_item(setup_test_db: None) -> ItemModel:
         ItemModel: The persisted ORM instance (with its generated UUID).
 
     """
-    return asyncio.run(_seed_item())
+    async with _TestAsyncSessionMaker() as session:
+        item = ItemModel(
+            name="Foo",
+            description="Seeded test item description",
+            price=10.0,
+            tax=1.0,
+        )
+        session.add(item)
+        await session.commit()
+        await session.refresh(item)
+        return item

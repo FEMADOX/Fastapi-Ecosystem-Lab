@@ -8,7 +8,7 @@ dependencies = [
   "psycopg[binary]>=3.3.3",
   "pytest>=9.0.2",
   "python-multipart>=0.0.22",
-  "sqlalchemy>=2.0.46",
+  "sqlalchemy[asyncio]>=2.0.46",
   "streamlit>=1.54.0",
   "uvicorn>=0.41.0",
 ]
@@ -39,6 +39,8 @@ extend-ignore = [
   "D104", # Ignore "Missing docstring in public package".
   "T201", # Ignore "print statements".
   "TC001", # Ignore "Move application imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
+  "TC002", # Ignore "Move third-party library imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
+  "TC003", # Ignore "Move standard library imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
 ]
 extend-select = [] # Here you can add additional rules to be checked by Ruff, if desired.
 
@@ -48,13 +50,16 @@ unresolved-import = "ignore"
 [dependency-groups]
 dev = [
   "pre-commit>=4.0.0",
+  "pytest-asyncio>=1.3.0",
   "ruff>=0.15.2",
   "sqlalchemy-stubs>=0.4",
+  "sqlalchemy[mypy]>=2.0.47",
   "ty>=0.0.17",
   "types-sqlalchemy>=1.4.53.38",
 ]
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 addopts = "-v --tb=short"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 testpaths = ["**/tests"]
