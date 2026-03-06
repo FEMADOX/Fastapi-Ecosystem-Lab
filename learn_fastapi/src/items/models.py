@@ -1,15 +1,17 @@
 from sqlalchemy.orm import Mapped
 
 from learn_fastapi.src.database import Base
+from learn_fastapi.src.utils.annotations import (
+    int_pk,
+    timestamp_created,
+    timestamp_updated,
+)
 
 from .annotations import (
     float_default,
-    int_pk,
     str_default,
     str_indexed,
     str_url,
-    timestamp_created,
-    timestamp_updated,
 )
 
 

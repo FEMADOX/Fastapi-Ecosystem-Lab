@@ -18,7 +18,11 @@ learn_fastapi/
 │   ├── database.py     # JSON persistence helpers
 │   └── main.py         # uvicorn runner (__main__)
 ├── tests/
-│   └── first_steps/
+|   |-- conftest.py     # Global test fixtures (e.g. TestClient)
+|   |-- auth/
+|   |   ├── conftest.py     # Auth fixtures
+|   |   └── test_auth.py    # Authentication tests
+│   └── items/
 │       ├── conftest.py     # TestClient fixture
 │       └── test_router.py  # Full CRUD test suite
 └── docs/
@@ -29,19 +33,19 @@ learn_fastapi/
 
 ## Topics Covered
 
-### `first_steps`
+### `items` App
 
 | Concept                                  | Where                                                                  |
 |------------------------------------------|------------------------------------------------------------------------|
-| `APIRouter` with prefix & tags           | [`router.py`](src/items/router.py)                               |
-| Pydantic model with `Field` validation   | [`schema.py`](src/items/schema.py)                               |
-| `Annotated` aliases                      | [`annotations.py`](src/items/annotations.py)                     |
-| Cross-field business rule validation     | [`validators.py`](src/items/validators.py)                       |
+| `APIRouter` with prefix & tags           | [`router.py`](src/items/router.py)                                     |
+| Pydantic model with `Field` validation   | [`schema.py`](src/items/schema.py)                                     |
+| `Annotated` aliases                      | [`annotations.py`](src/items/annotations.py)                           |
+| Cross-field business rule validation     | [`validators.py`](src/items/validators.py)                             |
 | JSON file as persistent in-memory store  | [`database.py`](src/database.py)                                       |
-| Full CRUD: GET / POST / PUT / DELETE     | [`router.py`](src/items/router.py)                               |
-| HTTP status codes via `starlette.status` | [`router.py`](src/items/router.py)                               |
-| `HTTPException` for 404 responses        | [`router.py`](src/items/router.py)                               |
-| Integration tests with `TestClient`      | [`tests/first_steps/test_router.py`](tests/first_steps/test_router.py) |
+| Full CRUD: GET / POST / PUT / DELETE     | [`router.py`](src/items/router.py)                                     |
+| HTTP status codes via `starlette.status` | [`router.py`](src/items/router.py)                                     |
+| `HTTPException` for 404 responses        | [`router.py`](src/items/router.py)                                     |
+| Integration tests with `TestClient`      | [`tests/first_steps/test_router.py`](tests/items/test_router.py)       |
 
 ## API Endpoints
 
@@ -59,6 +63,10 @@ Base prefix: `/items`
 | `POST`   | `/image/{id_param}` | Upload/update image for an item        |             `image_file` (`UploadFile`), `caption`              |
 | `GET`    | `/image/`           | Get image file by filename             |                                                                 |
 | `POST`   | `/with-image/`      | Create item with optional image upload | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
+
+### `auth` App (planned)
+
+<!-- TODO (FENYXZ): Implement auth tests -->
 
 ## Running
 

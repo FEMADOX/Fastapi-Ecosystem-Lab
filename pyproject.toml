@@ -2,10 +2,13 @@
 dependencies = [
   "aiofiles>=25.1.0",
   "aiosqlite>=0.22.1",
+  "argon2-cffi>=25.1.0",
   "asyncpg>=0.31.0",
   "fastapi[standard-no-fastapi-cloud-cli]>=0.129.0",
   "httpx>=0.28.1",
   "psycopg[binary]>=3.3.3",
+  "pydantic-settings>=2.13.1",
+  "pyjwt[crypto]>=2.11.0",
   "pytest>=9.0.2",
   "python-multipart>=0.0.22",
   "sqlalchemy[asyncio]>=2.0.46",

@@ -1,5 +1,3 @@
-import uuid
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import File, Form, UploadFile
@@ -10,29 +8,10 @@ from sqlalchemy.orm import mapped_column
 # SQLAlchemy ORM column type annotations
 # ---------------------------------------------------------------------------
 
-int_pk = Annotated[
-    uuid.UUID,
-    mapped_column(primary_key=True, default=uuid.uuid4),
-]
 str_indexed = Annotated[str, mapped_column(index=True)]
 str_default = Annotated[str, mapped_column(default="No text provided")]
 float_default = Annotated[float, mapped_column(default=0.00)]
 str_url = Annotated[str, mapped_column(default="")]
-timestamp_created = Annotated[
-    datetime,
-    mapped_column(
-        nullable=False,
-        default=lambda: datetime.now(tz=UTC),
-    ),
-]
-timestamp_updated = Annotated[
-    datetime,
-    mapped_column(
-        nullable=False,
-        default=lambda: datetime.now(tz=UTC),
-        onupdate=lambda: datetime.now(tz=UTC),
-    ),
-]
 
 # ---------------------------------------------------------------------------
 # Item Form field annotations
