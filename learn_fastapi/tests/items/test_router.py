@@ -20,21 +20,6 @@ if TYPE_CHECKING:
 
 
 # ---------------------------------------------------------------------------
-# GET /
-# ---------------------------------------------------------------------------
-
-
-class TestHelloWorld:
-    async def test_returns_200(self, client: AsyncClient) -> None:
-        response = await client.get("/")
-        assert response.status_code == HTTP_200_OK
-
-    async def test_response_body(self, client: AsyncClient) -> None:
-        response = await client.get("/")
-        assert response.json() == {"message": "Hello World"}
-
-
-# ---------------------------------------------------------------------------
 # GET /items/
 # ---------------------------------------------------------------------------
 

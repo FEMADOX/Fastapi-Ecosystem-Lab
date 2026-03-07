@@ -19,6 +19,7 @@ learn_fastapi/
 │   └── main.py         # uvicorn runner (__main__)
 ├── tests/
 |   |-- conftest.py     # Global test fixtures (e.g. TestClient)
+|   |-- test_main.py    # Basic smoke test for app startup
 |   |-- auth/
 |   |   ├── conftest.py     # Auth fixtures
 |   |   └── test_auth.py    # Authentication tests

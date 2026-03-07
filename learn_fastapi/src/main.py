@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 
-from learn_fastapi.src.config import lifespan, register_dev_reload
-
-from learn_fastapi.src.items.router import router as items_router
 from learn_fastapi.src.auth.router import router as auth_router
+from learn_fastapi.src.config import lifespan, register_dev_reload
+from learn_fastapi.src.items.router import router as items_router
 
 app = FastAPI(lifespan=lifespan)
 register_dev_reload(app)

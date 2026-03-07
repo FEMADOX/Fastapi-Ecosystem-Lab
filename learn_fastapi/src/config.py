@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING
 
 from fastapi.staticfiles import StaticFiles
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from watchfiles import awatch
 
@@ -63,3 +65,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     task.cancel()
     with suppress(asyncio.CancelledError):
         await task
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file="learn_fastapi/.env", env_file_encoding="utf-8"
+    )
+    secret_key: SecretStr
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+
+
+settings = Settings()  # ty:ignore[missing-argument]

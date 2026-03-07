@@ -1,4 +1,3 @@
-import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -6,10 +5,12 @@ import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerifyMismatchError
 
+from learn_fastapi.src.config import settings
+
 # Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "change-this-in-production-use-env-var!")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 # Password hasher instance
 ph = PasswordHasher()
@@ -56,7 +57,7 @@ def create_access_token(
         expire = datetime.now(tz=UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, SECRET_KEY.get_secret_value(), algorithm=ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict[str, Any] | None:
@@ -67,6 +68,6 @@ def decode_access_token(token: str) -> dict[str, Any] | None:
 
     """
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return jwt.decode(token, SECRET_KEY.get_secret_value(), algorithms=[ALGORITHM])
     except jwt.InvalidTokenError:
         return None
