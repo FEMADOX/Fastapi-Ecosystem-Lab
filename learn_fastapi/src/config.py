@@ -74,6 +74,14 @@ class Settings(BaseSettings):
     secret_key: SecretStr
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+    cookie_secure: bool = False  # Set to True in production when using HTTPS
+    # Use "none" if your frontend is on a different domain,
+    #   "strict" for same-site only and "lax" for a balance between security and usability
+    cookie_samesite: str = "lax"
+    cookie_domain: str | None = (
+        None  # Set to your domain in production, or None for localhost
+    )
 
 
 settings = Settings()  # ty:ignore[missing-argument]

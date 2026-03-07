@@ -1,10 +1,8 @@
-from datetime import UTC, datetime, timedelta
-from typing import Any
-
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerifyMismatchError
 
+from learn_fastapi.src.auth.schema import TokenData
 from learn_fastapi.src.config import settings
 
 # Configuration
@@ -40,34 +38,36 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def create_access_token(
-    data: dict[str, Any], expires_delta: timedelta | None = None
-) -> str:
+def create_access_token(token_data: TokenData) -> str:
     """Create a JWT access token.
 
     Returns:
         The encoded JWT token as a string.
 
     """
-    to_encode = data.copy()
+    to_encode = token_data.model_dump()
 
-    if expires_delta:
-        expire = datetime.now(tz=UTC) + expires_delta
-    else:
-        expire = datetime.now(tz=UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-    to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY.get_secret_value(), algorithm=ALGORITHM)
 
 
-def decode_access_token(token: str) -> dict[str, Any] | None:
-    """Decode and verify a JWT access token.
+def verify_access_token(token: str) -> TokenData | None:
+    """Verify a JWT access token and return its data.
+
+    Args:
+        token: The JWT token string to verify.
 
     Returns:
-        The token payload if valid, or None if invalid.
+        A TokenData instance if the token is valid, or None if invalid.
 
     """
     try:
-        return jwt.decode(token, SECRET_KEY.get_secret_value(), algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            SECRET_KEY.get_secret_value(),
+            algorithms=[ALGORITHM],
+            options={"require": ["exp", "sub"]},
+        )
     except jwt.InvalidTokenError:
         return None
+    # data = {"sub": payload.get("sub"), "exp": payload.get("exp")}
+    return TokenData(sub=payload["sub"], exp=payload["exp"])

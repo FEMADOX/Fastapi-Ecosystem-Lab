@@ -1,6 +1,10 @@
+from datetime import datetime, timedelta
 from uuid import UUID
 
+from dateutil.tz import UTC
 from pydantic import BaseModel, EmailStr, Field
+
+from learn_fastapi.src.config import settings
 
 
 class UserCreate(BaseModel):
@@ -15,8 +19,8 @@ class UserResponse(BaseModel):
 
     id: UUID = Field(description="User ID")
     email: str = Field(description="User email")
-    is_active: bool = Field(description="Whether user is active")
-    is_superuser: bool = Field(description="Whether user is a superuser")
+    is_active: bool = Field(description="Whether user is active", default=True)
+    is_superuser: bool = Field(description="Whether user is a superuser", default=False)
 
     model_config = {"from_attributes": True}
 
@@ -25,7 +29,11 @@ class TokenData(BaseModel):
     """Schema for JWT token payload."""
 
     sub: str = Field(description="Subject (usually user email)")
-    exp: int | None = Field(description="Expiration timestamp", default=None)
+    exp: datetime | None = Field(
+        description="Expiration timestamp",
+        default=datetime.now(tz=UTC)
+        + timedelta(minutes=settings.access_token_expire_minutes),
+    )
 
 
 class Token(BaseModel):
@@ -33,4 +41,3 @@ class Token(BaseModel):
 
     access_token: str = Field(description="JWT access token")
     token_type: str = Field(default="bearer", description="Token type")
-    user: UserResponse | None = Field(description="User information", default=None)

@@ -6,17 +6,28 @@ A personal learning module for exploring FastAPI concepts, patterns, and best pr
 
 ```text
 learn_fastapi/
+├── docs/
+|   ├── fastapi-best-practices.md
+|   ├── awesome-fastapi.md
+|   └── fastapi-new.md
 ├── src/
-│   ├── first_steps/
-│   │   ├── router.py       # CRUD endpoints for /items
-│   │   ├── schema.py       # Item Pydantic model
+│   ├── items/          # Items module (example domain)
 │   │   ├── annotations.py  # Annotated type aliases
-│   │   ├── validators.py   # Custom validation logic
-│   │   └── my_app.py       # App entry point (uvicorn)
+│   │   ├── models.py       # SQLAlchemy models
+│   │   ├── schema.py       # Item Pydantic model
+│   │   ├── router.py       # CRUD endpoints for /items
+│   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
+│   ├── auth/           # Authentication module
+│   │   ├── annotations.py  # Annotated type aliases
+│   │   ├── models.py       # SQLAlchemy models
+│   │   ├── router.py       # Auth endpoints (login, register, etc.)
+│   │   ├── schema.py       # Auth Pydantic models
+│   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
 │   ├── config.py       # Global configuration (e.g. DB path)
 │   ├── constants.py    # In-memory DB constant
 │   ├── database.py     # JSON persistence helpers
-│   └── main.py         # uvicorn runner (__main__)
+│   |-- main.py         # uvicorn runner (__main__)
+│   └── middleware.py   # Custom middleware (e.g. logging, CORS, etc.)
 ├── tests/
 |   |-- conftest.py     # Global test fixtures (e.g. TestClient)
 |   |-- test_main.py    # Basic smoke test for app startup
@@ -26,10 +37,9 @@ learn_fastapi/
 │   └── items/
 │       ├── conftest.py     # TestClient fixture
 │       └── test_router.py  # Full CRUD test suite
-└── docs/
-    ├── fastapi-best-practices.md
-    ├── awesome-fastapi.md
-    └── fastapi-new.md
+|-- .env.example
+|-- docker-compose.yaml
+└── README.md
 ```
 
 ## Topics Covered
