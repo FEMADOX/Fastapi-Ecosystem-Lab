@@ -24,7 +24,7 @@ async def _watch_files(match_path: str = ".") -> None:
         for client in _clients:
             try:
                 await client.send_text("reload")
-            except Exception:
+            except WebSocketDisconnect:
                 disconnected.append(client)
         for client in disconnected:
             _clients.remove(client)
