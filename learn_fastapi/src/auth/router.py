@@ -1,21 +1,26 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.future import select
+from starlette.status import (
+    HTTP_201_CREATED,
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+)
 
-from learn_fastapi.src.auth.annotations import OAuth2_Dep
-from learn_fastapi.src.auth.models import User
-from learn_fastapi.src.auth.schema import Token, UserCreate, UserResponse
-from learn_fastapi.src.auth.utils import (
+from learn_fastapi.src.database import AsyncSessionDep
+
+from .annotations import OAuth2_Dep, OAuth2PRFDep
+from .models import User
+from .schema import Token, UserCreate, UserResponse
+from .utils import (
     create_access_token,
     decode_access_token,
     hash_password,
     verify_password,
 )
-from learn_fastapi.src.database import AsyncSessionDep
 
-router = APIRouter(tags=["auth"])
+router = APIRouter()
 
 
 async def get_current_user(token: OAuth2_Dep, session: AsyncSessionDep) -> User:
@@ -30,7 +35,7 @@ async def get_current_user(token: OAuth2_Dep, session: AsyncSessionDep) -> User:
 
     """
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
@@ -51,16 +56,14 @@ async def get_current_user(token: OAuth2_Dep, session: AsyncSessionDep) -> User:
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=HTTP_400_BAD_REQUEST,
             detail="Inactive user",
         )
 
     return user
 
 
-@router.post(
-    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/register", response_model=UserResponse, status_code=HTTP_201_CREATED)
 async def register(user_data: UserCreate, session: AsyncSessionDep) -> User:
     """Register a new user account.
 
@@ -76,7 +79,7 @@ async def register(user_data: UserCreate, session: AsyncSessionDep) -> User:
 
     if existing_user is not None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
 
@@ -92,10 +95,7 @@ async def register(user_data: UserCreate, session: AsyncSessionDep) -> User:
 
 
 @router.post("/token", response_model=Token)
-async def login(
-    session: AsyncSessionDep,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-) -> dict:
+async def login(session: AsyncSessionDep, form_data: OAuth2PRFDep) -> dict:
     """Authenticate a user and return a JWT access token.
 
     Returns:
@@ -111,14 +111,14 @@ async def login(
 
     if user is None or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=HTTP_400_BAD_REQUEST,
             detail="User account is inactive",
         )
 
@@ -129,6 +129,9 @@ async def login(
         "token_type": "bearer",
         "user": UserResponse.model_validate(user),
     }
+
+
+# TODO (FENYXZ): Add endpoint to refresh access tokens using refresh tokens
 
 
 @router.get("/me", response_model=UserResponse)
