@@ -1,8 +1,6 @@
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-)
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from learn_fastapi.src.auth.models import User
 from learn_fastapi.src.auth.utils import hash_password

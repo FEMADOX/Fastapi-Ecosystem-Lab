@@ -4,12 +4,11 @@ from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING
 
 from fastapi.staticfiles import StaticFiles
-from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from watchfiles import awatch
 
-from learn_fastapi.src.constants import IMAGES_DIR, STATIC_DIR
+from learn_fastapi.src.constants import ENV_FILE_DIR, IMAGES_DIR, STATIC_DIR
 from learn_fastapi.src.database import create_db_and_tables
 from learn_fastapi.src.middleware import SwaggerHotReloadMiddleware
 
@@ -68,20 +67,4 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file="learn_fastapi/.env", env_file_encoding="utf-8"
-    )
-    secret_key: SecretStr
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-    refresh_token_expire_days: int = 7
-    cookie_secure: bool = False  # Set to True in production when using HTTPS
-    # Use "none" if your frontend is on a different domain,
-    #   "strict" for same-site only and "lax" for a balance between security and usability
-    cookie_samesite: str = "lax"
-    cookie_domain: str | None = (
-        None  # Set to your domain in production, or None for localhost
-    )
-
-
-settings = Settings()  # ty:ignore[missing-argument]
+    model_config = SettingsConfigDict(env_file=ENV_FILE_DIR, env_file_encoding="utf-8")

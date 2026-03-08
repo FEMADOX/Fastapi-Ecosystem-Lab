@@ -1,10 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from uuid import UUID
 
 from dateutil.tz import UTC
 from pydantic import BaseModel, EmailStr, Field
 
-from learn_fastapi.src.config import settings
+from .config import auth_config
 
 
 class UserCreate(BaseModel):
@@ -22,7 +22,8 @@ class UserResponse(BaseModel):
     is_active: bool = Field(description="Whether user is active", default=True)
     is_superuser: bool = Field(description="Whether user is a superuser", default=False)
 
-    model_config = {"from_attributes": True}
+    class ConfigDict:
+        from_attributes = True
 
 
 class TokenData(BaseModel):
@@ -31,8 +32,7 @@ class TokenData(BaseModel):
     sub: str = Field(description="Subject (usually user email)")
     exp: datetime | None = Field(
         description="Expiration timestamp",
-        default=datetime.now(tz=UTC)
-        + timedelta(minutes=settings.access_token_expire_minutes),
+        default=datetime.now(tz=UTC) + auth_config.access_token_expire,
     )
 
 
@@ -40,4 +40,6 @@ class Token(BaseModel):
     """Schema for token response."""
 
     access_token: str = Field(description="JWT access token")
-    token_type: str = Field(default="bearer", description="Token type")
+    token_type: str = Field(description="Token type", default="bearer")
+    expires_in: int = Field(description="Expiration timestamp")
+    csrf_token: str = Field(description="CSRF token")

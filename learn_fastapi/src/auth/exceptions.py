@@ -23,3 +23,11 @@ email_already_registered_exception = HTTPException(
     status_code=HTTP_400_BAD_REQUEST,
     detail="Email already registered",
 )
+invalid_refresh_or_csrf_token_exception = HTTPException(
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="Invalid refresh token or CSRF token",
+)
+invalid_refresh_token_exception = HTTPException(
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="Invalid or expired refresh token",
+)
