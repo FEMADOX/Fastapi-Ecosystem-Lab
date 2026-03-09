@@ -4,14 +4,14 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 
 ## 🗺️ What's covered
 
-| Topic                                        |   Status    |
-|:---------------------------------------------|-------------|
+| Topic                                        |   Status     |
+|:---------------------------------------------|--------------|
 | FastAPI — routing, dependencies, middleware  | ✅ Completed |
 | SQLAlchemy + PostgreSQL                      | ✅ Completed |
-| Streamlit — dashboards & data apps           | 📅 Planned  |
-| Authentication — JWT, OAuth2                 | 🔁 Process  |
+| Streamlit — dashboards & data apps           | 📅 Planned   |
+| Authentication — JWT, OAuth2                 | 🔁 Process   |
 | Testing — pytest, httpx                      | ✅ Completed |
-| Docker & deployment                          | 🔁 Process  |
+| Docker & deployment                          | 🔁 Process   |
 
 ## 🛠️ Tech Stack
 
@@ -39,7 +39,41 @@ cd learn_fastapi
 docker compose up -d
 ```
 
-## 📚 Resources
+## �️ Database Migrations (Django-style)
+
+Script que simula `python manage.py makemigrations` de Django:
+
+```powershell
+# Detectar cambios automáticamente
+.\makemigration.ps1
+# Output: 0002_add_email_to_users.py
+
+# Con mensaje personalizado
+.\makemigration.ps1 -m "add user roles"
+# Output: 0002_add_user_roles.py
+
+# Aplicar migración
+cd learn_fastapi
+uv run alembic upgrade head
+```
+
+> 📖 **[Guía completa, troubleshooting y ejemplos →](MAKEMIGRATION.md)**
+
+**Características:**
+
+- ✅ Detección automática de cambios en modelos SQLAlchemy
+- ✅ Nombres descriptivos auto-generados (no hashes aleatorios)
+- ✅ Secuencia numérica estilo Django (0001, 0002, 0003...)
+- ✅ Resumen visual de cambios detectados
+
+**Ejemplos de nombres autogenerados:**
+
+- `create_users` → Nueva tabla 'users'
+- `add_email_to_users` → Campo 'email' añadido
+- `drop_phone_from_users` → Campo eliminado
+- `add_indexes` → Índices añadidos
+
+## �📚 Resources
 
 ### Learning Guides (Spanish)
 

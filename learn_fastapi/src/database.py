@@ -19,6 +19,12 @@ class Base(DeclarativeBase):
     pass
 
 
+# Import all models here so they're registered with Base.metadata
+# This is required for Alembic to detect changes
+from learn_fastapi.src.auth.models import RefreshToken, User  # noqa: E402, F401
+from learn_fastapi.src.items.models import Item  # noqa: E402, F401
+
+
 async def create_db_and_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

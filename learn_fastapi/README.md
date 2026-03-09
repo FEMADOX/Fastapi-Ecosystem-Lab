@@ -115,11 +115,106 @@ Connection URL example:
 postgresql://postgres:postgres@localhost:5432/learn_fastapi
 ```
 
+## Database Migrations with Alembic
+
+This project uses [Alembic](https://alembic.sqlalchemy.org/) for database schema version control and migrations.
+
+### How It Works
+
+- Models are defined in `src/auth/models.py` and `src/items/models.py`
+- Migrations are generated automatically from model changes
+- Migrations are applied when the FastAPI app starts (via `lifespan`)
+- Each migration is tracked with a revision ID in `alembic/versions/`
+
+### Common Migration Commands
+
+#### Generate a new migration after updating models
+
+```bash
+uv run alembic revision --autogenerate -m "description of changes"
+```
+
+Example:
+
+```bash
+uv run alembic revision --autogenerate -m "add status field to items"
+```
+
+#### Apply all pending migrations
+
+```bash
+uv run alembic upgrade head
+```
+
+#### Check the current migration version
+
+```bash
+uv run alembic current
+```
+
+#### View all migration revisions
+
+```bash
+uv run alembic heads
+```
+
+#### Downgrade to the previous migration
+
+```bash
+uv run alembic downgrade -1
+```
+
+#### Downgrade all the way to the start
+
+```bash
+uv run alembic downgrade base
+```
+
+### How Migrations Run at Startup
+
+When the FastAPI app starts:
+
+1. The `lifespan` function in `src/config.py` is called
+2. It runs `alembic upgrade head` to apply any pending migrations
+3. If no migrations are pending, nothing happens (idempotent)
+4. The app then starts normally
+
+### Best Practices
+
+- **Always review generated migrations** before committing them
+- **Never manually edit migration files** after they've been applied to production
+- **Test migrations locally** before deploying to production
+- **Keep models and migrations in sync** — always regenerate migrations after model changes
+- **Use descriptive revision messages** to document what changed
+
+### Environment Configuration
+
+Alembic uses the `DATABASE_URL` environment variable (if set) or falls back to `alembic.ini`:
+
+**Via environment variable (recommended for production):**
+
+```bash
+export DATABASE_URL=postgresql+asyncpg://postgres:password@host:5432/learn_fastapi
+```
+
+**Or update `alembic.ini`:**
+
+```ini
+sqlalchemy.url = postgresql+asyncpg://postgres:postgres@localhost:5432/learn_fastapi
+```
+
 ## Testing
 
 ```bash
 pytest
 ```
+
+Tests use an **in-memory SQLite database** (`sqlite+aiosqlite:///:memory:`) which:
+
+- Is fast and isolated per test
+- Doesn't require PostgreSQL to be running
+- Automatically creates/drops all tables from models
+- Doesn't use Alembic (migrations are only for production PostgreSQL)
 
 ## Docs
 

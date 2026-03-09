@@ -1,13 +1,10 @@
 from datetime import timedelta
 from typing import Literal
 
-from pydantic import SecretStr
-
 from learn_fastapi.src.config import Settings
 
 
 class AuthConfig(Settings):
-    secret_key: SecretStr
     algorithm: str = "HS256"
 
     access_token_expire_minutes: int = 30

@@ -72,6 +72,8 @@ async def register(session: AsyncSessionDep, user_data: UserCreate) -> User:
     return new_user
 
 
+# TODO (FENYXZ): Implement new tests for the token refresh and logout endpoints,
+#   including edge cases like missing/invalid CSRF tokens and refresh tokens.
 @router.post("/token", response_model=Token)
 async def login(
     session: AsyncSessionDep,
