@@ -10,7 +10,19 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 
-engine = create_async_engine(settings.database_url)
+# Configuración específica para SQLite
+connect_args = {}
+if settings.database_url.startswith("sqlite"):
+    # Para SQLite: permitir acceso desde múltiples threads
+    # English:
+    connect_args = {"check_same_thread": False}
+
+engine = create_async_engine(
+    settings.database_url,
+    connect_args=connect_args,
+    echo=False,  # Cambiar a True para debug
+)
+
 
 AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

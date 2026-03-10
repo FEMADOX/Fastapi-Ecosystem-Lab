@@ -7,10 +7,13 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+# Import all models so Alembic can detect them
+from learn_fastapi.src.auth.models import User  # noqa: F401
 from learn_fastapi.src.config import settings
 
 # Import the Base class and all models for autogenerate support
 from learn_fastapi.src.database import Base
+from learn_fastapi.src.items.models import Item  # noqa: F401
 
 DATABASE_URL = settings.database_url
 
@@ -22,7 +25,8 @@ config.set_main_option("sqlalchemy.url", DATABASE_URL)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Keep already configured app/server loggers (e.g. uvicorn.access) enabled.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Set the target metadata for autogenerate support
 target_metadata = Base.metadata
@@ -60,8 +64,9 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        compare_type=True,
         compare_server_default=True,
+        # SQLite-specific: enable batch mode for better ALTER support
+        render_as_batch=True,
     )
 
     with context.begin_transaction():
@@ -79,10 +84,17 @@ def run_migrations_online() -> None:
     async def async_run() -> None:
         url = get_sqlalchemy_url()
 
+        # SQLite-specific configuration
+        connect_args = {}
+        if url.startswith("sqlite"):
+            # Enable foreign keys in SQLite
+            connect_args = {"check_same_thread": False}
+
         connectable = create_async_engine(
             url,
             poolclass=pool.NullPool,
             echo=False,
+            connect_args=connect_args,
         )
 
         async with connectable.begin() as connection:

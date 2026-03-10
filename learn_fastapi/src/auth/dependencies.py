@@ -12,6 +12,7 @@ from learn_fastapi.src.auth.exceptions import (
 )
 from learn_fastapi.src.database import AsyncSessionDep
 
+from . import models
 from .models import User
 from .utils import verify_access_token
 
@@ -55,3 +56,6 @@ async def get_current_user(session: AsyncSessionDep, token: OAuth2_Dep) -> User:
         raise user_inactive_exception
 
     return user
+
+
+CurrentUserDep = Annotated[models.User, Depends(get_current_user)]

@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import File, Form, UploadFile
 from fastapi.params import Query
+from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import mapped_column
 
 # ---------------------------------------------------------------------------
@@ -10,7 +11,9 @@ from sqlalchemy.orm import mapped_column
 
 str_indexed = Annotated[str, mapped_column(index=True)]
 str_default = Annotated[str, mapped_column(default="No text provided")]
-float_default = Annotated[float, mapped_column(default=0.00)]
+float_default = Annotated[
+    float, mapped_column(CheckConstraint("price >= 0"), default=0.00)
+]
 str_url = Annotated[str, mapped_column(default="")]
 
 # ---------------------------------------------------------------------------

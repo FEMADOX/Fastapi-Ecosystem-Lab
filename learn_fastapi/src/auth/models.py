@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from learn_fastapi.src.database import Base
 from learn_fastapi.src.utils.annotations import (
@@ -24,6 +24,7 @@ class User(Base):
     id: Mapped[int_pk]
     email: Mapped[str_idx_unique]
     password_hash: Mapped[str]
+    phone_number: Mapped[str | None] = mapped_column(nullable=True)
     is_active: Mapped[bool_default_true]
     is_superuser: Mapped[bool_default_false]
     created_at: Mapped[timestamp_created]

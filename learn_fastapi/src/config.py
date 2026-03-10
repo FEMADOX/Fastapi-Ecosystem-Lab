@@ -3,57 +3,31 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING
 
-from alembic import command
-from alembic.config import Config
 from fastapi.staticfiles import StaticFiles
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from starlette.websockets import WebSocket, WebSocketDisconnect
-from watchfiles import awatch
 
-from learn_fastapi.src.constants import (
+from learn_fastapi.src.utils.hot_reload import _hot_reload_ws, _watch_files
+
+from .constants import (
     IMAGES_DIR,
+    MEDIA_DIR,
     PROJECT_DIR,
     STATIC_DIR,
 )
-from learn_fastapi.src.middleware import SwaggerHotReloadMiddleware
+from .middleware import SwaggerHotReloadMiddleware
+from .utils.alembic import check_pending_migrations
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
 
-async def _watch_files(match_path: str = ".") -> None:
-    # async for _ in awatch(match_path, watch_filter=PythonFilter()):
-    async for _ in awatch(match_path):
-        disconnected = []
-        for client in _clients:
-            try:
-                await client.send_text("reload")
-            except WebSocketDisconnect:
-                disconnected.append(client)
-        for client in disconnected:
-            _clients.remove(client)
-
-
-_clients: list[WebSocket] = []
-
-
 def mount_static_files(app: FastAPI) -> None:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-
-async def _hot_reload_ws(websocket: WebSocket) -> None:
-    await websocket.accept()
-    _clients.append(websocket)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        pass
-    finally:
-        if websocket in _clients:
-            _clients.remove(websocket)
+    app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 
 def register_dev_reload(app: FastAPI) -> None:
@@ -61,31 +35,10 @@ def register_dev_reload(app: FastAPI) -> None:
     app.add_websocket_route("/hot-reload", _hot_reload_ws, name="hot-reload")
 
 
-async def run_db_migrations() -> None:
-    """Run Alembic migrations asynchronously using subprocess.
-
-    This approach avoids import conflicts with local alembic directory.
-    subprocess is safe here: we use list (not shell=True) with no user input.
-
-    Raises:
-        RuntimeError: If migration process fails.
-
-    """
-    # Import here to avoid conflicts with local alembic/ directory
-
-    alembic_cfg = Config(PROJECT_DIR / "alembic.ini")
-
-    try:
-        await asyncio.to_thread(lambda: command.upgrade(alembic_cfg, "head"))
-    except Exception as e:
-        msg = f"Migration failed: {e!s}"
-        raise RuntimeError(msg) from e
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     mount_static_files(app)
-    await run_db_migrations()
+    await check_pending_migrations()
     task = asyncio.create_task(_watch_files())
     yield
     task.cancel()

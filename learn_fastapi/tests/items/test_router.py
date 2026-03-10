@@ -237,7 +237,7 @@ class TestSubmitItemImage:
             f"/items/image/{seeded_item.id}",
             files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
         )
-        assert response.json()["image_url"] == "/static/images/test.png"
+        assert response.json()["image_url"] == "/media/images/test.png"
 
     async def test_item_name_unchanged(
         self, client: AsyncClient, seeded_item: ItemModel
@@ -330,7 +330,7 @@ class TestCreateItemWithImage:
             },
             files={"image_file": ("product.png", self.FAKE_PNG, "image/png")},
         )
-        assert response.json()["image_url"] == "/static/images/product.png"
+        assert response.json()["image_url"] == "/media/images/product.png"
 
     async def test_default_values_used_when_no_data_sent(
         self, client: AsyncClient

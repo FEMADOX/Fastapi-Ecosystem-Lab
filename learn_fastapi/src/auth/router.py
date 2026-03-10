@@ -2,7 +2,7 @@ import secrets
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Header
 from sqlalchemy.future import select
 from starlette.requests import Request
 from starlette.responses import Response
@@ -14,7 +14,7 @@ from learn_fastapi.src.database import AsyncSessionDep
 
 from .annotations import X_CSRF_TOKEN
 from .config import auth_config
-from .dependencies import OAuth2PRFDep, get_current_user
+from .dependencies import CurrentUserDep, OAuth2PRFDep
 from .exceptions import (
     credentials_exception,
     email_already_registered_exception,
@@ -72,8 +72,6 @@ async def register(session: AsyncSessionDep, user_data: UserCreate) -> User:
     return new_user
 
 
-# TODO (FENYXZ): Implement new tests for the token refresh and logout endpoints,
-#   including edge cases like missing/invalid CSRF tokens and refresh tokens.
 @router.post("/token", response_model=Token)
 async def login(
     session: AsyncSessionDep,
@@ -286,7 +284,8 @@ async def logout(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+# async def get_me(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+async def get_me(current_user: CurrentUserDep) -> User:
     """Return the currently authenticated user's profile.
 
     Args:

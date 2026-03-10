@@ -30,6 +30,7 @@ from .schema import (
 router = APIRouter()
 
 
+# GET
 @router.get("/")
 async def read_items(
     session: AsyncSessionDep, offset: int = 0, limit: int = 10
@@ -38,6 +39,7 @@ async def read_items(
     return list_items.scalars().all()
 
 
+# GET using path parameter
 @router.get("/{id_param}")
 async def read_item(id_param: UUID, session: AsyncSessionDep) -> ItemSchema:
     item = await session.get(Item, id_param)
@@ -46,15 +48,17 @@ async def read_item(id_param: UUID, session: AsyncSessionDep) -> ItemSchema:
     return item
 
 
+# POST
 @router.post("/")
 async def create_item(item: ItemSchema, session: AsyncSessionDep) -> ItemSchema:
     item_db = Item(**item.model_dump(exclude={"id"}))
     session.add(item_db)
     await session.commit()
     await session.refresh(item_db)
-    return item
+    return item_db
 
 
+# PUT
 @router.put("/{id_param}")
 async def update_item(
     id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdateSchema
@@ -89,6 +93,7 @@ async def patch_item(
     return item_db
 
 
+# DELETE
 @router.delete("/{id_param}")
 async def delete_item(id_param: UUID, session: AsyncSessionDep) -> dict[str, str | int]:
     item = await session.get(Item, id_param)
@@ -114,7 +119,6 @@ async def save_image_file(
     if not image_file.filename:
         raise HTTPException(status_code=422, detail="Image file must have a filename")
 
-    await asyncio.to_thread(IMAGES_DIR.mkdir, parents=True, exist_ok=True)
     file_path = IMAGES_DIR / image_file.filename
 
     if not file_path.exists():
@@ -125,7 +129,7 @@ async def save_image_file(
         name=image_file.filename,
         description=caption,
         content_type=image_file.content_type,
-        url=f"/static/images/{image_file.filename}",
+        url=f"/media/images/{image_file.filename}",
     )
 
 
