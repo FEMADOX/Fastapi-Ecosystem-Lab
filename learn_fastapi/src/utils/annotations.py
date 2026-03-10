@@ -8,7 +8,7 @@ from sqlalchemy.orm import mapped_column
 # ---------------------------------------------------------------------------
 # SQLAlchemy ORM column type annotations
 # ---------------------------------------------------------------------------
-int_pk = Annotated[uuid.UUID, mapped_column(primary_key=True, default=uuid.uuid4)]
+uuid_pk = Annotated[uuid.UUID, mapped_column(primary_key=True, default=uuid.uuid4)]
 
 timestamp_created = Annotated[
     datetime,

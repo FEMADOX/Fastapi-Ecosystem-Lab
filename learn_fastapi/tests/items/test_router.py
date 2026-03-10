@@ -1,5 +1,6 @@
 import uuid
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 import pytest
 from starlette.status import (
@@ -98,7 +99,9 @@ class TestCreateItem:
     ) -> None:
         response = await client.post("/items/", json=sample_item)
         body = response.json()
+        assert UUID(body["id"])
         assert body["name"] == sample_item["name"]
+        assert body["description"] == sample_item["description"]
         assert body["price"] == sample_item["price"]
         assert body["tax"] == sample_item["tax"]
 
@@ -113,17 +116,21 @@ class TestCreateItem:
     async def test_missing_required_field_returns_422(
         self, client: AsyncClient
     ) -> None:
-        """Omitting 'price' (required) must trigger a validation error."""
-        response = await client.post("/items/", json={"name": "Incomplete"})
+        """Omitting 'name' (required) must trigger a validation error."""
+        response = await client.post("/items/", json={"price": 10.0})
         assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_optional_fields_use_defaults(self, client: AsyncClient) -> None:
-        payload = {"name": "Minimal", "price": 5.0}
+        payload = {"name": "Minimal"}
         response = await client.post("/items/", json=payload)
         assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
         body = response.json()
-        body_tax = 0.00
-        assert body["tax"] == body_tax
+        default_description = "No description provided"
+        default_price = 0.00
+        default_tax = 0.00
+        assert body["description"] == default_description
+        assert body["price"] == default_price
+        assert body["tax"] == default_tax
 
 
 # ---------------------------------------------------------------------------

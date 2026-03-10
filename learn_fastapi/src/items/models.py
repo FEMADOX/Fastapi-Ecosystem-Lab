@@ -2,9 +2,9 @@ from sqlalchemy.orm import Mapped
 
 from learn_fastapi.src.database import Base
 from learn_fastapi.src.utils.annotations import (
-    int_pk,
     timestamp_created,
     timestamp_updated,
+    uuid_pk,
 )
 
 from .annotations import (
@@ -18,7 +18,7 @@ from .annotations import (
 class Item(Base):
     __tablename__ = "items"
 
-    id: Mapped[int_pk]
+    id: Mapped[uuid_pk]
     name: Mapped[str_indexed]
     description: Mapped[str_default]
     price: Mapped[float_default]

@@ -1,5 +1,4 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -40,7 +39,7 @@ def get_sqlalchemy_url() -> str:
         The database URL as a string.
 
     """
-    env_url = os.getenv("DATABASE_URL")
+    env_url = DATABASE_URL
     if env_url:
         return env_url
     return config.get_main_option("sqlalchemy.url", DATABASE_URL)
@@ -110,7 +109,6 @@ def _run_migrations(connection: Connection) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
-        compare_type=True,
         compare_server_default=True,
     )
 

@@ -11,6 +11,9 @@ from learn_fastapi.src.constants import PROJECT_DIR
 app_logger = logging.getLogger("uvicorn.error")
 alembic_cfg = Config(str(PROJECT_DIR / "alembic.ini"))
 
+# TODO (FENYXZ): Implement alembic check to verify if there is
+#  any kind of change in the models
+
 
 async def _is_database_at_head() -> bool:
     """Check if DB heads are equal to script heads (cookbook approach).

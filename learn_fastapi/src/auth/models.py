@@ -1,8 +1,8 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from learn_fastapi.src.database import Base
 from learn_fastapi.src.utils.annotations import (
-    int_pk,
+    uuid_pk,
     timestamp_created,
     timestamp_updated,
 )
@@ -21,10 +21,9 @@ from .annotations import (
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int_pk]
+    id: Mapped[uuid_pk]
     email: Mapped[str_idx_unique]
     password_hash: Mapped[str]
-    phone_number: Mapped[str | None] = mapped_column(nullable=True)
     is_active: Mapped[bool_default_true]
     is_superuser: Mapped[bool_default_false]
     created_at: Mapped[timestamp_created]
@@ -40,7 +39,7 @@ class RefreshToken(Base):
 
     __tablename__ = "refresh_tokens"
 
-    id: Mapped[int_pk]
+    id: Mapped[uuid_pk]
     user_id: Mapped[user_id_fk]
     token_hash: Mapped[token_hash]
     expires_at: Mapped[expiration]

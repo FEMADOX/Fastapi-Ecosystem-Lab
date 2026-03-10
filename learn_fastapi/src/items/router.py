@@ -50,12 +50,12 @@ async def read_item(id_param: UUID, session: AsyncSessionDep) -> ItemSchema:
 
 # POST
 @router.post("/")
-async def create_item(item: ItemSchema, session: AsyncSessionDep) -> ItemSchema:
+async def create_item(item: ItemUpdateSchema, session: AsyncSessionDep) -> ItemSchema:
     item_db = Item(**item.model_dump(exclude={"id"}))
     session.add(item_db)
     await session.commit()
     await session.refresh(item_db)
-    return item_db
+    return ItemSchema(**item_db.__dict__)
 
 
 # PUT

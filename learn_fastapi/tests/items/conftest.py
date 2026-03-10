@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from learn_fastapi.src.items.models import Item as ItemModel
+from learn_fastapi.src.items.models import Item
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def sample_item() -> dict:
 
 
 @pytest.fixture
-async def seeded_item(test_session: AsyncSession) -> ItemModel:
+async def seeded_item(test_session: AsyncSession) -> Item:
     """Insert a single 'Foo' item into the test DB.
 
     Args:
@@ -31,7 +31,7 @@ async def seeded_item(test_session: AsyncSession) -> ItemModel:
         ItemModel: The persisted ORM instance with its UUID.
 
     """
-    item = ItemModel(
+    item = Item(
         name="Foo",
         description="Seeded test item description",
         price=10.0,
