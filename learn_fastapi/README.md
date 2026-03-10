@@ -6,38 +6,53 @@ A personal learning module for exploring FastAPI concepts, patterns, and best pr
 
 ```text
 learn_fastapi/
+|-- alembic/
+    |-- versions/        # Auto-generated migration scripts
+    |-- env.py           # Alembic configuration and setup
+    |-- README.md        # Alembic usage instructions
+    └── script.py.mako   # Template for generating migration scripts
 ├── docs/
 |   ├── fastapi-best-practices.md
 |   ├── awesome-fastapi.md
 |   └── fastapi-new.md
 ├── src/
+│   ├── auth/           # Authentication module
+│   │   ├── annotations.py  # Annotated type aliases
+│   │   ├── config.py       # Auth-specific settings (JWT, cookies)
+│   │   ├── dependencies.py # Auth dependencies (get_current_user)
+│   │   ├── exceptions.py   # Auth-specific exceptions
+│   │   ├── models.py       # SQLAlchemy models (User, RefreshToken)
+│   │   ├── router.py       # Auth endpoints (login, register, etc.)
+│   │   ├── schema.py       # Auth Pydantic models
+│   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
 │   ├── items/          # Items module (example domain)
 │   │   ├── annotations.py  # Annotated type aliases
 │   │   ├── models.py       # SQLAlchemy models
 │   │   ├── schema.py       # Item Pydantic model
 │   │   ├── router.py       # CRUD endpoints for /items
 │   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
-│   ├── auth/           # Authentication module
-│   │   ├── annotations.py  # Annotated type aliases
-│   │   ├── models.py       # SQLAlchemy models
-│   │   ├── router.py       # Auth endpoints (login, register, etc.)
-│   │   ├── schema.py       # Auth Pydantic models
-│   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
-│   ├── config.py       # Global configuration (e.g. DB path)
-│   ├── constants.py    # In-memory DB constant
-│   ├── database.py     # JSON persistence helpers
+|   |-- media/images/   # Media storage (e.g. uploaded images)
+|   |-- static/js/      # Static files (e.g. CSS, JS)
+│   ├── utils/          # Shared utilities
+│   │   ├── alembic.py      # Alembic integration helpers
+│   │   ├── annotations.py  # Shared type annotations
+│   │   └── hot_reload.py   # Development hot-reload WebSocket
+│   ├── config.py       # Global configuration and lifespan
+│   ├── constants.py    # Project paths and constants
+│   ├── database.py     # SQLAlchemy engine and session setup
 │   |-- main.py         # uvicorn runner (__main__)
-│   └── middleware.py   # Custom middleware (e.g. logging, CORS, etc.)
+│   └── middleware.py   # Custom middleware (e.g. Swagger hot reload, CORS, etc.)
 ├── tests/
-|   |-- conftest.py     # Global test fixtures (e.g. TestClient)
-|   |-- test_main.py    # Basic smoke test for app startup
 |   |-- auth/
 |   |   ├── conftest.py     # Auth fixtures
-|   |   └── test_auth.py    # Authentication tests
-│   └── items/
-│       ├── conftest.py     # TestClient fixture
-│       └── test_router.py  # Full CRUD test suite
+|   |   └── test_router.py  # Authentication tests
+│   |── items/
+│   |   ├── conftest.py     # TestClient fixture
+│   |   └── test_router.py  # Full CRUD test suite
+|   |-- conftest.py     # Global test fixtures (e.g. TestClient)
+|   └── test_main.py    # Basic smoke test for app startup
 |-- .env.example
+|-- alembic.ini
 |-- docker-compose.yaml
 └── README.md
 ```
@@ -58,7 +73,7 @@ learn_fastapi/
 | `HTTPException` for 404 responses        | [`router.py`](src/items/router.py)                                     |
 | Integration tests with `TestClient`      | [`tests/first_steps/test_router.py`](tests/items/test_router.py)       |
 
-## API Endpoints
+#### `items` Endpoints
 
 Base prefix: `/items`
 
@@ -75,9 +90,39 @@ Base prefix: `/items`
 | `GET`    | `/image/`           | Get image file by filename             |                                                                 |
 | `POST`   | `/with-image/`      | Create item with optional image upload | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
 
-### `auth` App (planned)
+### `auth` App
 
-<!-- TODO (FENYXZ): Implement auth tests -->
+| Concept                                  | Where                                                                  |
+|------------------------------------------|------------------------------------------------------------------------|
+| JWT authentication with refresh tokens   | [`router.py`](src/auth/router.py), [`utils.py`](src/auth/utils.py)     |
+| Password hashing with Argon2             | [`utils.py`](src/auth/utils.py)                                        |
+| OAuth2 Password Flow with Bearer tokens  | [`dependencies.py`](src/auth/dependencies.py)                          |
+| CSRF token protection                    | [`router.py`](src/auth/router.py)                                      |
+| Refresh token rotation                   | [`router.py`](src/auth/router.py), [`models.py`](src/auth/models.py)   |
+| Secure cookie handling                   | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)     |
+| Custom exceptions for auth errors        | [`exceptions.py`](src/auth/exceptions.py)                              |
+| User model with SQLAlchemy ORM           | [`models.py`](src/auth/models.py)                                      |
+| Dependency injection for current user    | [`dependencies.py`](src/auth/dependencies.py)                          |
+
+#### `auth` Endpoints
+
+Base prefix: `/auth`
+
+| Method | Path        | Description                          | Body Params                                            | Headers/Cookies                                           |
+|:-------|:------------|:-------------------------------------|:-------------------------------------------------------|:----------------------------------------------------------|
+| `POST` | `/register` | Register a new user account          | `UserCreate` (email, password)                         | —                                                         |
+| `POST` | `/token`    | Login and receive JWT access token   | `OAuth2PasswordRequestForm` (username/email, password) | —                                                         |
+| `POST` | `/refresh`  | Refresh access token                 | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies)  |
+| `POST` | `/logout`   | Logout and revoke refresh token      | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies)  |
+| `GET`  | `/me`       | Get current user profile             | —                                                      | `Authorization: Bearer <token>`                           |
+
+**Authentication Flow:**
+
+1. **Register** → Create account with email/password
+2. **Login** → Get `access_token` (JWT), `refresh_token` (cookie), `csrf_token` (cookie + response body)
+3. **Use APIs** → Include `Authorization: Bearer <access_token>` header
+4. **Refresh** → Exchange expired access token for new one using refresh token
+5. **Logout** → Revoke refresh token and clear cookies
 
 ## Running
 
@@ -175,9 +220,11 @@ uv run alembic downgrade base
 When the FastAPI app starts:
 
 1. The `lifespan` function in `src/config.py` is called
-2. It runs `alembic upgrade head` to apply any pending migrations
-3. If no migrations are pending, nothing happens (idempotent)
+2. It checks for pending migrations using `check_pending_migrations()` from `src/utils/alembic.py`
+3. If migrations are pending, a warning is logged (manual migration required)
 4. The app then starts normally
+
+**Note:** Migrations are **checked** at startup, but not automatically applied. You must run `alembic upgrade head` manually to apply pending migrations.
 
 ### Best Practices
 
@@ -186,22 +233,54 @@ When the FastAPI app starts:
 - **Test migrations locally** before deploying to production
 - **Keep models and migrations in sync** — always regenerate migrations after model changes
 - **Use descriptive revision messages** to document what changed
+- **Import all models in `alembic/env.py`** — ensures Alembic can detect all table changes
+- **Commit migrations to version control** — essential for team collaboration and production deployments
+
+### Alembic Configuration Details
+
+The project includes several Alembic enhancements in `alembic/env.py`:
+
+- **Explicit model imports** — All SQLAlchemy models are imported directly to ensure Alembic detects schema changes
+- **Logger preservation** — `disable_existing_loggers=False` keeps uvicorn and app loggers active during migrations
+- **SQLite compatibility** — Automatic configuration for SQLite-specific features:
+  - `render_as_batch=True` — enables batch mode for better ALTER TABLE support
+  - `check_same_thread=False` — allows SQLite access from multiple threads
+- **Server default comparison** — Detects changes in column default values
 
 ### Environment Configuration
 
-Alembic uses the `DATABASE_URL` environment variable (if set) or falls back to `alembic.ini`:
+Alembic and the application use environment variables defined in `.env` (see `.env.example` for reference).
 
-**Via environment variable (recommended for production):**
+**Required environment variables:**
 
 ```bash
-export DATABASE_URL=postgresql+asyncpg://postgres:password@host:5432/learn_fastapi
+# Auth
+SECRET_KEY=your-secret-key-here
+AUTH_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# Database
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_DB=fastapi_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# Security
+COOKIE_SECURE=false        # true in production (HTTPS only)
+COOKIE_SAMESITE=lax        # strict/lax/none
+COOKIE_DOMAIN=             # empty for localhost, set domain in production
 ```
 
-**Or update `alembic.ini`:**
+**For SQLite (development):**
 
-```ini
-sqlalchemy.url = postgresql+asyncpg://postgres:postgres@localhost:5432/learn_fastapi
+```bash
+DATABASE_URL=sqlite+aiosqlite:///./learn_fastapi/test.db
 ```
+
+**Note:** Alembic automatically reads `DATABASE_URL` from the environment. The `alembic.ini` file is only used as a fallback.
 
 ## Testing
 
