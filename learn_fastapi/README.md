@@ -6,11 +6,11 @@ A personal learning module for exploring FastAPI concepts, patterns, and best pr
 
 ```text
 learn_fastapi/
-|-- alembic/
-    |-- versions/        # Auto-generated migration scripts
-    |-- env.py           # Alembic configuration and setup
-    |-- README.md        # Alembic usage instructions
-    └── script.py.mako   # Template for generating migration scripts
+├── alembic/
+|   ├── versions/        # Auto-generated migration scripts
+|   ├── env.py           # Alembic configuration and setup
+|   ├── README.md        # Alembic usage instructions
+|   └── script.py.mako   # Template for generating migration scripts
 ├── docs/
 |   ├── fastapi-best-practices.md
 |   ├── awesome-fastapi.md
@@ -31,8 +31,8 @@ learn_fastapi/
 │   │   ├── schema.py       # Item Pydantic model
 │   │   ├── router.py       # CRUD endpoints for /items
 │   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
-|   |-- media/images/   # Media storage (e.g. uploaded images)
-|   |-- static/js/      # Static files (e.g. CSS, JS)
+|   ├── media/images/   # Media storage (e.g. uploaded images)
+|   ├── static/js/      # Static files (e.g. CSS, JS)
 │   ├── utils/          # Shared utilities
 │   │   ├── alembic.py      # Alembic integration helpers
 │   │   ├── annotations.py  # Shared type annotations
@@ -40,20 +40,20 @@ learn_fastapi/
 │   ├── config.py       # Global configuration and lifespan
 │   ├── constants.py    # Project paths and constants
 │   ├── database.py     # SQLAlchemy engine and session setup
-│   |-- main.py         # uvicorn runner (__main__)
+│   ├── main.py         # uvicorn runner (__main__)
 │   └── middleware.py   # Custom middleware (e.g. Swagger hot reload, CORS, etc.)
 ├── tests/
 |   |-- auth/
 |   |   ├── conftest.py     # Auth fixtures
 |   |   └── test_router.py  # Authentication tests
-│   |── items/
+│   ├── items/
 │   |   ├── conftest.py     # TestClient fixture
 │   |   └── test_router.py  # Full CRUD test suite
-|   |-- conftest.py     # Global test fixtures (e.g. TestClient)
+|   ├── conftest.py     # Global test fixtures (e.g. TestClient)
 |   └── test_main.py    # Basic smoke test for app startup
-|-- .env.example
-|-- alembic.ini
-|-- docker-compose.yaml
+├── .env.example
+├── alembic.ini
+├── docker-compose.yaml
 └── README.md
 ```
 

@@ -27,9 +27,9 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 ```text
 Fastapi-Ecosystem-Lab/
 ├── learn_fastapi/                      # 🧪 Practical implementations (Read more details in learn_fastapi/README.md)
-|-- .gitignore                          # Git ignore file
-|-- .pre-commit-config.yaml             # pre-commit hooks configuration
-|-- .python-version                     # Python version for pyenv
+├── .gitignore                          # Git ignore file
+├── .pre-commit-config.yaml             # pre-commit hooks configuration
+├── .python-version                     # Python version for pyenv
 ├── FastAPI_Learning.code-workspace     # VSCode workspace file
 ├── pyproject.toml                      # uv project configuration
 ├── README.md                           # This file
