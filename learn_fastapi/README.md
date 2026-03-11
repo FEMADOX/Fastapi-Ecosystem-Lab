@@ -51,7 +51,7 @@ learn_fastapi/
 │   ├── main.py         # uvicorn runner (__main__)
 │   └── middleware.py   # Custom middleware (e.g. Swagger hot reload, CORS, etc.)
 ├── tests/
-|   |-- auth/
+|   ├── auth/
 |   |   ├── conftest.py     # Auth fixtures
 |   |   └── test_router.py  # Authentication tests
 │   ├── items/
