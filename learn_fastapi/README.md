@@ -19,7 +19,7 @@ learn_fastapi/
 │   ├── auth/           # Authentication module
 │   │   ├── annotations.py  # Annotated type aliases
 │   │   ├── config.py       # Auth-specific settings (JWT, cookies)
-│   │   ├── dependencies.py # Auth dependencies (get_current_user)
+│   │   ├── dependencies.py # OAuth2 dependencies (token/form)
 │   │   ├── exceptions.py   # Auth-specific exceptions
 │   │   ├── models.py       # SQLAlchemy models (User, RefreshToken)
 │   │   ├── router.py       # Auth endpoints (login, register, etc.)
@@ -27,15 +27,21 @@ learn_fastapi/
 │   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
 │   ├── items/          # Items module (example domain)
 │   │   ├── annotations.py  # Annotated type aliases
+│   │   ├── dependencies.py # Item service dependency wiring
+│   │   ├── exceptions.py   # Item-specific exceptions
 │   │   ├── models.py       # SQLAlchemy models
+│   │   ├── repository.py   # Data access layer
 │   │   ├── schema.py       # Item Pydantic model
 │   │   ├── router.py       # CRUD endpoints for /items
+│   │   ├── service.py      # Business logic layer
+│   │   ├── utils.py        # Item helpers (image save, etc.)
 │   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
 |   ├── media/images/   # Media storage (e.g. uploaded images)
 |   ├── static/js/      # Static files (e.g. CSS, JS)
 │   ├── utils/          # Shared utilities
 │   │   ├── alembic.py      # Alembic integration helpers
 │   │   ├── annotations.py  # Shared type annotations
+│   │   ├── dependencies.py # Shared dependencies (e.g. CurrentUserDep)
 │   │   └── hot_reload.py   # Development hot-reload WebSocket
 │   ├── config.py       # Global configuration and lifespan
 │   ├── constants.py    # Project paths and constants
@@ -61,17 +67,18 @@ learn_fastapi/
 
 ### `items` App
 
-| Concept                                  | Where                                                                  |
-|------------------------------------------|------------------------------------------------------------------------|
-| `APIRouter` with prefix & tags           | [`router.py`](src/items/router.py)                                     |
-| Pydantic model with `Field` validation   | [`schema.py`](src/items/schema.py)                                     |
-| `Annotated` aliases                      | [`annotations.py`](src/items/annotations.py)                           |
-| Cross-field business rule validation     | [`validators.py`](src/items/validators.py)                             |
-| JSON file as persistent in-memory store  | [`database.py`](src/database.py)                                       |
-| Full CRUD: GET / POST / PUT / DELETE     | [`router.py`](src/items/router.py)                                     |
-| HTTP status codes via `starlette.status` | [`router.py`](src/items/router.py)                                     |
-| `HTTPException` for 404 responses        | [`router.py`](src/items/router.py)                                     |
-| Integration tests with `TestClient`      | [`tests/first_steps/test_router.py`](tests/items/test_router.py)       |
+| Concept                                      | Where                                                                            |
+|----------------------------------------------|----------------------------------------------------------------------------------|
+| `APIRouter` with prefix & tags               | [`router.py`](src/items/router.py)                                               |
+| Pydantic model with `Field` validation       | [`schema.py`](src/items/schema.py)                                               |
+| `Annotated` aliases                          | [`annotations.py`](src/items/annotations.py)                                     |
+| Cross-field business rule validation         | [`validators.py`](src/items/validators.py)                                       |
+| Repository + Service pattern                 | [`repository.py`](src/items/repository.py), [`service.py`](src/items/service.py) |
+| Ownership-aware CRUD (`User` -> `Item`)      | [`models.py`](src/items/models.py), [`router.py`](src/items/router.py)           |
+| Full CRUD: GET / POST / PUT / PATCH / DELETE | [`router.py`](src/items/router.py)                                               |
+| HTTP status codes via `starlette.status`     | [`router.py`](src/items/router.py)                                               |
+| `HTTPException` for 404 responses            | [`router.py`](src/items/router.py)                                               |
+| Integration tests with `httpx.AsyncClient`   | [`tests/items/test_router.py`](tests/items/test_router.py)                       |
 
 #### `items` Endpoints
 
@@ -79,7 +86,6 @@ Base prefix: `/items`
 
 | Method   | Path                | Description                            |                           Body Params                           |
 |:---------|:--------------------|:---------------------------------------|:---------------------------------------------------------------:|
-| `GET`    | `/hello-world/`     | Health-check / hello world             |                                                                 |
 | `GET`    | `/`                 | List all items                         |                                                                 |
 | `GET`    | `/{id_param}`       | Get item by `UUID`                     |                                                                 |
 | `POST`   | `/`                 | Create a new item                      |                             `Item`                              |
@@ -102,7 +108,7 @@ Base prefix: `/items`
 | Secure cookie handling                   | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)     |
 | Custom exceptions for auth errors        | [`exceptions.py`](src/auth/exceptions.py)                              |
 | User model with SQLAlchemy ORM           | [`models.py`](src/auth/models.py)                                      |
-| Dependency injection for current user    | [`dependencies.py`](src/auth/dependencies.py)                          |
+| Dependency injection for current user    | [`dependencies.py`](src/utils/dependencies.py)                         |
 
 #### `auth` Endpoints
 
@@ -168,7 +174,7 @@ This project uses [Alembic](https://alembic.sqlalchemy.org/) for database schema
 
 - Models are defined in `src/auth/models.py` and `src/items/models.py`
 - Migrations are generated automatically from model changes
-- Migrations are applied when the FastAPI app starts (via `lifespan`)
+- Migrations are checked when the FastAPI app starts (via `lifespan`)
 - Each migration is tracked with a revision ID in `alembic/versions/`
 
 ### Common Migration Commands
