@@ -19,11 +19,13 @@ learn_fastapi/
 │   ├── auth/           # Authentication module
 │   │   ├── annotations.py  # Annotated type aliases
 │   │   ├── config.py       # Auth-specific settings (JWT, cookies)
-│   │   ├── dependencies.py # OAuth2 dependencies (token/form)
+│   │   ├── dependencies.py # OAuth2 and auth service dependencies
 │   │   ├── exceptions.py   # Auth-specific exceptions
 │   │   ├── models.py       # SQLAlchemy models (User, RefreshToken)
+│   │   ├── repository.py   # Auth data access layer
 │   │   ├── router.py       # Auth endpoints (login, register, etc.)
 │   │   ├── schema.py       # Auth Pydantic models
+│   │   ├── service.py      # Auth business logic layer
 │   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
 │   ├── items/          # Items module (example domain)
 │   │   ├── annotations.py  # Annotated type aliases
@@ -55,6 +57,7 @@ learn_fastapi/
 │   ├── items/
 │   |   ├── conftest.py     # TestClient fixture
 │   |   └── test_router.py  # Full CRUD test suite
+|   ├── test_items_authorization.py # Authorization tests for item ownership and auth
 |   ├── conftest.py     # Global test fixtures (e.g. TestClient)
 |   └── test_main.py    # Basic smoke test for app startup
 ├── .env.example
@@ -79,6 +82,7 @@ learn_fastapi/
 | HTTP status codes via `starlette.status`     | [`router.py`](src/items/router.py)                                               |
 | `HTTPException` for 404 responses            | [`router.py`](src/items/router.py)                                               |
 | Integration tests with `httpx.AsyncClient`   | [`tests/items/test_router.py`](tests/items/test_router.py)                       |
+| Authorization and ownership tests            | [`tests/test_items_authorization.py`](tests/test_items_authorization.py)         |
 
 #### `items` Endpoints
 
@@ -98,17 +102,16 @@ Base prefix: `/items`
 
 ### `auth` App
 
-| Concept                                  | Where                                                                  |
-|------------------------------------------|------------------------------------------------------------------------|
-| JWT authentication with refresh tokens   | [`router.py`](src/auth/router.py), [`utils.py`](src/auth/utils.py)     |
-| Password hashing with Argon2             | [`utils.py`](src/auth/utils.py)                                        |
-| OAuth2 Password Flow with Bearer tokens  | [`dependencies.py`](src/auth/dependencies.py)                          |
-| CSRF token protection                    | [`router.py`](src/auth/router.py)                                      |
-| Refresh token rotation                   | [`router.py`](src/auth/router.py), [`models.py`](src/auth/models.py)   |
-| Secure cookie handling                   | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)     |
-| Custom exceptions for auth errors        | [`exceptions.py`](src/auth/exceptions.py)                              |
-| User model with SQLAlchemy ORM           | [`models.py`](src/auth/models.py)                                      |
-| Dependency injection for current user    | [`dependencies.py`](src/utils/dependencies.py)                         |
+- JWT authentication with refresh tokens: [`service.py`](src/auth/service.py), [`utils.py`](src/auth/utils.py)
+- Password hashing with Argon2: [`utils.py`](src/auth/utils.py)
+- OAuth2 Password Flow with Bearer tokens: [`dependencies.py`](src/auth/dependencies.py)
+- Repository + Service pattern: [`repository.py`](src/auth/repository.py), [`service.py`](src/auth/service.py)
+- CSRF token protection: [`service.py`](src/auth/service.py), [`router.py`](src/auth/router.py)
+- Refresh token rotation: [`service.py`](src/auth/service.py), [`models.py`](src/auth/models.py)
+- Secure cookie handling: [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)
+- Custom exceptions for auth errors: [`exceptions.py`](src/auth/exceptions.py)
+- User model with SQLAlchemy ORM: [`models.py`](src/auth/models.py)
+- Dependency injection for current user: [`dependencies.py`](src/utils/dependencies.py)
 
 #### `auth` Endpoints
 
@@ -300,6 +303,7 @@ Tests use an **in-memory SQLite database** (`sqlite+aiosqlite:///:memory:`) whic
 - Doesn't require PostgreSQL to be running
 - Automatically creates/drops all tables from models
 - Doesn't use Alembic (migrations are only for production PostgreSQL)
+- Includes dedicated auth tests, items CRUD tests, and item authorization/ownership tests
 
 ## Docs
 

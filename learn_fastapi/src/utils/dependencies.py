@@ -2,7 +2,6 @@ import uuid
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy import select
 
 from learn_fastapi.src.auth.dependencies import OAuth2_Dep
 from learn_fastapi.src.auth.exceptions import (
@@ -11,6 +10,7 @@ from learn_fastapi.src.auth.exceptions import (
     user_inactive_exception,
 )
 from learn_fastapi.src.auth.models import User
+from learn_fastapi.src.auth.repository import AuthRepository
 from learn_fastapi.src.auth.utils import verify_access_token
 from learn_fastapi.src.database import AsyncSessionDep
 
@@ -41,8 +41,8 @@ async def get_current_user(session: AsyncSessionDep, token: OAuth2_Dep) -> User:
     except (TypeError, ValueError) as exception:
         raise invalid_expire_token_exception from exception
 
-    result = await session.execute(select(User).where(User.id == user_id_uuid))  # ty:ignore[invalid-argument-type]
-    user = result.scalar_one_or_none()
+    repository = AuthRepository(session)
+    user = await repository.get_user_by_id(user_id_uuid)
     if not user:
         raise user_doesnt_exist_exception
     if not user.is_active:
