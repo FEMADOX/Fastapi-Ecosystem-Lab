@@ -12,3 +12,6 @@ items_not_found_for_user_exception = HTTPException(
     status_code=HTTP_404_NOT_FOUND,
     detail="No items found for the user",
 )
+image_not_found_exception = HTTPException(
+    status_code=HTTP_404_NOT_FOUND, detail="Image not found"
+)

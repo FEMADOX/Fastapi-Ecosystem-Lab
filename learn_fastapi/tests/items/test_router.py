@@ -339,10 +339,9 @@ class TestCreateItemWithImage:
         )
         assert response.json()["image_url"] == "/media/images/product.png"
 
-    async def test_default_values_used_when_no_data_sent(
-        self, client: AsyncClient
-    ) -> None:
-        response = await client.post("/items/with-image/")
+    async def test_default_values_used(self, client: AsyncClient) -> None:
+        item_name = "Default Item"
+        response = await client.post("/items/with-image/", data={"name": item_name})
         assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
         body = response.json()
         body_price = 0.00

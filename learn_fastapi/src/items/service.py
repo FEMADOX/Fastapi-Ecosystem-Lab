@@ -107,8 +107,8 @@ class ItemService:
         price: float,
         tax: float,
         owner: User,
-        image_file: UploadFile | None = None,
-        caption: str = "No description provided",
+        image_file: UploadFile | None,
+        caption: str,
     ) -> ItemSchema:
         """Create a new item and optionally attach an uploaded image.
 

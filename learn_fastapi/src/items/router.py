@@ -1,9 +1,9 @@
 import asyncio
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import FileResponse
-from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND
+from starlette.status import HTTP_200_OK
 
 from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
@@ -19,6 +19,7 @@ from .annotations import (
     ItemTax,
 )
 from .dependencies import ItemServiceDep
+from .exceptions import image_not_found_exception
 from .schema import (
     ItemSchema,
     ItemUpdateSchema,
@@ -179,12 +180,12 @@ async def get_image(filename: ImageFilename) -> FileResponse:
         The image file as a ``FileResponse`` with the appropriate media type.
 
     Raises:
-        HTTPException: 404 if no matching image file is found.
+        image_not_found_exception: 404 if no matching image file is found.
 
     """
     matches = await asyncio.to_thread(lambda: list(IMAGES_DIR.glob(f"{filename}.*")))
     if not matches:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Image not found")
+        raise image_not_found_exception
 
     file_path = matches[0]
     return FileResponse(
@@ -198,7 +199,7 @@ async def get_image(filename: ImageFilename) -> FileResponse:
 async def create_item_with_image(  # noqa: PLR0913, PLR0917
     service: ItemServiceDep,
     current_user: CurrentUserDep,
-    name: ItemName = "Default Item",
+    name: ItemName,
     description: ItemDescription = "No description provided",
     price: ItemPrice = 0.00,
     tax: ItemTax = 0.00,
