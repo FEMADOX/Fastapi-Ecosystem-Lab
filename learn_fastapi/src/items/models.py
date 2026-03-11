@@ -1,9 +1,14 @@
-from sqlalchemy.orm import Mapped
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from sqlalchemy.orm import Mapped, relationship
 
 from learn_fastapi.src.database import Base
 from learn_fastapi.src.utils.annotations import (
     timestamp_created,
     timestamp_updated,
+    user_id_fk,
     uuid_pk,
 )
 
@@ -13,6 +18,9 @@ from .annotations import (
     str_indexed,
     str_url,
 )
+
+if TYPE_CHECKING:
+    from learn_fastapi.src.auth.models import User
 
 
 class Item(Base):
@@ -26,3 +34,6 @@ class Item(Base):
     image_url: Mapped[str_url]
     created_at: Mapped[timestamp_created]
     updated_at: Mapped[timestamp_updated]
+    user_id: Mapped[user_id_fk]
+
+    user: Mapped[User] = relationship("User", back_populates="items")

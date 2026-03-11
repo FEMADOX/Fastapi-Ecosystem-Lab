@@ -11,10 +11,11 @@ from starlette.status import (
 )
 
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
 from .annotations import X_CSRF_TOKEN
 from .config import auth_config
-from .dependencies import CurrentUserDep, OAuth2PRFDep
+from .dependencies import OAuth2PRFDep
 from .exceptions import (
     credentials_exception,
     email_already_registered_exception,

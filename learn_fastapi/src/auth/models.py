@@ -1,10 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, relationship
 
 from learn_fastapi.src.database import Base
 from learn_fastapi.src.utils.annotations import (
-    uuid_pk,
     timestamp_created,
     timestamp_updated,
+    user_id_fk,
+    uuid_pk,
 )
 
 from .annotations import (
@@ -14,8 +19,10 @@ from .annotations import (
     revoked,
     str_idx_unique,
     token_hash,
-    user_id_fk,
 )
+
+if TYPE_CHECKING:
+    from learn_fastapi.src.items.models import Item
 
 
 class User(Base):
@@ -32,6 +39,9 @@ class User(Base):
     refresh_tokens: Mapped[list[RefreshToken]] = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
+    items: Mapped[list[Item]] = relationship(
+        "Item", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class RefreshToken(Base):
@@ -46,4 +56,4 @@ class RefreshToken(Base):
     created_at: Mapped[timestamp_created]
     revoked_at: Mapped[revoked]
 
-    user: Mapped[User] = relationship(User, back_populates="refresh_tokens")
+    user: Mapped[User] = relationship("User", back_populates="refresh_tokens")

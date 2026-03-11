@@ -59,7 +59,10 @@ async def test_session(test_async_engine: AsyncEngine) -> AsyncGenerator[AsyncSe
 
     """
     session_factory = async_sessionmaker(
-        autocommit=False, autoflush=False, bind=test_async_engine
+        autocommit=False,
+        autoflush=False,
+        bind=test_async_engine,
+        expire_on_commit=False,
     )
 
     async with session_factory() as session:

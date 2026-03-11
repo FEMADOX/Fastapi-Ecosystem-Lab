@@ -1,14 +1,12 @@
 import asyncio
 from uuid import UUID
 
-import aiofiles
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
-from sqlalchemy import select, update
 from starlette.status import HTTP_200_OK, HTTP_404_NOT_FOUND
 
 from learn_fastapi.src.constants import IMAGES_DIR
-from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
 from .annotations import (
     ImageCaption,
@@ -20,9 +18,8 @@ from .annotations import (
     ItemPrice,
     ItemTax,
 )
-from .models import Item
+from .dependencies import ItemServiceDep
 from .schema import (
-    ImageSchema,
     ItemSchema,
     ItemUpdateSchema,
 )
@@ -30,138 +27,166 @@ from .schema import (
 router = APIRouter()
 
 
-# GET
 @router.get("/")
-async def read_items(
-    session: AsyncSessionDep, offset: int = 0, limit: int = 10
-) -> list[ItemSchema]:
-    list_items = await session.execute(select(Item).offset(offset).limit(limit))  # ty:ignore[invalid-argument-type]
-    return list_items.scalars().all()
+async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
+    """Return all items stored in the database.
 
-
-# GET using path parameter
-@router.get("/{id_param}")
-async def read_item(id_param: UUID, session: AsyncSessionDep) -> ItemSchema:
-    item = await session.get(Item, id_param)
-    if item is None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
-    return item
-
-
-# POST
-@router.post("/")
-async def create_item(item: ItemUpdateSchema, session: AsyncSessionDep) -> ItemSchema:
-    item_db = Item(**item.model_dump(exclude={"id"}))
-    session.add(item_db)
-    await session.commit()
-    await session.refresh(item_db)
-    return ItemSchema(**item_db.__dict__)
-
-
-# PUT
-@router.put("/{id_param}")
-async def update_item(
-    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdateSchema
-) -> ItemSchema:
-    item_db = await session.get(Item, id_param)
-    if item_db is None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
-
-    item_data = item_param.model_dump(exclude_unset=True, exclude={"id"})
-    await session.execute(
-        update(Item).where(Item.id == item_db.id).values(**item_data)  # ty:ignore[invalid-argument-type]
-    )
-    await session.commit()
-    await session.refresh(item_db)
-    return item_db
-
-
-# PATCH
-@router.patch("/{id_param}")
-async def patch_item(
-    id_param: UUID, session: AsyncSessionDep, item_param: ItemUpdateSchema
-) -> ItemSchema:
-    item_db = await session.get(Item, id_param)
-    if item_db is None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
-
-    item_data = item_param.model_dump(exclude_unset=True, exclude={"id"})
-    [setattr(item_db, key, value) for key, value in item_data.items()]
-
-    await session.commit()
-    await session.refresh(item_db)
-    return item_db
-
-
-# DELETE
-@router.delete("/{id_param}")
-async def delete_item(id_param: UUID, session: AsyncSessionDep) -> dict[str, str | int]:
-    item = await session.get(Item, id_param)
-    if item is None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
-    await session.delete(item)
-    await session.commit()
-    return {"detail": "Item deleted successfully", "status_code": HTTP_200_OK}
-
-
-async def save_image_file(
-    image_file: UploadFile, caption: str = "No description provided"
-) -> ImageSchema:
-    """Save the image to disk and return an Image Model.
+    Args:
+        service: Injected ItemService dependency.
 
     Returns:
-        ImageSchema: The saved image model.
-
-    Raises:
-        HTTPException: If the image file does not have a filename.
+        A list of all ItemSchema objects (may be empty).
 
     """
-    if not image_file.filename:
-        raise HTTPException(status_code=422, detail="Image file must have a filename")
+    return await service.get_all_items()
 
-    file_path = IMAGES_DIR / image_file.filename
 
-    if not file_path.exists():
-        async with aiofiles.open(file_path, "wb") as f:
-            await f.write(await image_file.read())
+@router.get("/{id_param}")
+async def read_item(id_param: UUID, service: ItemServiceDep) -> ItemSchema:
+    """Return a single item by its UUID.
 
-    return ImageSchema(
-        name=image_file.filename,
-        description=caption,
-        content_type=image_file.content_type,
-        url=f"/media/images/{image_file.filename}",
-    )
+    Args:
+        id_param: UUID of the item to retrieve.
+        service: Injected ItemService dependency.
+
+    Returns:
+        The matching ItemSchema.
+
+    """
+    return await service.get_item(id_param)
+
+
+@router.post("/")
+async def create_item(
+    item: ItemUpdateSchema, service: ItemServiceDep, current_user: CurrentUserDep
+) -> ItemSchema:
+    """Create a new item owned by the authenticated user.
+
+    Args:
+        item: Validated item payload.
+        service: Injected ItemService dependency.
+        current_user: The authenticated user who will own the item.
+
+    Returns:
+        The newly created ItemSchema.
+
+    """
+    return await service.create_item(item, current_user)
+
+
+@router.put("/{id_param}")
+async def update_item(
+    id_param: UUID,
+    item_param: ItemUpdateSchema,
+    service: ItemServiceDep,
+    current_user: CurrentUserDep,
+) -> ItemSchema:
+    """Replace all fields of an item owned by the authenticated user.
+
+    All fields are written, including those omitted from the request body
+    (which receive their schema default values).
+
+    Args:
+        id_param: UUID of the item to update.
+        item_param: Complete field values for the item.
+        service: Injected ItemService dependency.
+        current_user: Must be the owner of the item.
+
+    Returns:
+        The updated ItemSchema.
+
+    """
+    return await service.update_item(id_param, item_param, current_user)
+
+
+@router.patch("/{id_param}")
+async def patch_item(
+    id_param: UUID,
+    item_param: ItemUpdateSchema,
+    service: ItemServiceDep,
+    current_user: CurrentUserDep,
+) -> ItemSchema:
+    """Apply a partial update to an item owned by the authenticated user.
+
+    Only fields explicitly included in the request body are modified;
+    omitted fields retain their current values.
+
+    Args:
+        id_param: UUID of the item to update.
+        item_param: Partial field values to apply.
+        service: Injected ItemService dependency.
+        current_user: Must be the owner of the item.
+
+    Returns:
+        The updated ItemSchema.
+
+    """
+    return await service.patch_item(id_param, item_param, current_user)
+
+
+@router.delete("/{id_param}")
+async def delete_item(
+    id_param: UUID, service: ItemServiceDep, current_user: CurrentUserDep
+) -> dict[str, str | int]:
+    """Delete an item owned by the authenticated user.
+
+    Args:
+        id_param: UUID of the item to delete.
+        service: Injected ItemService dependency.
+        current_user: Must be the owner of the item.
+
+    Returns:
+        Confirmation message with HTTP 200 status code.
+
+    """
+    await service.delete_item(id_param, current_user)
+    return {"detail": "Item deleted successfully", "status_code": HTTP_200_OK}
 
 
 @router.post("/image/{id_param}")
 async def submit_an_item_image(
     id_param: UUID,
-    session: AsyncSessionDep,
+    service: ItemServiceDep,
     image_file: ImageFile,
     caption: ImageCaption = "No description provided",
 ) -> ItemSchema:
-    item_db = await session.get(Item, id_param)
+    """Upload an image and attach it to an existing item.
 
-    if item_db is None:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Item not found")
+    Args:
+        id_param: UUID of the target item.
+        service: Injected ItemService dependency.
+        image_file: Image file to upload (multipart/form-data).
+        caption: Optional alt-text or description for the image.
 
-    image = await save_image_file(image_file, caption)
-    await session.execute(
-        update(Item).where(Item.id == item_db.id).values(image_url=image.url)  # ty:ignore[invalid-argument-type]
-    )
-    await session.commit()
-    await session.refresh(item_db)
-    return item_db
+    Returns:
+        The updated item with its new ``image_url``.
+
+    """
+    return await service.update_item_image(id_param, image_file, caption)
 
 
 @router.get("/image/")
 async def get_image(filename: ImageFilename) -> FileResponse:
+    """Serve a stored image file by its base filename (without extension).
+
+    Performs a glob search in ``IMAGES_DIR`` for any file whose stem matches
+    the supplied name, then streams it back with the correct media type.
+
+    Args:
+        filename: Base name of the image, without file extension.
+
+    Returns:
+        The image file as a ``FileResponse`` with the appropriate media type.
+
+    Raises:
+        HTTPException: 404 if no matching image file is found.
+
+    """
     matches = await asyncio.to_thread(lambda: list(IMAGES_DIR.glob(f"{filename}.*")))
     if not matches:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Image not found")
 
     file_path = matches[0]
-
     return FileResponse(
         path=file_path,
         media_type=f"image/{file_path.suffix.lstrip('.')}",
@@ -171,7 +196,8 @@ async def get_image(filename: ImageFilename) -> FileResponse:
 
 @router.post("/with-image/")
 async def create_item_with_image(  # noqa: PLR0913, PLR0917
-    session: AsyncSessionDep,
+    service: ItemServiceDep,
+    current_user: CurrentUserDep,
     name: ItemName = "Default Item",
     description: ItemDescription = "No description provided",
     price: ItemPrice = 0.00,
@@ -179,24 +205,33 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
     image_file: ImageFileOptional = None,
     caption: ImageCaption = "No description provided",
 ) -> ItemSchema:
-    result = await session.execute(select(Item).where(Item.name == name))  # ty:ignore[invalid-argument-type]
-    result = result.scalar_one_or_none()
-    if result is not None:
-        raise HTTPException(
-            status_code=422, detail=f"An item with name '{name}' already exists"
-        )
+    """Create an item with an optional image in a single multipart request.
 
-    item_db = Item(
+    Validates that no other item shares the same name before creation.
+    If an image file is supplied it is saved to disk and its URL stored on
+    the newly created item.
+
+    Args:
+        service: Injected ItemService dependency.
+        current_user: The authenticated user who will own the item.
+        name: Display name for the item (must be unique).
+        description: Human-readable description.
+        price: Base price.
+        tax: Tax rate.
+        image_file: Optional image to attach.
+        caption: Alt-text for the image.
+
+    Returns:
+        The newly created ItemSchema, with ``image_url`` set when an image
+        was provided.
+
+    """
+    return await service.create_item_with_image(
         name=name,
         description=description,
         price=price,
         tax=tax,
+        owner=current_user,
+        image_file=image_file,
+        caption=caption,
     )
-    if image_file:
-        image = await save_image_file(image_file, caption)
-        item_db.image_url = image.url
-
-    session.add(item_db)
-    await session.commit()
-    await session.refresh(item_db)
-    return item_db

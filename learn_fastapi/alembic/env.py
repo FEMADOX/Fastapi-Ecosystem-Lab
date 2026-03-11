@@ -58,6 +58,13 @@ def run_migrations_offline() -> None:
 
     """
     url = get_sqlalchemy_url()
+    connect_args = {}
+    render_as_batch = False
+    if url.startswith("sqlite"):
+        # Enable foreign keys in SQLite
+        connect_args = {"check_same_thread": False}
+        render_as_batch = True
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -65,7 +72,8 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_server_default=True,
         # SQLite-specific: enable batch mode for better ALTER support
-        render_as_batch=True,
+        render_as_batch=render_as_batch,
+        connect_args=connect_args,
     )
 
     with context.begin_transaction():
@@ -106,10 +114,13 @@ def run_migrations_online() -> None:
 
 def _run_migrations(connection: Connection) -> None:
     """Sync wrapper for running migrations with connection."""
+    url = get_sqlalchemy_url()
+    render_as_batch = url.startswith("sqlite")
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
         compare_server_default=True,
+        render_as_batch=render_as_batch,
     )
 
     with context.begin_transaction():
