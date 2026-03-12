@@ -68,12 +68,12 @@ unresolved-import = "ignore"
 
 [dependency-groups]
 dev = [
-  "pre-commit>=4.0.0",
+  "pre-commit>=4.5.1",
   "pytest-asyncio>=1.3.0",
-  "ruff>=0.15.2",
+  "ruff>=0.15.5",
   "sqlalchemy-stubs>=0.4",
-  "sqlalchemy[mypy]>=2.0.47",
-  "ty>=0.0.17",
+  "sqlalchemy[mypy]>=2.0.48",
+  "ty>=0.0.21",
   "types-sqlalchemy>=1.4.53.38",
 ]
 
