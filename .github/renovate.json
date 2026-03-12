@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+  "rebaseWhen": "behind-base-branch",
   "labels": [
     "dependencies",
     "python"
@@ -11,6 +12,9 @@
   "schedule": [
     "after 10pm and before 5am"
   ],
+  "separateMajorMinor": false,
+  "separateMultipleMajor": false,
+  "separateMinorPatch": false,
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
@@ -23,13 +27,24 @@
       "matchManagers": [
         "uv"
       ],
-      "groupName": "uv dependencies"
-    },
-    {
       "matchDepTypes": [
         "dependency-groups"
       ],
-      "groupName": "dev dependencies"
+      "groupName": "dev dependencies",
+      "groupSlug": "dev-dependencies"
+    },
+    {
+      "excludeDepTypes": [
+        "dependency-groups"
+      ],
+      "matchManagers": [
+        "uv"
+      ],
+      "matchPackageNames": [
+        "*"
+      ],
+      "groupName": "production dependencies",
+      "groupSlug": "production-dependencies"
     }
   ]
 }
