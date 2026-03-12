@@ -23,6 +23,8 @@ class UserResponse(BaseModel):
     is_superuser: bool = Field(description="Whether user is a superuser", default=False)
 
     class ConfigDict:
+        """Pydantic model config."""
+
         from_attributes = True
 
 

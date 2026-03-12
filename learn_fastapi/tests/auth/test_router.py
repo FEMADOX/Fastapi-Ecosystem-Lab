@@ -146,7 +146,7 @@ class TestRefresh:
         assert rotated_refresh != initial_refresh
         assert rotated_csrf == body["csrf_token"]
 
-        result = await test_session.execute(select(RefreshToken))  # ty:ignore[invalid-argument-type]
+        result = await test_session.execute(select(RefreshToken))
         tokens = result.scalars().all()
         total_tokens = 2
         assert len(tokens) == total_tokens
@@ -236,7 +236,7 @@ class TestRefresh:
         )
 
         csrf = login_response.json()["csrf_token"]
-        client.cookies["refresh_token"] = "invalid-refresh-token"
+        client.cookies["refresh_token"] = "invalid-refresh-token"  # noqa: S105
 
         response = await client.post("/auth/refresh", headers={"X-CSRF-Token": csrf})
 
@@ -276,7 +276,7 @@ class TestLogout:
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
-        result = await test_session.execute(select(RefreshToken))  # ty:ignore[invalid-argument-type]
+        result = await test_session.execute(select(RefreshToken))
         tokens = result.scalars().all()
         assert len(tokens) == 1
         assert tokens[0].revoked_at is not None
@@ -304,7 +304,7 @@ class TestLogout:
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
-        result = await test_session.execute(select(RefreshToken))  # ty:ignore[invalid-argument-type]
+        result = await test_session.execute(select(RefreshToken))
         tokens = result.scalars().all()
         assert len(tokens) == 1
         assert tokens[0].revoked_at is None
@@ -331,7 +331,7 @@ class TestLogout:
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
-        result = await test_session.execute(select(RefreshToken))  # ty:ignore[invalid-argument-type]
+        result = await test_session.execute(select(RefreshToken))
         tokens = result.scalars().all()
         assert len(tokens) == 1
         assert tokens[0].revoked_at is None

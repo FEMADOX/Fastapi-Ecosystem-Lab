@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import and_, select, update
@@ -7,13 +8,16 @@ from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.items.models import Item
 from learn_fastapi.src.items.schema import ItemUpdateSchema
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio.session import AsyncSession
+
 
 class ItemRepository:
     """Repository class for Item ORM operations."""
 
     def __init__(self, session: AsyncSessionDep) -> None:
         """Initialize the repository with an async database session."""
-        self.session = session
+        self.session: AsyncSession = session
 
     async def get_all_items(self) -> list[Item]:
         """Fetch every Item row from the database.
@@ -22,7 +26,7 @@ class ItemRepository:
             A list of all Item ORM instances.
 
         """
-        result = await self.session.execute(select(Item))  # ty: ignore[invalid-argument-type]
+        result = await self.session.execute(select(Item))
         return list(result.scalars().all())
 
     async def get_item(self, id_param: UUID) -> Item | None:
@@ -35,7 +39,7 @@ class ItemRepository:
             The matching Item, or None if not found.
 
         """
-        result = await self.session.execute(select(Item).where(Item.id == id_param))  # ty: ignore[invalid-argument-type]
+        result = await self.session.execute(select(Item).where(Item.id == id_param))
         return result.scalar_one_or_none()
 
     async def get_item_by_name(self, name: str) -> Item | None:
@@ -48,7 +52,7 @@ class ItemRepository:
             The matching Item, or None if no item has that name.
 
         """
-        result = await self.session.execute(select(Item).where(Item.name == name))  # ty: ignore[invalid-argument-type]
+        result = await self.session.execute(select(Item).where(Item.name == name))
         return result.scalar_one_or_none()
 
     async def get_user_items(self, owner: User) -> list[Item]:
@@ -62,7 +66,7 @@ class ItemRepository:
 
         """
         result = await self.session.execute(
-            select(Item).where(Item.user_id == owner.id)  # ty: ignore[invalid-argument-type]
+            select(Item).where(Item.user_id == owner.id)
         )
         return list(result.scalars().all())
 
@@ -78,7 +82,7 @@ class ItemRepository:
 
         """
         result = await self.session.execute(
-            select(Item).where(Item.id == item_id).where(Item.user_id == owner.id)  # ty: ignore[invalid-argument-type]
+            select(Item).where(Item.id == item_id).where(Item.user_id == owner.id)
         )
         return result.scalar_one_or_none()
 
@@ -123,15 +127,13 @@ class ItemRepository:
         else:
             condition = Item.id == item_id
 
-        result = await self.session.execute(select(Item).where(condition))  # ty: ignore[invalid-argument-type]
+        result = await self.session.execute(select(Item).where(condition))
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item)  # ty:ignore[invalid-argument-type]
-            .where(condition)
-            .values(**item_data.model_dump())
+            update(Item).where(condition).values(**item_data.model_dump())
         )
         await self.session.commit()
         await self.session.refresh(item)
@@ -161,13 +163,13 @@ class ItemRepository:
         else:
             condition = Item.id == item_id
 
-        result = await self.session.execute(select(Item).where(condition))  # ty: ignore[invalid-argument-type]
+        result = await self.session.execute(select(Item).where(condition))
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item)  # ty:ignore[invalid-argument-type]
+            update(Item)
             .where(condition)
             .values(**item_data.model_dump(exclude_unset=True))
         )
@@ -186,13 +188,13 @@ class ItemRepository:
             The updated Item.
 
         """
-        result = await self.session.execute(select(Item).where(Item.id == item_id))  # ty: ignore[invalid-argument-type]
+        result = await self.session.execute(select(Item).where(Item.id == item_id))
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item).where(Item.id == item_id).values(image_url=image_url)  # ty: ignore[invalid-argument-type]
+            update(Item).where(Item.id == item_id).values(image_url=image_url)
         )
         await self.session.commit()
         await self.session.refresh(item)

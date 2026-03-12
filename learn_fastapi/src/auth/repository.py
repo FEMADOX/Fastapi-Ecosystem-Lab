@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from learn_fastapi.src.database import AsyncSessionDep
 
@@ -13,20 +14,7 @@ class AuthRepository:
 
     def __init__(self, session: AsyncSessionDep) -> None:
         """Initialize the repository with an async database session."""
-        self.session = session
-
-    async def get_user_by_email(self, email: str) -> User | None:
-        """Fetch a user by email address.
-
-        Args:
-            email: The email to search for.
-
-        Returns:
-            The matching user or ``None`` if no user exists.
-
-        """
-        result = await self.session.execute(select(User).where(User.email == email))  # ty: ignore[invalid-argument-type]
-        return result.scalar_one_or_none()
+        self.session: AsyncSession = session
 
     async def get_user_by_id(self, user_id: UUID) -> User | None:
         """Fetch a user by primary key.
@@ -38,7 +26,20 @@ class AuthRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.id == user_id))  # ty: ignore[invalid-argument-type]
+        result = await self.session.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
+
+    async def get_user_by_email(self, email: str) -> User | None:
+        """Fetch a user by email address.
+
+        Args:
+            email: The email to search for.
+
+        Returns:
+            The matching user or ``None`` if no user exists.
+
+        """
+        result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def create_user(self, email: str, password_hash: str) -> User:
@@ -95,10 +96,11 @@ class AuthRepository:
             A list of valid refresh token records.
 
         """
+        refresh_tokens = RefreshToken.__table__.c
         result = await self.session.execute(
-            select(RefreshToken)  # ty: ignore[invalid-argument-type]
-            .where(RefreshToken.revoked_at.is_(None))
-            .where(RefreshToken.expires_at > now)
+            select(RefreshToken)
+            .where(refresh_tokens.revoked_at.is_(None))
+            .where(refresh_tokens.expires_at > now)
         )
         return list(result.scalars().all())
 
@@ -109,8 +111,9 @@ class AuthRepository:
             A list of refresh tokens whose ``revoked_at`` is still ``None``.
 
         """
+        refresh_tokens = RefreshToken.__table__.c
         result = await self.session.execute(
-            select(RefreshToken).where(RefreshToken.revoked_at.is_(None))  # ty: ignore[invalid-argument-type]
+            select(RefreshToken).where(refresh_tokens.revoked_at.is_(None))
         )
         return list(result.scalars().all())
 

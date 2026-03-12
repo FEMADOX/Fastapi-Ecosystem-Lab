@@ -37,7 +37,7 @@ class AuthService:
 
     def __init__(self, session: AsyncSessionDep) -> None:
         """Initialize the service with an async database session."""
-        self.repository = AuthRepository(session)
+        self.repository: AuthRepository = AuthRepository(session)
 
     async def register(self, user_data: UserCreate) -> User:
         """Register a new user account.
@@ -52,7 +52,7 @@ class AuthService:
             email_already_registered_exception: If the email already exists.
 
         """
-        existing_user = await self.repository.get_user_by_email(str(user_data.email))
+        existing_user = await self.repository.get_user_by_email(user_data.email)
         if existing_user is not None:
             raise email_already_registered_exception
 

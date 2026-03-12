@@ -20,6 +20,8 @@ from .annotations import (
 )
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
     from learn_fastapi.src.auth.models import User
 
 
@@ -37,3 +39,6 @@ class Item(Base):
     user_id: Mapped[user_id_fk]
 
     user: Mapped[User] = relationship("User", back_populates="items")
+
+    if TYPE_CHECKING:
+        id: UUID

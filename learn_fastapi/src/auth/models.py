@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from sqlalchemy.orm import Mapped, relationship
 
@@ -43,6 +44,10 @@ class User(Base):
         "Item", back_populates="user", cascade="all, delete-orphan"
     )
 
+    if TYPE_CHECKING:
+        id: UUID
+        password_hash: str
+
 
 class RefreshToken(Base):
     """Refresh token storage for JWT token rotation."""
@@ -57,3 +62,8 @@ class RefreshToken(Base):
     revoked_at: Mapped[revoked]
 
     user: Mapped[User] = relationship("User", back_populates="refresh_tokens")
+
+    if TYPE_CHECKING:
+        id: UUID
+        user_id: UUID
+        token_hash: str

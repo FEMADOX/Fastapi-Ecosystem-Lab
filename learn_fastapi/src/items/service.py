@@ -18,7 +18,7 @@ class ItemService:
 
     def __init__(self, session: AsyncSessionDep) -> None:
         """Initialize the service with an async database session."""
-        self.repository = ItemRepository(session)
+        self.repository: ItemRepository = ItemRepository(session)
 
     async def get_all_items(self) -> list[ItemSchema]:
         """Return all items in the database as serialized schemas.
