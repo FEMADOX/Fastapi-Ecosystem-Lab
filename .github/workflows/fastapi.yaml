@@ -24,11 +24,6 @@ jobs:
     env:
       SECRET_KEY: "qdH-iRql2gEFJkXRVVFOt3j2b1EdLA1mBE0SoGne3No"
       DATABASE_URL: "sqlite+aiosqlite:///./test.db"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: "test_db"
-      POSTGRES_HOST: "localhost"
-      POSTGRES_PORT: 5432
 
     steps:
       - name: Checkout code

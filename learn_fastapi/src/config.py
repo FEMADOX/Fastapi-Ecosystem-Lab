@@ -48,9 +48,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 class Settings(BaseSettings):
     secret_key: SecretStr
-    postgres_user: str
-    postgres_password: str
-    postgres_db: str
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"  # noqa: S105
+    postgres_db: str = "learn_fastapi"
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     database_url: str
