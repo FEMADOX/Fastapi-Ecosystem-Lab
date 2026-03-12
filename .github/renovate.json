@@ -9,13 +9,13 @@
   ],
   "timezone": "America/Santo_Domingo",
   "schedule": [
-    "every day after 10pm and before 5am"
+    "after 10pm and before 5am"
   ],
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": [
-      "every day after 10pm and before 5am"
+      "after 10pm and before 5am"
     ]
   },
   "packageRules": [
