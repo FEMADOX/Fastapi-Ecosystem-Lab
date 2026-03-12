@@ -13,7 +13,7 @@ dependencies = [
   "pytest>=9.0.2",
   "python-multipart>=0.0.22",
   "sqlalchemy[asyncio]>=2.0.46",
-  "streamlit>=1.54.0",
+  "streamlit>=1.55.0",
   "uvicorn>=0.41.0",
 ]
 description = "This project is a learning resource for FastAPI ecosystem, a modern, fast (high-performance) web framework for building APIs with Python 3.14+ based on standard Python type hints."
