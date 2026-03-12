@@ -39,7 +39,7 @@ jobs:
         run: uv sync --no-dev --locked
 
       - name: Run tests
-        run: uv run pytest --config-file=pyproject.toml
+        run: uv run pytest --config-file=../pyproject.toml
 
       - name: Check code formatting and linting
         run: uv run ruff check . && uv run ruff format --check .
