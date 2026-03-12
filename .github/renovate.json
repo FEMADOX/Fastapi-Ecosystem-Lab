@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies",
+    "python"
+  ],
+  "timezone": "America/Santo_Domingo",
+  "schedule": [
+    "every day after 10pm and before 5am"
+  ],
+  "rangeStrategy": "bump",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "every day after 10pm and before 5am"
+    ]
+  },
+  "packageRules": [
+    {
+      "matchManagers": [
+        "uv"
+      ],
+      "groupName": "uv dependencies"
+    },
+    {
+      "matchDepTypes": [
+        "dependency-groups"
+      ],
+      "groupName": "dev dependencies"
+    }
+  ]
+}

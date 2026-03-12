@@ -93,30 +93,7 @@ async def logout(
     await service.logout(request, response, x_csrf_token)
 
 
-# @router.post("/logout-all", status_code=204)
-# async def logout_all_devices(
-#     session: AsyncSessionDep,
-#     current_user: CurrentUserDep,
-#     response: Response,
-# ) -> None:
-#     """Revoke all refresh tokens for current user and clear browser cookies."""
-#     result = await session.execute(
-#         select(RefreshToken)
-#         .where(RefreshToken.user_id == current_user.id)
-#         .where(RefreshToken.revoked_at.is_(None))
-#     )
-#     active_tokens = result.scalars().all()
-#
-#     now = datetime.now(UTC)
-#     for token in active_tokens:
-#         token.revoked_at = now
-#
-#     await session.commit()
-#     clear_auth_cookies(response)
-
-
 @router.get("/me", response_model=UserResponse)
-# async def get_me(current_user: Annotated[User, Depends(get_current_user)]) -> User:
 async def get_me(current_user: CurrentUserDep) -> User:
     """Return the currently authenticated user's profile.
 
