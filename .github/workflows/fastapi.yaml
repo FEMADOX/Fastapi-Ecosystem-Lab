@@ -39,13 +39,13 @@ jobs:
         run: uv sync --no-dev --locked
 
       - name: Run tests
-        run: uv pytest --config-file=pyproject.toml
+        run: uv run pytest --config-file=pyproject.toml
 
       - name: Check code formatting and linting
-        run: uv ruff check . && uv ruff format --check .
+        run: uv run ruff check . && uv run ruff format --check .
 
       - name: Check type hints
-        run: uv ty check .
+        run: uv run ty check .
 
       - name: Minimize uv cache
         run: uv cache prune --ci
