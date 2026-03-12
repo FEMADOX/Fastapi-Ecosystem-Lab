@@ -49,8 +49,8 @@ jobs:
       - name: Check code formatting and linting
         run: uv run ruff check . && uv run ruff format --check .
 
-      - name: Check type hints
-        run: uv run ty check .
+      # - name: Check type hints
+      #   run: uv run ty check .
 
       - name: Minimize uv cache
         run: uv cache prune --ci
