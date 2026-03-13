@@ -34,14 +34,11 @@
       "groupSlug": "dev-dependencies"
     },
     {
-      "excludeDepTypes": [
-        "dependency-groups"
-      ],
       "matchManagers": [
         "uv"
       ],
-      "matchPackageNames": [
-        "*"
+      "matchDepTypes": [
+        "dependencies"
       ],
       "groupName": "production dependencies",
       "groupSlug": "production-dependencies"
