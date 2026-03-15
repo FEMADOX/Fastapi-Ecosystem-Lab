@@ -116,7 +116,6 @@ def verify_access_token(token: str) -> TokenData | None:
     payload = decode_access_token(token)
     if not payload:
         return None
-    # data = {"sub": payload.get("sub"), "exp": payload.get("exp")}
     return TokenData(sub=payload["sub"], exp=payload["exp"])
 
 
@@ -181,6 +180,12 @@ def set_auth_cookies(response: Response, refresh_token: str, csrf_token: str) ->
 
 
 def clear_auth_cookies(response: Response) -> None:
+    """Clear the authentication cookies for refresh token and CSRF token.
+
+    Args:
+        response: The FastAPI Response object to delete cookies from.
+
+    """
     response.delete_cookie(
         key="refresh_token", path="/auth", domain=auth_config.cookie_domain
     )

@@ -31,7 +31,6 @@ async def get_current_user(session: AsyncSessionDep, token: OAuth2_Dep) -> User:
         user_doesnt_exist_exception: If the user does not exist.
 
     """
-    # payload = decode_access_token(token)
     user_id = verify_access_token(token)
     if not user_id:
         raise invalid_expire_token_exception

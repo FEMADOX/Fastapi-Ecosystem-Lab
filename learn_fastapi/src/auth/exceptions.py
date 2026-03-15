@@ -1,5 +1,9 @@
 from fastapi import HTTPException
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
+from starlette.status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+)
 
 invalid_expire_token_exception = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
@@ -30,4 +34,8 @@ invalid_refresh_or_csrf_token_exception = HTTPException(
 invalid_refresh_token_exception = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
     detail="Invalid or expired refresh token",
+)
+incorrect_password_exception = HTTPException(
+    status_code=HTTP_403_FORBIDDEN,
+    detail="Incorrect password",
 )

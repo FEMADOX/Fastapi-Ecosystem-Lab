@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -47,6 +48,10 @@ class User(Base):
     if TYPE_CHECKING:
         id: UUID
         password_hash: str
+        email: str
+        password_hash: str
+        is_active: bool
+        is_superuser: bool
 
 
 class RefreshToken(Base):
@@ -67,3 +72,5 @@ class RefreshToken(Base):
         id: UUID
         user_id: UUID
         token_hash: str
+        expires_at: datetime
+        revoked_at: datetime | None

@@ -11,14 +11,14 @@ from .config import auth_config
 from .exceptions import (
     credentials_exception,
     email_already_registered_exception,
+    incorrect_password_exception,
     invalid_refresh_or_csrf_token_exception,
     invalid_refresh_token_exception,
-    user_doesnt_exist_exception,
     user_inactive_exception,
 )
 from .models import User
 from .repository import AuthRepository
-from .schema import Token, TokenData, UserCreate
+from .schema import DeleteAccount, Token, TokenData, UserCreate, UserUpdate
 from .utils import (
     clear_auth_cookies,
     create_access_token,
@@ -88,17 +88,24 @@ class AuthService:
         if not user.is_active:
             raise user_inactive_exception
 
-        access_token = create_access_token(TokenData(sub=str(user.id)))
+        user_id = user.id
+
+        access_token = create_access_token(TokenData(sub=str(user_id)))
         refresh_token_raw = generate_refresh_token()
         refresh_token_hashed = hash_refresh_token(refresh_token_raw)
 
+        user_refresh_token = await self.repository.get_refresh_token(user_id)
+        if user_refresh_token:
+            await self.repository.revoke_refresh_token(user_id)
+
+        csrf_token = secrets.token_urlsafe(24)
+
         await self.repository.create_refresh_token(
-            user_id=user.id,
+            user_id=user_id,
             token_hash=refresh_token_hashed,
             expires_at=get_refresh_token_expiration(),
         )
 
-        csrf_token = secrets.token_urlsafe(24)
         set_auth_cookies(response, refresh_token_raw, csrf_token)
 
         return Token(
@@ -109,6 +116,7 @@ class AuthService:
 
     async def refresh_token(
         self,
+        user: User,
         request: Request,
         response: Response,
         x_csrf_token: str,
@@ -116,6 +124,7 @@ class AuthService:
         """Rotate refresh token and issue a new access token.
 
         Args:
+            user: The current authenticated user.
             request: Request used to read cookies.
             response: Response used to write rotated cookies.
             x_csrf_token: CSRF token provided in the request header.
@@ -126,12 +135,11 @@ class AuthService:
         Raises:
             invalid_refresh_or_csrf_token_exception: If CSRF/cookie validation fails.
             invalid_refresh_token_exception: If the refresh token is invalid or expired.
-            user_doesnt_exist_exception: If the refresh token's user no longer exists.
-            user_inactive_exception: If the user is inactive.
 
         """
         refresh_token_raw = request.cookies.get("refresh_token")
         csrf_token = request.cookies.get("csrf_token")
+        user_id = user.id
 
         if (
             not refresh_token_raw
@@ -141,37 +149,22 @@ class AuthService:
         ):
             raise invalid_refresh_or_csrf_token_exception
 
-        valid_tokens = await self.repository.get_valid_refresh_tokens(
-            datetime.now(tz=UTC)
-        )
+        user_refresh_token = await self.repository.get_refresh_token(user_id)
 
-        matching_token = next(
-            (
-                token_record
-                for token_record in valid_tokens
-                if verify_refresh_token(refresh_token_raw, token_record.token_hash)
-            ),
-            None,
-        )
-        if not matching_token:
+        if not user_refresh_token or not verify_refresh_token(
+            refresh_token_raw, user_refresh_token.token_hash
+        ):
             raise invalid_refresh_token_exception
 
-        user = await self.repository.get_user_by_id(matching_token.user_id)
-        if not user:
-            raise user_doesnt_exist_exception
-        if not user.is_active:
-            raise user_inactive_exception
+        await self.repository.revoke_refresh_token(user_id)
 
-        matching_token.revoked_at = datetime.now(tz=UTC)
-        await self.repository.commit()
-
-        access_token = create_access_token(TokenData(sub=str(user.id)))
+        access_token = create_access_token(TokenData(sub=str(user_id)))
         new_refresh_token_raw = generate_refresh_token()
         new_refresh_token_hashed = hash_refresh_token(new_refresh_token_raw)
         new_csrf_token = secrets.token_urlsafe(24)
 
         await self.repository.create_refresh_token(
-            user_id=user.id,
+            user_id=user_id,
             token_hash=new_refresh_token_hashed,
             expires_at=get_refresh_token_expiration(),
         )
@@ -186,6 +179,7 @@ class AuthService:
 
     async def logout(
         self,
+        user: User,
         request: Request,
         response: Response,
         x_csrf_token: str | None,
@@ -193,6 +187,7 @@ class AuthService:
         """Revoke the current refresh token and clear auth cookies.
 
         Args:
+            user: The current authenticated user.
             request: Request used to read auth cookies.
             response: Response used to clear cookies.
             x_csrf_token: CSRF token header value.
@@ -210,11 +205,62 @@ class AuthService:
             clear_auth_cookies(response)
             return
 
-        active_tokens = await self.repository.get_active_refresh_tokens()
-        for token_record in active_tokens:
-            if verify_refresh_token(refresh_token_raw, token_record.token_hash):
-                token_record.revoked_at = datetime.now(tz=UTC)
-                await self.repository.commit()
-                break
+        token_record = await self.repository.get_refresh_token(user.id)
+        if not token_record:
+            clear_auth_cookies(response)
+            return
+        if verify_refresh_token(refresh_token_raw, token_record.token_hash):
+            token_record.revoked_at = datetime.now(tz=UTC)
+            await self.repository.commit()
 
+        clear_auth_cookies(response)
+
+    async def update_account(self, user: User, data: UserUpdate) -> User:
+        """Update the authenticated user's email and/or password.
+
+        Args:
+            user: The currently authenticated user instance.
+            data: The update payload containing the current password
+                and optional new email / new password.
+
+        Returns:
+            The refreshed user instance after the update.
+
+        Raises:
+            incorrect_password_exception: If ``current_password`` is wrong.
+            email_already_registered_exception: If ``new_email`` is already taken.
+
+        """
+        if not verify_password(data.current_password, user.password_hash):
+            raise incorrect_password_exception
+
+        if data.new_email:
+            existing = await self.repository.get_user_by_email(data.new_email)
+            if existing:
+                raise email_already_registered_exception
+            user.email = data.new_email
+
+        if data.new_password:
+            user.password_hash = hash_password(data.new_password)
+
+        return await self.repository.update_user(user)
+
+    async def delete_account(
+        self, user: User, data: DeleteAccount, response: Response
+    ) -> None:
+        """Permanently delete the authenticated user's account.
+
+        Args:
+            user: The currently authenticated user instance.
+            data: The deletion confirmation payload containing the user's password.
+            response: Response used to clear auth cookies after deletion.
+
+        Raises:
+            incorrect_password_exception: If the provided password is wrong.
+
+        """
+        if not verify_password(data.password, user.password_hash):
+            raise incorrect_password_exception
+
+        await self.repository.delete_user(user)
         clear_auth_cookies(response)

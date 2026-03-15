@@ -1,5 +1,7 @@
 from http import HTTPStatus
+from uuid import UUID
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -124,13 +126,17 @@ class TestRefresh:
         )
         assert login_response.status_code == HTTPStatus.OK
 
+        access_token = login_response.json()["access_token"]
         initial_csrf = login_response.json()["csrf_token"]
         initial_refresh = client.cookies.get("refresh_token")
         assert initial_refresh is not None
 
         refresh_response = await client.post(
             "/auth/refresh",
-            headers={"X-CSRF-Token": initial_csrf},
+            headers={
+                "X-CSRF-Token": initial_csrf,
+                "Authorization": f"Bearer {access_token}",
+            },
         )
 
         assert refresh_response.status_code == HTTPStatus.OK
@@ -168,12 +174,15 @@ class TestRefresh:
             "password": "secure_password123",
         }
         await client.post("/auth/register", json=user_data)
-        await client.post(
+        login_response = await client.post(
             "/auth/token",
             data={"username": user_data["email"], "password": user_data["password"]},
         )
+        access_token = login_response.json()["access_token"]
 
-        response = await client.post("/auth/refresh")
+        response = await client.post(
+            "/auth/refresh", headers={"Authorization": f"Bearer {access_token}"}
+        )
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
@@ -186,14 +195,18 @@ class TestRefresh:
             "password": "secure_password123",
         }
         await client.post("/auth/register", json=user_data)
-        await client.post(
+        login_response = await client.post(
             "/auth/token",
             data={"username": user_data["email"], "password": user_data["password"]},
         )
+        access_token = login_response.json()["access_token"]
 
         response = await client.post(
             "/auth/refresh",
-            headers={"X-CSRF-Token": "invalid-csrf"},
+            headers={
+                "X-CSRF-Token": "invalid-csrf",
+                "Authorization": f"Bearer {access_token}",
+            },
         )
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -213,10 +226,14 @@ class TestRefresh:
             data={"username": user_data["email"], "password": user_data["password"]},
         )
         csrf = login_response.json()["csrf_token"]
+        access_token = login_response.json()["access_token"]
 
         client.cookies.pop("refresh_token", None)
 
-        response = await client.post("/auth/refresh", headers={"X-CSRF-Token": csrf})
+        response = await client.post(
+            "/auth/refresh",
+            headers={"X-CSRF-Token": csrf, "Authorization": f"Bearer {access_token}"},
+        )
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
         assert "Invalid refresh token or CSRF token" in response.json()["detail"]
@@ -236,9 +253,13 @@ class TestRefresh:
         )
 
         csrf = login_response.json()["csrf_token"]
+        access_token = login_response.json()["access_token"]
         client.cookies["refresh_token"] = "invalid-refresh-token"  # noqa: S105
 
-        response = await client.post("/auth/refresh", headers={"X-CSRF-Token": csrf})
+        response = await client.post(
+            "/auth/refresh",
+            headers={"X-CSRF-Token": csrf, "Authorization": f"Bearer {access_token}"},
+        )
 
         assert response.status_code == HTTPStatus.UNAUTHORIZED
         assert "Invalid or expired refresh token" in response.json()["detail"]
@@ -250,6 +271,24 @@ class TestRefresh:
 
 
 class TestLogout:
+    @pytest.fixture(autouse=True)
+    async def setup(self, client: AsyncClient) -> None:
+        user_data = {
+            "email": "logout_setup@example.com",
+            "password": "secure_password123",
+        }
+        register_response = await client.post("/auth/register", json=user_data)
+
+        self.user = register_response.json()
+
+        login_response = await client.post(
+            "/auth/token",
+            data={"username": user_data["email"], "password": user_data["password"]},
+        )
+        self.access_token = login_response.json()["access_token"]
+        self.csrf_token = login_response.json()["csrf_token"]
+        self.refresh_token = client.cookies["refresh_token"]
+
     async def test_logout_success_revokes_token_and_clears_cookies(
         self,
         client: AsyncClient,
@@ -268,18 +307,22 @@ class TestLogout:
         assert login_response.status_code == HTTPStatus.OK
 
         csrf_token = login_response.json()["csrf_token"]
+        access_token = login_response.json()["access_token"]
 
         logout_response = await client.post(
             "/auth/logout",
-            headers={"X-CSRF-Token": csrf_token},
+            headers={
+                "X-CSRF-Token": csrf_token,
+                "Authorization": f"Bearer {access_token}",
+            },
         )
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
         result = await test_session.execute(select(RefreshToken))
         tokens = result.scalars().all()
-        assert len(tokens) == 1
-        assert tokens[0].revoked_at is not None
+        assert len(tokens) == 2  # noqa: PLR2004
+        assert tokens[1].revoked_at is not None
 
         set_cookie_headers = logout_response.headers.get_list("set-cookie")
         assert any("refresh_token=" in header for header in set_cookie_headers)
@@ -290,23 +333,20 @@ class TestLogout:
         client: AsyncClient,
         test_session: AsyncSession,
     ) -> None:
-        user_data = {
-            "email": "logout_missing_csrf@example.com",
-            "password": "secure_password123",
-        }
-        await client.post("/auth/register", json=user_data)
-        await client.post(
-            "/auth/token",
-            data={"username": user_data["email"], "password": user_data["password"]},
-        )
+        client.cookies["refresh_token"] = "invalid-refresh-token"  # noqa: S105
 
-        logout_response = await client.post("/auth/logout")
+        logout_response = await client.post(
+            "/auth/logout", headers={"Authorization": f"Bearer {self.access_token}"}
+        )
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
-        result = await test_session.execute(select(RefreshToken))
+        statement = select(RefreshToken).where(
+            RefreshToken.user_id == UUID(self.user["id"])
+        )
+        result = await test_session.execute(statement)
         tokens = result.scalars().all()
-        assert len(tokens) == 1
+        assert len(tokens) == 1  # noqa: PLR2004
         assert tokens[0].revoked_at is None
 
     async def test_logout_with_invalid_csrf_token_does_not_revoke(
@@ -314,19 +354,12 @@ class TestLogout:
         client: AsyncClient,
         test_session: AsyncSession,
     ) -> None:
-        user_data = {
-            "email": "logout_invalid_csrf@example.com",
-            "password": "secure_password123",
-        }
-        await client.post("/auth/register", json=user_data)
-        await client.post(
-            "/auth/token",
-            data={"username": user_data["email"], "password": user_data["password"]},
-        )
-
         logout_response = await client.post(
             "/auth/logout",
-            headers={"X-CSRF-Token": "wrong_token"},
+            headers={
+                "X-CSRF-Token": "wrong_token",
+                "Authorization": f"Bearer {self.access_token}",
+            },
         )
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
@@ -340,7 +373,10 @@ class TestLogout:
         self,
         client: AsyncClient,
     ) -> None:
-        logout_response = await client.post("/auth/logout")
+        logout_response = await client.post(
+            "/auth/logout",
+            headers={"Authorization": f"Bearer {self.access_token}"},
+        )
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 

@@ -4,7 +4,9 @@ from fastapi import APIRouter, Header
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.status import (
+    HTTP_200_OK,
     HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
 )
 
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
@@ -12,7 +14,7 @@ from learn_fastapi.src.utils.dependencies import CurrentUserDep
 from .annotations import X_CSRF_TOKEN
 from .dependencies import AuthServiceDep, OAuth2PRFDep
 from .models import User
-from .schema import Token, UserCreate, UserResponse
+from .schema import DeleteAccount, Token, UserCreate, UserResponse, UserUpdate
 
 router = APIRouter()
 
@@ -32,7 +34,7 @@ async def register(service: AuthServiceDep, user_data: UserCreate) -> User:
     return await service.register(user_data)
 
 
-@router.post("/token", response_model=Token)
+@router.post("/token")
 async def login(
     service: AuthServiceDep,
     form_data: OAuth2PRFDep,
@@ -52,9 +54,10 @@ async def login(
     return await service.login(form_data, response)
 
 
-@router.post("/refresh", response_model=Token)
+@router.post("/refresh")
 async def refresh_token(
     service: AuthServiceDep,
+    current_user: CurrentUserDep,
     request: Request,
     response: Response,
     x_csrf_token: X_CSRF_TOKEN,
@@ -63,6 +66,7 @@ async def refresh_token(
 
     Args:
         service: Injected AuthService dependency.
+        current_user: The current authenticated user.
         request: The FastAPI Request object to read cookies from.
         response: The FastAPI Response object to set new cookies on.
         x_csrf_token: The CSRF token from the X-CSRF-Token header.
@@ -71,12 +75,13 @@ async def refresh_token(
         Token: A new access token and CSRF token if the refresh is successful.
 
     """
-    return await service.refresh_token(request, response, x_csrf_token)
+    return await service.refresh_token(current_user, request, response, x_csrf_token)
 
 
 @router.post("/logout", status_code=204)
 async def logout(
     service: AuthServiceDep,
+    current_user: CurrentUserDep,
     request: Request,
     response: Response,
     x_csrf_token: Annotated[str | None, Header(alias="X-CSRF-Token")] = None,
@@ -85,12 +90,13 @@ async def logout(
 
     Args:
         service: Injected AuthService dependency.
+        current_user: The current authenticated user.
         request: The FastAPI Request object to read cookies from.
         response: The FastAPI Response object to clear cookies on.
         x_csrf_token: The CSRF token from the X-CSRF-Token header.
 
     """
-    await service.logout(request, response, x_csrf_token)
+    await service.logout(current_user, request, response, x_csrf_token)
 
 
 @router.get("/me", response_model=UserResponse)
@@ -105,3 +111,43 @@ async def get_me(current_user: CurrentUserDep) -> User:
 
     """
     return current_user
+
+
+@router.patch("/me", response_model=UserResponse, status_code=HTTP_200_OK)
+async def update_me(
+    service: AuthServiceDep,
+    current_user: CurrentUserDep,
+    data: UserUpdate,
+) -> User:
+    """Update the authenticated user's email and/or password.
+
+    Args:
+        service: Injected AuthService dependency.
+        current_user: The current authenticated user.
+        data: The update payload
+            (current password required*; new email/password optional*).
+
+    Returns:
+        The updated User ORM instance.
+
+    """
+    return await service.update_account(current_user, data)
+
+
+@router.delete("/me", status_code=HTTP_204_NO_CONTENT)
+async def delete_me(
+    service: AuthServiceDep,
+    current_user: CurrentUserDep,
+    data: DeleteAccount,
+    response: Response,
+) -> None:
+    """Permanently delete the authenticated user's account.
+
+    Args:
+        service: Injected AuthService dependency.
+        current_user: The current authenticated user.
+        data: The deletion confirmation payload (current password required).
+        response: The FastAPI Response object used to clear auth cookies.
+
+    """
+    await service.delete_account(current_user, data, response)

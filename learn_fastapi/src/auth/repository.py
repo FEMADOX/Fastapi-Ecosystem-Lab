@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from learn_fastapi.src.database import AsyncSessionDep
@@ -15,6 +15,10 @@ class AuthRepository:
     def __init__(self, session: AsyncSessionDep) -> None:
         """Initialize the repository with an async database session."""
         self.session: AsyncSession = session
+
+    async def commit(self) -> None:
+        """Commit the current unit of work."""
+        await self.session.commit()
 
     async def get_user_by_id(self, user_id: UUID) -> User | None:
         """Fetch a user by primary key.
@@ -55,9 +59,29 @@ class AuthRepository:
         """
         user = User(email=email, password_hash=password_hash)
         self.session.add(user)
-        await self.session.commit()
+        await self.commit()
         await self.session.refresh(user)
         return user
+
+    async def get_refresh_token(self, user_id: UUID) -> RefreshToken | None:
+        """Fetch a refresh token.
+
+        Args:
+            user_id: The UUID of the user whose refresh token to retrieve.
+
+        Returns:
+            The matching refresh token or ``None`` if no valid token exists.
+
+        """
+        refresh_token = RefreshToken.__table__.c
+        statement = (
+            select(RefreshToken)
+            .where(refresh_token.user_id == user_id)
+            .where(refresh_token.revoked_at.is_(None))
+            .where(refresh_token.expires_at > datetime.now(tz=UTC))
+        )
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
 
     async def create_refresh_token(
         self,
@@ -82,41 +106,53 @@ class AuthRepository:
             expires_at=expires_at,
         )
         self.session.add(refresh_token)
-        await self.session.commit()
+        await self.commit()
         await self.session.refresh(refresh_token)
         return refresh_token
 
-    async def get_valid_refresh_tokens(self, now: datetime) -> list[RefreshToken]:
-        """Fetch all unrevoked and unexpired refresh tokens.
+    async def revoke_refresh_token(self, user_id: UUID) -> None:
+        """Revoke a refresh token record.
 
         Args:
-            now: Reference datetime for expiration comparison.
-
-        Returns:
-            A list of valid refresh token records.
+            user_id: Owner of the refresh token.
 
         """
         refresh_tokens = RefreshToken.__table__.c
-        result = await self.session.execute(
-            select(RefreshToken)
+        # user_refresh_tokens = await self.session.execute(
+        #     select(RefreshToken)
+        #     .where(refresh_tokens.user_id == user_id)
+        #     .where(refresh_tokens.revoked_at.is_(None))
+        # )
+        # if not user_refresh_tokens.scalars().first():
+        #     return
+        await self.session.execute(
+            update(RefreshToken)
+            .where(refresh_tokens.user_id == user_id)
             .where(refresh_tokens.revoked_at.is_(None))
-            .where(refresh_tokens.expires_at > now)
+            .values(revoked_at=datetime.now(tz=UTC))
         )
-        return list(result.scalars().all())
+        await self.commit()
 
-    async def get_active_refresh_tokens(self) -> list[RefreshToken]:
-        """Fetch all active refresh tokens.
+    async def update_user(self, user: User) -> User:
+        """Persist in-place changes to a user and return the refreshed instance.
+
+        Args:
+            user: The user instance with updated fields already applied.
 
         Returns:
-            A list of refresh tokens whose ``revoked_at`` is still ``None``.
+            The refreshed user instance after the commit.
 
         """
-        refresh_tokens = RefreshToken.__table__.c
-        result = await self.session.execute(
-            select(RefreshToken).where(refresh_tokens.revoked_at.is_(None))
-        )
-        return list(result.scalars().all())
+        await self.commit()
+        await self.session.refresh(user)
+        return user
 
-    async def commit(self) -> None:
-        """Commit the current unit of work."""
-        await self.session.commit()
+    async def delete_user(self, user: User) -> None:
+        """Delete a user and all related records via cascade.
+
+        Args:
+            user: The user instance to delete.
+
+        """
+        await self.session.delete(user)
+        await self.commit()

@@ -19,6 +19,10 @@ class ItemRepository:
         """Initialize the repository with an async database session."""
         self.session: AsyncSession = session
 
+    async def commit(self) -> None:
+        """Commit the current unit of work."""
+        await self.session.commit()
+
     async def get_all_items(self) -> list[Item]:
         """Fetch every Item row from the database.
 
@@ -99,7 +103,7 @@ class ItemRepository:
         """
         item = Item(**item_data.model_dump(), user_id=owner.id, user=owner)
         self.session.add(item)
-        await self.session.commit()
+        await self.commit()
         await self.session.refresh(item)
         return item
 
@@ -173,7 +177,7 @@ class ItemRepository:
             .where(condition)
             .values(**item_data.model_dump(exclude_unset=True))
         )
-        await self.session.commit()
+        await self.commit()
         await self.session.refresh(item)
         return item
 
@@ -196,7 +200,7 @@ class ItemRepository:
         await self.session.execute(
             update(Item).where(Item.id == item_id).values(image_url=image_url)
         )
-        await self.session.commit()
+        await self.commit()
         await self.session.refresh(item)
         return item
 
@@ -208,4 +212,4 @@ class ItemRepository:
 
         """
         await self.session.delete(item)
-        await self.session.commit()
+        await self.commit()
