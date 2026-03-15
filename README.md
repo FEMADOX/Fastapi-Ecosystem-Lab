@@ -46,7 +46,7 @@ cd learn_fastapi
 docker compose up -d
 ```
 
-## �📚 Resources
+## 📚 Resources
 
 ### Learning Guides (Spanish)
 
