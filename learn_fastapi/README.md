@@ -293,9 +293,21 @@ DATABASE_URL=sqlite+aiosqlite:///./learn_fastapi/test.db
 
 ## Testing
 
+To run the test normally use:
+
 ```bash
 pytest
 ```
+
+If you want to run the tests in parallel (faster):
+
+```bash
+pytest -n auto
+```
+
+Using the `-n auto` flag with pytest-xdist will automatically run tests in parallel across multiple CPU cores, significantly reducing test execution time for larger test suites.
+
+`xdist` plugin docs: <https://pytest-xdist.readthedocs.io/en/stable/index.html>
 
 Tests use an **in-memory SQLite database** (`sqlite+aiosqlite:///:memory:`) which:
 
@@ -304,6 +316,14 @@ Tests use an **in-memory SQLite database** (`sqlite+aiosqlite:///:memory:`) whic
 - Automatically creates/drops all tables from models
 - Doesn't use Alembic (migrations are only for production PostgreSQL)
 - Includes dedicated auth tests, items CRUD tests, and item authorization/ownership tests
+
+If you want to run tests against PostgreSQL instead, change the `TEST_DATABASE_URL` variable inside `tests/conftest.py` to point to your local PostgreSQL instance:
+
+```python
+TEST_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db"
+```
+
+And run the tests
 
 ## Docs
 
