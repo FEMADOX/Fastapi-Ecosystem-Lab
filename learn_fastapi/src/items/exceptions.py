@@ -1,6 +1,9 @@
 from starlette.exceptions import HTTPException
 from starlette.status import HTTP_404_NOT_FOUND
 
+image_not_found_exception = HTTPException(
+    status_code=HTTP_404_NOT_FOUND, detail="Image not found"
+)
 item_not_found_exception = HTTPException(
     status_code=HTTP_404_NOT_FOUND, detail="Item not found"
 )
@@ -11,7 +14,4 @@ item_not_found_or_not_belong_to_user_exception = HTTPException(
 items_not_found_for_user_exception = HTTPException(
     status_code=HTTP_404_NOT_FOUND,
     detail="No items found for the user",
-)
-image_not_found_exception = HTTPException(
-    status_code=HTTP_404_NOT_FOUND, detail="Image not found"
 )

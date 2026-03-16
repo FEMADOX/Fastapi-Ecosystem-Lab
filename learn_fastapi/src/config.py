@@ -7,8 +7,6 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from learn_fastapi.src.utils.hot_reload import _hot_reload_ws, _watch_files
-
 from .constants import (
     IMAGES_DIR,
     MEDIA_DIR,
@@ -17,6 +15,7 @@ from .constants import (
 )
 from .middleware import SwaggerHotReloadMiddleware
 from .utils.alembic import check_pending_migrations
+from .utils.hot_reload import _hot_reload_ws, _watch_files
 
 if TYPE_CHECKING:
     from fastapi import FastAPI

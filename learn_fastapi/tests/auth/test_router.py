@@ -399,7 +399,9 @@ class TestMe:
         }
         self.user_data = user_data
 
-        await client.post("/auth/register", json=user_data)
+        register_response = await client.post("/auth/register", json=user_data)
+
+        self.user: dict[str, str] = register_response.json()
 
         login_response = await client.post(
             "/auth/token",
@@ -409,7 +411,7 @@ class TestMe:
             },
         )
 
-        self.access_token = login_response.json()["access_token"]
+        self.access_token: str = login_response.json()["access_token"]
 
     async def test_get_me_authenticated(self, client: AsyncClient) -> None:
         response = await client.get(
@@ -441,7 +443,7 @@ class TestMe:
     ) -> None:
         old_user_data = self.user_data.copy()
         response = await client.patch(
-            "/auth/me",
+            f"/auth/{self.user['id']}",
             headers={"Authorization": f"Bearer {self.access_token}"},
             json={
                 "current_password": "secure_password123",
@@ -467,7 +469,7 @@ class TestMe:
     ) -> None:
         response = await client.request(
             "DELETE",
-            "/auth/me",
+            f"/auth/{self.user['id']}",
             headers={"Authorization": f"Bearer {self.access_token}"},
             json={"password": self.user_data["password"]},
         )

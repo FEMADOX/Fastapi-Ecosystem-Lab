@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Header
 from starlette.requests import Request
@@ -107,14 +108,15 @@ async def get_me(current_user: CurrentUserDep) -> User:
         current_user: The current authenticated user, injected by the dependency.
 
     Returns:
-        The current User ORM instance.
+        The current User Response instance.
 
     """
     return current_user
 
 
-@router.patch("/me", response_model=UserResponse, status_code=HTTP_200_OK)
+@router.patch("/{user_id}", response_model=UserResponse, status_code=HTTP_200_OK)
 async def update_me(
+    user_id: UUID,
     service: AuthServiceDep,
     current_user: CurrentUserDep,
     data: UserUpdate,
@@ -122,20 +124,22 @@ async def update_me(
     """Update the authenticated user's email and/or password.
 
     Args:
+        user_id: The user id of the user you want to update
         service: Injected AuthService dependency.
         current_user: The current authenticated user.
         data: The update payload
             (current password required*; new email/password optional*).
 
     Returns:
-        The updated User ORM instance.
+        The updated User Response instance.
 
     """
-    return await service.update_account(current_user, data)
+    return await service.update_account(user_id, current_user, data)
 
 
-@router.delete("/me", status_code=HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}", status_code=HTTP_204_NO_CONTENT)
 async def delete_me(
+    user_id: UUID,
     service: AuthServiceDep,
     current_user: CurrentUserDep,
     data: DeleteAccount,
@@ -144,10 +148,11 @@ async def delete_me(
     """Permanently delete the authenticated user's account.
 
     Args:
+        user_id: The user id of the user you want to update
         service: Injected AuthService dependency.
         current_user: The current authenticated user.
         data: The deletion confirmation payload (current password required).
         response: The FastAPI Response object used to clear auth cookies.
 
     """
-    await service.delete_account(current_user, data, response)
+    await service.delete_account(user_id, current_user, data, response)

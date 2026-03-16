@@ -1,11 +1,13 @@
 import secrets
 from datetime import UTC, datetime
+from uuid import UUID
 
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.requests import Request
 from starlette.responses import Response
 
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.utils.exceptions import user_doesnt_exist_exception
 
 from .config import auth_config
 from .exceptions import (
@@ -14,6 +16,7 @@ from .exceptions import (
     incorrect_password_exception,
     invalid_refresh_or_csrf_token_exception,
     invalid_refresh_token_exception,
+    only_user_owner_is_authorized,
     user_inactive_exception,
 )
 from .models import User
@@ -215,11 +218,52 @@ class AuthService:
 
         clear_auth_cookies(response)
 
-    async def update_account(self, user: User, data: UserUpdate) -> User:
+    async def verify_userid_and_auth_user(
+        self,
+        user_id: UUID,
+        authorized_user: User,
+        user_password: str,
+    ) -> None:
+        """Verify if the authorized user is the owner.
+
+        This method verify if the authorized user is the owner of the user_id account
+        if isn't the case this method will raise the corresponding exception.
+
+        Admin users will be ignore by this verification method.
+
+        Args:
+            user_id: The user id of the user you want to update
+            authorized_user: The currently authenticated user instance.
+            user_password: The user current password
+
+        Raises:
+            user_doesnt_exist_exception: If the user does not exist.
+            only_user_owner_is_authorized: If the authorized user is not the owner
+                of the accont
+            incorrect_password_exception: If `current_password` is wrong.
+
+        """
+        user_from_user_id = await self.repository.get_user_by_id(user_id)
+        if not user_from_user_id:
+            raise user_doesnt_exist_exception
+
+        if authorized_user.is_superuser:
+            return
+
+        if not user_from_user_id == authorized_user:
+            raise only_user_owner_is_authorized
+
+        if not verify_password(user_password, authorized_user.password_hash):
+            raise incorrect_password_exception
+
+    async def update_account(
+        self, user_id: UUID, authorized_user: User, data: UserUpdate
+    ) -> User:
         """Update the authenticated user's email and/or password.
 
         Args:
-            user: The currently authenticated user instance.
+            user_id: The user id of the user you want to update
+            authorized_user: The currently authenticated user instance.
             data: The update payload containing the current password
                 and optional new email / new password.
 
@@ -227,40 +271,39 @@ class AuthService:
             The refreshed user instance after the update.
 
         Raises:
-            incorrect_password_exception: If ``current_password`` is wrong.
             email_already_registered_exception: If ``new_email`` is already taken.
 
         """
-        if not verify_password(data.current_password, user.password_hash):
-            raise incorrect_password_exception
-
+        await self.verify_userid_and_auth_user(
+            user_id, authorized_user, data.current_password
+        )
         if data.new_email:
             existing = await self.repository.get_user_by_email(data.new_email)
             if existing:
                 raise email_already_registered_exception
-            user.email = data.new_email
+            authorized_user.email = data.new_email
 
         if data.new_password:
-            user.password_hash = hash_password(data.new_password)
+            authorized_user.password_hash = hash_password(data.new_password)
 
-        return await self.repository.update_user(user)
+        return await self.repository.update_user(authorized_user)
 
     async def delete_account(
-        self, user: User, data: DeleteAccount, response: Response
+        self,
+        user_id: UUID,
+        authorized_user: User,
+        data: DeleteAccount,
+        response: Response,
     ) -> None:
         """Permanently delete the authenticated user's account.
 
         Args:
-            user: The currently authenticated user instance.
+            user_id: The user id of the user you want to update
+            authorized_user: The currently authenticated user instance.
             data: The deletion confirmation payload containing the user's password.
             response: Response used to clear auth cookies after deletion.
 
-        Raises:
-            incorrect_password_exception: If the provided password is wrong.
-
         """
-        if not verify_password(data.password, user.password_hash):
-            raise incorrect_password_exception
-
-        await self.repository.delete_user(user)
+        await self.verify_userid_and_auth_user(user_id, authorized_user, data.password)
+        await self.repository.delete_user(authorized_user)
         clear_auth_cookies(response)
