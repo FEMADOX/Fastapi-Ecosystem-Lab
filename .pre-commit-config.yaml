@@ -17,8 +17,10 @@ repos:
     hooks:
       - id: ruff-check
         args: [ "--fix" ]
+        files: \.py$
         verbose: true
       - id: ruff-format
+        files: \.py$
         verbose: true
 
   - repo: local
@@ -28,5 +30,5 @@ repos:
         entry: uv run pytest
         language: system
         pass_filenames: false
-        always_run: true
+        files: \.py$
         verbose: true
