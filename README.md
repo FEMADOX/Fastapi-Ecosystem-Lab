@@ -8,8 +8,8 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 |:---------------------------------------------|-------------|
 | FastAPI — routing, dependencies, middleware  | ✅ Completed |
 | SQLAlchemy + PostgreSQL + Alembic            | ✅ Completed |
-| Streamlit — dashboards & data apps           | 📅 Planned  |
-| Authentication + Authorization — JWT, OAuth2 | 🔁 Process  |
+| Streamlit — dashboards & data apps           | 🔁 Process  |
+| Authentication + Authorization — JWT, OAuth2 | ✅ Completed |
 | Testing — pytest, httpx                      | ✅ Completed |
 | Docker & deployment                          | 🔁 Process  |
 

@@ -20,6 +20,9 @@ class ItemSchema(BaseModel):
         default=None,
         exclude=False,
     )
+    user_id: UUID = Field(
+        description="The id of the owner user",
+    )
     name: str = Field(description="The name of the item", min_length=3)
     description: str = Field(
         description="The description of the item",

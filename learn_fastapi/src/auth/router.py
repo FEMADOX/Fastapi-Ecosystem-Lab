@@ -45,7 +45,7 @@ async def login(
         response: The FastAPI Response object to set cookies on.
 
     Returns:
-        A dict containing the access token, token type, and user info.
+        Token: Returns the JWT access token.
 
     """
     return await service.login(form_data, response)
