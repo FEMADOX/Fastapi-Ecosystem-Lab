@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,37 +9,20 @@ from learn_fastapi.src.users.models import User
 
 
 class TestMe:
-    @pytest.fixture(autouse=True)
-    async def setup(self, client: AsyncClient) -> None:
-        user_data = {
-            "email": "test@example.com",
-            "password": "secure_password123",
-        }
-        self.user_data = user_data
-
-        register_response = await client.post("/auth/register", json=user_data)
-
-        self.user: dict[str, str] = register_response.json()
-
-        login_response = await client.post(
-            "/auth/token",
-            data={
-                "username": user_data["email"],
-                "password": user_data["password"],
-            },
-        )
-
-        self.access_token: str = login_response.json()["access_token"]
-
-    async def test_get_me_authenticated(self, client: AsyncClient) -> None:
+    async def test_get_me_authenticated(
+        self,
+        client: AsyncClient,
+        auth_headers: dict[str, str],
+        user_data: dict[str, str],
+    ) -> None:
         response = await client.get(
             "/users/me",
-            headers={"Authorization": f"Bearer {self.access_token}"},
+            headers=auth_headers,
         )
 
         assert response.status_code == HTTPStatus.OK
         data = response.json()
-        assert data["email"] == self.user_data["email"]
+        assert data["email"] == user_data["email"]
         assert data["is_active"] is True
 
     async def test_get_me_unauthenticated(self, client: AsyncClient) -> None:
@@ -58,12 +40,17 @@ class TestMe:
         assert "Invalid or expired token" in response.json()["detail"]
 
     async def test_update_me(
-        self, client: AsyncClient, test_session: AsyncSession
+        self,
+        client: AsyncClient,
+        test_session: AsyncSession,
+        auth_headers: dict[str, str],
+        registered_user: dict[str, str],
+        user_data: dict[str, str],
     ) -> None:
-        old_user_data = self.user_data.copy()
+        old_user_data = user_data.copy()
         response = await client.patch(
-            f"/users/{self.user['id']}",
-            headers={"Authorization": f"Bearer {self.access_token}"},
+            f"/users/{registered_user['id']}",
+            headers=auth_headers,
             json={
                 "current_password": "secure_password123",
                 "new_email": "newemailtest@example.com",
@@ -84,17 +71,22 @@ class TestMe:
         )
 
     async def test_delete_me(
-        self, client: AsyncClient, test_session: AsyncSession
+        self,
+        client: AsyncClient,
+        test_session: AsyncSession,
+        auth_headers: dict[str, str],
+        registered_user: dict[str, str],
+        user_data: dict[str, str],
     ) -> None:
         response = await client.request(
             "DELETE",
-            f"/users/{self.user['id']}",
-            headers={"Authorization": f"Bearer {self.access_token}"},
-            json={"password": self.user_data["password"]},
+            f"/users/{registered_user['id']}",
+            headers=auth_headers,
+            json={"password": user_data["password"]},
         )
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        statement = select(User).where(User.email == self.user_data["email"])
+        statement = select(User).where(User.email == user_data["email"])
         result = await test_session.execute(statement)
         deleted_user = result.scalar_one_or_none()
         assert deleted_user is None
