@@ -3,10 +3,10 @@ from uuid import UUID
 
 from sqlalchemy import and_, select, update
 
-from learn_fastapi.src.users.models import User
 from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.items.models import Item
 from learn_fastapi.src.items.schema import ItemUpdateSchema
+from learn_fastapi.src.users.models import User
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -85,9 +85,8 @@ class ItemRepository:
             The matching Item, or None if not found or not owned by the user.
 
         """
-        result = await self.session.execute(
-            select(Item).where(Item.id == item_id).where(Item.user_id == owner.id)
-        )
+        condition = and_(Item.id == item_id, Item.user_id == owner.id)
+        result = await self.session.execute(select(Item).where(condition))
         return result.scalar_one_or_none()
 
     async def create_item(self, item_data: ItemUpdateSchema, owner: User) -> Item:

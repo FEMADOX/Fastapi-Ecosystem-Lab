@@ -3,6 +3,10 @@ from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from learn_fastapi.src.users.models import User
 
 
 async def register_and_login(client: AsyncClient, email: str, password: str) -> str:
@@ -50,6 +54,23 @@ async def other_user_token(client: AsyncClient) -> str:
         email="other@example.com",
         password="other_password_123",  # noqa: S106
     )
+
+
+@pytest.fixture
+async def admin_token(client: AsyncClient, test_session: AsyncSession) -> str:
+    email = "admin@example.com"
+    token = await register_and_login(
+        client,
+        email=email,
+        password="admin_password_123",  # noqa: S106
+    )
+
+    result = await test_session.execute(select(User).where(User.email == email))
+    admin_user = result.scalar_one()
+    admin_user.is_superuser = True
+    await test_session.commit()
+
+    return token
 
 
 @pytest.fixture
@@ -175,3 +196,49 @@ class TestItemsAuthorization:
         )
         assert owner_response.status_code == HTTPStatus.OK
         assert owner_response.json()["detail"] == "Item deleted successfully"
+
+    async def test_put_allows_admin_for_non_owned_item(
+        self,
+        client: AsyncClient,
+        owner_item_id: UUID,
+        admin_token: str,
+    ) -> None:
+        response = await client.put(
+            f"/items/{owner_item_id}",
+            json={
+                "name": "Admin Updated",
+                "description": "Updated by admin",
+                "price": 50.0,
+                "tax": 5.0,
+            },
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["name"] == "Admin Updated"
+
+    async def test_patch_allows_admin_for_non_owned_item(
+        self,
+        client: AsyncClient,
+        owner_item_id: UUID,
+        admin_token: str,
+    ) -> None:
+        response = await client.patch(
+            f"/items/{owner_item_id}",
+            json={"name": "Admin Patched", "description": "Patched by admin"},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["description"] == "Patched by admin"
+
+    async def test_delete_allows_admin_for_non_owned_item(
+        self,
+        client: AsyncClient,
+        owner_item_id: UUID,
+        admin_token: str,
+    ) -> None:
+        response = await client.delete(
+            f"/items/{owner_item_id}",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["detail"] == "Item deleted successfully"

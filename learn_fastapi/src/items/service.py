@@ -170,7 +170,8 @@ class ItemService:
                 or does not belong to the given owner.
 
         """
-        item = await self.repository.update_item(item_id, item_data, owner)
+        owner_scope = None if owner and owner.is_superuser else owner
+        item = await self.repository.update_item(item_id, item_data, owner_scope)
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception
         return ItemSchema(**item.__dict__)
@@ -197,7 +198,8 @@ class ItemService:
                 or does not belong to the given owner.
 
         """
-        item = await self.repository.patch_item(item_id, item_data, owner)
+        owner_scope = None if owner and owner.is_superuser else owner
+        item = await self.repository.patch_item(item_id, item_data, owner_scope)
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception
         return ItemSchema(**item.__dict__)
@@ -214,7 +216,11 @@ class ItemService:
                 or does not belong to the owner.
 
         """
-        item = await self.repository.get_user_item(item_id, owner)
+        if owner.is_superuser:
+            item = await self.repository.get_item(item_id)
+        else:
+            item = await self.repository.get_user_item(item_id, owner)
+
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception
         await self.repository.delete_item(item)
