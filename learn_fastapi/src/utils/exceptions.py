@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from starlette.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
-    HTTP_422_UNPROCESSABLE_ENTITY,
+    HTTP_422_UNPROCESSABLE_CONTENT,
 )
 
 
@@ -62,6 +62,6 @@ def invalid_expire_token_exception() -> HTTPException:
 
 def image_filename_required_exception() -> HTTPException:
     return build_http_exception(
-        status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=HTTP_422_UNPROCESSABLE_CONTENT,
         detail="Image file must have a filename",
     )
