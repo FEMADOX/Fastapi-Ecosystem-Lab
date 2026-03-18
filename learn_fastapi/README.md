@@ -79,6 +79,8 @@ learn_fastapi/
 
 ## Topics Covered
 
+The API base path is `/api/v1` (configured in `src/main.py`), and the main topics covered include:
+
 ### `items` App
 
 | Concept                                      | Where                                                                            |
