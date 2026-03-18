@@ -7,7 +7,6 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 # Import all models so Alembic can detect them
-from learn_fastapi.src.auth.models import User  # noqa: F401
 from learn_fastapi.src.config import settings
 
 # Import the Base class and all models for autogenerate support

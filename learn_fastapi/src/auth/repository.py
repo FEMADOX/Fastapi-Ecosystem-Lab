@@ -5,8 +5,9 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.users.models import User
 
-from .models import RefreshToken, User
+from .models import RefreshToken
 
 
 class AuthRepository:
@@ -118,41 +119,10 @@ class AuthRepository:
 
         """
         refresh_tokens = RefreshToken.__table__.c
-        # user_refresh_tokens = await self.session.execute(
-        #     select(RefreshToken)
-        #     .where(refresh_tokens.user_id == user_id)
-        #     .where(refresh_tokens.revoked_at.is_(None))
-        # )
-        # if not user_refresh_tokens.scalars().first():
-        #     return
         await self.session.execute(
             update(RefreshToken)
             .where(refresh_tokens.user_id == user_id)
             .where(refresh_tokens.revoked_at.is_(None))
             .values(revoked_at=datetime.now(tz=UTC))
         )
-        await self.commit()
-
-    async def update_user(self, user: User) -> User:
-        """Persist in-place changes to a user and return the refreshed instance.
-
-        Args:
-            user: The user instance with updated fields already applied.
-
-        Returns:
-            The refreshed user instance after the commit.
-
-        """
-        await self.commit()
-        await self.session.refresh(user)
-        return user
-
-    async def delete_user(self, user: User) -> None:
-        """Delete a user and all related records via cascade.
-
-        Args:
-            user: The user instance to delete.
-
-        """
-        await self.session.delete(user)
         await self.commit()

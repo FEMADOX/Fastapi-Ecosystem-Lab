@@ -2,7 +2,6 @@ from uuid import UUID
 
 from fastapi import UploadFile
 
-from learn_fastapi.src.auth.models import User
 from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.items.exceptions import (
     item_not_found_exception,
@@ -11,6 +10,7 @@ from learn_fastapi.src.items.exceptions import (
 from learn_fastapi.src.items.repository import ItemRepository
 from learn_fastapi.src.items.schema import ItemSchema, ItemUpdateSchema
 from learn_fastapi.src.items.utils import save_image_file
+from learn_fastapi.src.users.models import User
 
 
 class ItemService:

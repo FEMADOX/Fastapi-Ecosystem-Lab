@@ -22,7 +22,7 @@ from .annotations import (
 if TYPE_CHECKING:
     from uuid import UUID
 
-    from learn_fastapi.src.auth.models import User
+    from learn_fastapi.src.users.models import User
 
 
 class Item(Base):

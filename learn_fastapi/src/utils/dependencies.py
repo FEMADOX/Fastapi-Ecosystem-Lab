@@ -4,16 +4,16 @@ from typing import Annotated
 from fastapi import Depends
 
 from learn_fastapi.src.auth.dependencies import OAuth2_Dep
-from learn_fastapi.src.auth.exceptions import (
-    invalid_expire_token_exception,
-    user_inactive_exception,
-)
-from learn_fastapi.src.auth.models import User
 from learn_fastapi.src.auth.repository import AuthRepository
 from learn_fastapi.src.auth.utils import verify_access_token
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.users.models import User
 
-from .exceptions import user_doesnt_exist_exception
+from .exceptions import (
+    invalid_expire_token_exception,
+    user_doesnt_exist_exception,
+    user_inactive_exception,
+)
 
 
 async def get_current_user(session: AsyncSessionDep, token: OAuth2_Dep) -> User:

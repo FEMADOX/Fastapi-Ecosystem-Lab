@@ -4,7 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from learn_fastapi.src.auth.models import User
+from learn_fastapi.src.users.models import User
 from learn_fastapi.src.auth.utils import hash_password
 from learn_fastapi.src.database import get_session
 from learn_fastapi.src.items.models import Item
