@@ -30,24 +30,29 @@ class UsersService:
         self,
         user_id: UUID,
         authorized_user: User,
-        user_password: str,
-    ) -> None:
+        user_password: str | None,
+    ) -> User:
         """Verify if the authorized user is the owner.
 
         This method verify if the authorized user is the owner of the user_id account
         if isn't the case this method will raise the corresponding exception.
 
-        Admin users will be ignore by this verification method.
+        Admin users will be ignored by this verification method.
 
         Args:
             user_id: The user id of the user you want to update
             authorized_user: The currently authenticated user instance.
             user_password: The user current password
 
+        Returns:
+            User: The user instance matching the user_id
+                if the authorized_user is the owner or
+                an admin user, otherwise ``None``.
+
         Raises:
             user_doesnt_exist_exception: If the user does not exist.
             only_user_owner_is_authorized: If the authorized user is not the owner
-                of the accont
+                of the account
             incorrect_password_exception: If `current_password` is wrong.
 
         """
@@ -56,13 +61,17 @@ class UsersService:
             raise user_doesnt_exist_exception
 
         if authorized_user.is_superuser:
-            return
+            return user_from_user_id
 
         if not user_from_user_id == authorized_user:
             raise only_user_owner_is_authorized
 
-        if not verify_password(user_password, authorized_user.password_hash):
+        if user_password and not verify_password(
+            user_password, authorized_user.password_hash
+        ):
             raise incorrect_password_exception
+
+        return user_from_user_id
 
     async def get_account(self, user_id: UUID, authorized_user: User) -> User:
         """Return account details for an allowed user.
@@ -74,19 +83,8 @@ class UsersService:
         Returns:
             The requested user when access is allowed.
 
-        Raises:
-            user_doesnt_exist_exception: If the requested user does not exist.
-            only_user_owner_is_authorized: If the requester is not allowed.
-
         """
-        user_from_user_id = await self.repository.get_user_by_id(user_id)
-        if not user_from_user_id:
-            raise user_doesnt_exist_exception
-
-        if authorized_user.is_superuser or user_from_user_id == authorized_user:
-            return user_from_user_id
-
-        raise only_user_owner_is_authorized
+        return await self.verify_userid_and_auth_user(user_id, authorized_user, None)
 
     async def update_account(
         self, user_id: UUID, authorized_user: User, data: UserUpdate

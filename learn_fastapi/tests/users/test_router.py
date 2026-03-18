@@ -39,6 +39,27 @@ class TestMe:
         assert response.status_code == HTTPStatus.UNAUTHORIZED
         assert "Invalid or expired token" in response.json()["detail"]
 
+
+class TestAccount:
+    async def test_get_account_authenticated_owner(
+        self,
+        client: AsyncClient,
+        auth_headers: dict[str, str],
+        registered_user: dict[str, str],
+        user_data: dict[str, str],
+    ) -> None:
+        response = await client.get(
+            f"/users/{registered_user['id']}",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        data = response.json()
+        assert data["id"] == registered_user["id"]
+        assert data["email"] == user_data["email"]
+        assert data["is_active"] is True
+        assert data["is_superuser"] is False
+
     async def test_update_me(
         self,
         client: AsyncClient,
