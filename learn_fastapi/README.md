@@ -16,17 +16,25 @@ learn_fastapi/
 |   ├── awesome-fastapi.md
 |   └── fastapi-new.md
 ├── src/
-│   ├── auth/           # Authentication module
-│   │   ├── annotations.py  # Annotated type aliases
+│   ├── auth/           # Authentication module (login, register, tokens only)
+│   │   ├── annotations.py  # Annotated type aliases for auth models
 │   │   ├── config.py       # Auth-specific settings (JWT, cookies)
 │   │   ├── dependencies.py # OAuth2 and auth service dependencies
 │   │   ├── exceptions.py   # Auth-specific exceptions
-│   │   ├── models.py       # SQLAlchemy models (User, RefreshToken)
-│   │   ├── repository.py   # Auth data access layer
-│   │   ├── router.py       # Auth endpoints (login, register, etc.)
-│   │   ├── schema.py       # Auth Pydantic models
+│   │   ├── models.py       # SQLAlchemy models (RefreshToken only)
+│   │   ├── repository.py   # Auth data access layer (refresh tokens)
+│   │   ├── router.py       # Auth endpoints (register, login, refresh, logout)
+│   │   ├── schema.py       # Auth Pydantic models (Token, UserCreate, etc.)
 │   │   ├── service.py      # Auth business logic layer
 │   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
+│   ├── users/          # User account management module
+│   │   ├── annotations.py  # Annotated type aliases for users models
+│   │   ├── dependencies.py # User service dependency wiring
+│   │   ├── models.py       # SQLAlchemy models (User)
+│   │   ├── repository.py   # User account data access layer
+│   │   ├── router.py       # User endpoints (profile, update, delete)
+│   │   ├── schema.py       # User Pydantic models (UserResponse, UserUpdate, etc.)
+│   │   └── service.py      # User account business logic layer
 │   ├── items/          # Items module (example domain)
 │   │   ├── annotations.py  # Annotated type aliases
 │   │   ├── dependencies.py # Item service dependency wiring
@@ -52,13 +60,16 @@ learn_fastapi/
 │   └── middleware.py   # Custom middleware (e.g. Swagger hot reload, CORS, etc.)
 ├── tests/
 |   ├── auth/
-|   |   ├── conftest.py     # Auth fixtures
-|   |   └── test_router.py  # Authentication tests
+|   |   ├── conftest.py     # Auth fixtures (seeded user)
+|   |   └── test_router.py  # Authentication endpoints tests
+|   ├── users/
+|   |   ├── conftest.py     # User fixtures (user_data, registered_user, access_token, auth_headers)
+|   |   └── test_router.py  # User account endpoints tests
 │   ├── items/
-│   |   ├── conftest.py     # TestClient fixture
-│   |   └── test_router.py  # Full CRUD test suite
-|   ├── test_items_authorization.py # Authorization tests for item ownership and auth
-|   ├── conftest.py     # Global test fixtures (e.g. TestClient)
+│   |   ├── conftest.py     # Item fixtures (test_user, test_client override, sample_item, seeded_item)
+│   |   └── test_router.py  # Item CRUD endpoints tests
+|   ├── test_items_authorization.py # Authorization tests for item ownership
+|   ├── conftest.py     # Global test fixtures (test_async_engine, test_session, client)
 |   └── test_main.py    # Basic smoke test for app startup
 ├── .env.example
 ├── alembic.ini
@@ -102,28 +113,30 @@ Base prefix: `/items`
 
 ### `auth` App
 
-- JWT authentication with refresh tokens: [`service.py`](src/auth/service.py), [`utils.py`](src/auth/utils.py)
-- Password hashing with Argon2: [`utils.py`](src/auth/utils.py)
-- OAuth2 Password Flow with Bearer tokens: [`dependencies.py`](src/auth/dependencies.py)
-- Repository + Service pattern: [`repository.py`](src/auth/repository.py), [`service.py`](src/auth/service.py)
-- CSRF token protection: [`service.py`](src/auth/service.py), [`router.py`](src/auth/router.py)
-- Refresh token rotation: [`service.py`](src/auth/service.py), [`models.py`](src/auth/models.py)
-- Secure cookie handling: [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)
-- Custom exceptions for auth errors: [`exceptions.py`](src/auth/exceptions.py)
-- User model with SQLAlchemy ORM: [`models.py`](src/auth/models.py)
-- Dependency injection for current user: [`dependencies.py`](src/utils/dependencies.py)
+| Concept                                      | Where                                                                          |
+|:---------------------------------------------|:-------------------------------------------------------------------------------|
+| JWT authentication with refresh tokens       | [`service.py`](src/auth/service.py), [`utils.py`](src/auth/utils.py)           |
+| Password hashing with Argon2                 | [`utils.py`](src/auth/utils.py)                                                |
+| OAuth2 Password Flow with Bearer tokens      | [`dependencies.py`](src/auth/dependencies.py)                                  |
+| Repository + Service pattern                 | [`repository.py`](src/auth/repository.py), [`service.py`](src/auth/service.py) |
+| CSRF token protection                        | [`service.py`](src/auth/service.py), [`router.py`](src/auth/router.py)         |
+| Refresh token rotation with expiration       | [`service.py`](src/auth/service.py), [`models.py`](src/auth/models.py)         |
+| Secure HTTP-only cookie handling             | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)             |
+| Custom exceptions for auth errors            | [`exceptions.py`](src/auth/exceptions.py)                                      |
+| RefreshToken model with SQLAlchemy ORM       | [`models.py`](src/auth/models.py)                                              |
+| Circular import avoidance with TYPE_CHECKING | [`models.py`](src/auth/models.py)                                              |
+| Integration tests for authentication flow    | [`tests/auth/test_router.py`](tests/auth/test_router.py)                       |
 
-#### `auth` Endpoints
+#### `auth` Endpoints (Authentication flows only)
 
 Base prefix: `/auth`
 
-| Method | Path        | Description                          | Body Params                                            | Headers/Cookies                                           |
-|:-------|:------------|:-------------------------------------|:-------------------------------------------------------|:----------------------------------------------------------|
-| `POST` | `/register` | Register a new user account          | `UserCreate` (email, password)                         | —                                                         |
-| `POST` | `/token`    | Login and receive JWT access token   | `OAuth2PasswordRequestForm` (username/email, password) | —                                                         |
-| `POST` | `/refresh`  | Refresh access token                 | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies)  |
-| `POST` | `/logout`   | Logout and revoke refresh token      | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies)  |
-| `GET`  | `/me`       | Get current user profile             | —                                                      | `Authorization: Bearer <token>`                           |
+| Method | Path        | Description                        | Body Params                                            | Headers/Cookies                                          |
+|:-------|:------------|:-----------------------------------|:-------------------------------------------------------|:---------------------------------------------------------|
+| `POST` | `/register` | Register a new user account        | `UserCreate` (email, password)                         | —                                                        |
+| `POST` | `/token`    | Login and receive JWT access token | `OAuth2PasswordRequestForm` (username/email, password) | —                                                        |
+| `POST` | `/refresh`  | Refresh and rotate access token    | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies) |
+| `POST` | `/logout`   | Logout and revoke refresh token    | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies) |
 
 **Authentication Flow:**
 
@@ -132,6 +145,30 @@ Base prefix: `/auth`
 3. **Use APIs** → Include `Authorization: Bearer <access_token>` header
 4. **Refresh** → Exchange expired access token for new one using refresh token
 5. **Logout** → Revoke refresh token and clear cookies
+
+### `users` App
+
+| Concept                                       | Where                                                                             |
+|:----------------------------------------------|:----------------------------------------------------------------------------------|
+| Repository + Service pattern                  | [`repository.py`](src/users/repository.py), [`service.py`](src/users/service.py)  |
+| User model with SQLAlchemy ORM                | [`models.py`](src/users/models.py)                                                |
+| Ownership-aware operations (user only access) | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)          |
+| Superuser override capability                 | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)          |
+| Account update (email + password with verify) | [`service.py`](src/users/service.py)                                              |
+| Account deletion with cascading cleanup       | [`service.py`](src/users/service.py), [`repository.py`](src/users/repository.py)  |
+| Test fixtures with dependency chains          | [`conftest.py`](tests/users/conftest.py)                                          |
+| Integration tests for account flows           | [`tests/users/test_router.py`](tests/users/test_router.py)                        |
+
+#### `users` Endpoints (Account management only)
+
+Base prefix: `/users`
+
+| Method   | Path         | Description                                | Body Params     | Headers                         |
+|:---------|:-------------|:-------------------------------------------|:----------------|:--------------------------------|
+| `GET`    | `/me`        | Get current user profile                   | —               | `Authorization: Bearer <token>` |
+| `GET`    | `/{user_id}` | Get specific user account (if owner/admin) | —               | `Authorization: Bearer <token>` |
+| `PATCH`  | `/{user_id}` | Update user email and/or password          | `UserUpdate`    | `Authorization: Bearer <token>` |
+| `DELETE` | `/{user_id}` | Delete user account permanently            | `DeleteAccount` | `Authorization: Bearer <token>` |
 
 ## Running
 
@@ -175,7 +212,7 @@ This project uses [Alembic](https://alembic.sqlalchemy.org/) for database schema
 
 ### How It Works
 
-- Models are defined in `src/auth/models.py` and `src/items/models.py`
+- Models are defined in `src/auth/models.py`, `src/users/models.py`, and `src/items/models.py`
 - Migrations are generated automatically from model changes
 - Migrations are checked when the FastAPI app starts (via `lifespan`)
 - Each migration is tracked with a revision ID in `alembic/versions/`
@@ -233,7 +270,8 @@ When the FastAPI app starts:
 3. If migrations are pending, a warning is logged (manual migration required)
 4. The app then starts normally
 
-**Note:** Migrations are **checked** at startup, but not automatically applied. You must run `alembic upgrade head` manually to apply pending migrations.
+**Note:** Migrations are **checked** at startup, but not automatically applied. You must run `alembic upgrade head`
+manually to apply pending migrations.
 
 ### Best Practices
 
@@ -252,8 +290,8 @@ The project includes several Alembic enhancements in `alembic/env.py`:
 - **Explicit model imports** — All SQLAlchemy models are imported directly to ensure Alembic detects schema changes
 - **Logger preservation** — `disable_existing_loggers=False` keeps uvicorn and app loggers active during migrations
 - **SQLite compatibility** — Automatic configuration for SQLite-specific features:
-  - `render_as_batch=True` — enables batch mode for better ALTER TABLE support
-  - `check_same_thread=False` — allows SQLite access from multiple threads
+    - `render_as_batch=True` — enables batch mode for better ALTER TABLE support
+    - `check_same_thread=False` — allows SQLite access from multiple threads
 - **Server default comparison** — Detects changes in column default values
 
 ### Environment Configuration
@@ -289,7 +327,8 @@ COOKIE_DOMAIN=             # empty for localhost, set domain in production
 DATABASE_URL=sqlite+aiosqlite:///./learn_fastapi/test.db
 ```
 
-**Note:** Alembic automatically reads `DATABASE_URL` from the environment. The `alembic.ini` file is only used as a fallback.
+**Note:** Alembic automatically reads `DATABASE_URL` from the environment. The `alembic.ini` file is only used as a
+fallback.
 
 ## Testing
 
@@ -305,7 +344,8 @@ If you want to run the tests in parallel (faster):
 pytest -n auto
 ```
 
-Using the `-n auto` flag with pytest-xdist will automatically run tests in parallel across multiple CPU cores, significantly reducing test execution time for larger test suites.
+Using the `-n auto` flag with pytest-xdist will automatically run tests in parallel across multiple CPU cores,
+significantly reducing test execution time for larger test suites.
 
 `xdist` plugin docs: <https://pytest-xdist.readthedocs.io/en/stable/index.html>
 
@@ -317,7 +357,8 @@ Tests use an **in-memory SQLite database** (`sqlite+aiosqlite:///:memory:`) whic
 - Doesn't use Alembic (migrations are only for production PostgreSQL)
 - Includes dedicated auth tests, items CRUD tests, and item authorization/ownership tests
 
-If you want to run tests against PostgreSQL instead, change the `TEST_DATABASE_URL` variable inside `tests/conftest.py` to point to your local PostgreSQL instance:
+If you want to run tests against PostgreSQL instead, change the `TEST_DATABASE_URL` variable inside `tests/conftest.py`
+to point to your local PostgreSQL instance:
 
 ```python
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db"
@@ -329,6 +370,8 @@ And run the tests
 
 ### Reference Materials
 
-- [`docs/fastapi-best-practices.md`](docs/fastapi-best-practices.md) — Opinionated best practices: project structure, async routes, Pydantic, dependency injection.
-- [`docs/awesome-fastapi.md`](docs/awesome-fastapi.md) — Curated list of FastAPI third-party extensions, resources, and open source projects.
+- [`docs/fastapi-best-practices.md`](docs/fastapi-best-practices.md) — Opinionated best practices: project structure,
+  async routes, Pydantic, dependency injection.
+- [`docs/awesome-fastapi.md`](docs/awesome-fastapi.md) — Curated list of FastAPI third-party extensions, resources, and
+  open source projects.
 - [`docs/fastapi-new.md`](docs/fastapi-new.md) — Additional FastAPI patterns and modern approaches.
