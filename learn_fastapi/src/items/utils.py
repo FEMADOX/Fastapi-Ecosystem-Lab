@@ -1,8 +1,9 @@
 import aiofiles
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 
 from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.items.schema import ImageSchema
+from learn_fastapi.src.utils.exceptions import image_filename_required_exception
 
 
 async def save_image_file(
@@ -18,11 +19,11 @@ async def save_image_file(
         ImageSchema with the saved file metadata.
 
     Raises:
-        HTTPException: If the image file does not have a filename.
+        image_filename_required_exception: If the image file does not have a filename.
 
     """
     if not image_file.filename:
-        raise HTTPException(status_code=422, detail="Image file must have a filename")
+        raise image_filename_required_exception()
 
     file_path = IMAGES_DIR / image_file.filename
 

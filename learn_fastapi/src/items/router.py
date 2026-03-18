@@ -36,7 +36,7 @@ async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
         service: Injected ItemService dependency.
 
     Returns:
-        A list of all ItemSchema objects (may be empty).
+        A list of all ItemSchema objects (maybe empty).
 
     """
     return await service.get_all_items()
@@ -185,7 +185,7 @@ async def get_image(filename: ImageFilename) -> FileResponse:
     """
     matches = await asyncio.to_thread(lambda: list(IMAGES_DIR.glob(f"{filename}.*")))
     if not matches:
-        raise image_not_found_exception
+        raise image_not_found_exception()
 
     file_path = matches[0]
     return FileResponse(

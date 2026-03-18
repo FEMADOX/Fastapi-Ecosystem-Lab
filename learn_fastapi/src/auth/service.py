@@ -56,7 +56,7 @@ class AuthService:
         """
         existing_user = await self.repository.get_user_by_email(user_data.email)
         if existing_user is not None:
-            raise email_already_registered_exception
+            raise email_already_registered_exception()
 
         return await self.repository.create_user(
             email=str(user_data.email),
@@ -85,10 +85,10 @@ class AuthService:
         user = await self.repository.get_user_by_email(form_data.username.lower())
 
         if not user or not verify_password(form_data.password, user.password_hash):
-            raise credentials_exception
+            raise credentials_exception()
 
         if not user.is_active:
-            raise user_inactive_exception
+            raise user_inactive_exception()
 
         user_id = user.id
 
@@ -149,14 +149,14 @@ class AuthService:
             or not x_csrf_token
             or x_csrf_token != csrf_token
         ):
-            raise invalid_refresh_or_csrf_token_exception
+            raise invalid_refresh_or_csrf_token_exception()
 
         user_refresh_token = await self.repository.get_refresh_token(user_id)
 
         if not user_refresh_token or not verify_refresh_token(
             refresh_token_raw, user_refresh_token.token_hash
         ):
-            raise invalid_refresh_token_exception
+            raise invalid_refresh_token_exception()
 
         await self.repository.revoke_refresh_token(user_id)
 

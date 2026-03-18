@@ -58,18 +58,18 @@ class UsersService:
         """
         user_from_user_id = await self.repository.get_user_by_id(user_id)
         if not user_from_user_id:
-            raise user_doesnt_exist_exception
+            raise user_doesnt_exist_exception()
 
         if authorized_user.is_superuser:
             return user_from_user_id
 
         if not user_from_user_id == authorized_user:
-            raise only_user_owner_is_authorized
+            raise only_user_owner_is_authorized()
 
         if user_password and not verify_password(
             user_password, authorized_user.password_hash
         ):
-            raise incorrect_password_exception
+            raise incorrect_password_exception()
 
         return user_from_user_id
 
@@ -110,7 +110,7 @@ class UsersService:
         if data.new_email:
             existing = await self.repository.get_user_by_email(data.new_email)
             if existing:
-                raise email_already_registered_exception
+                raise email_already_registered_exception()
             authorized_user.email = data.new_email
 
         if data.new_password:

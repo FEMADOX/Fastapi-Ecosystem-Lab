@@ -34,19 +34,19 @@ async def get_current_user(session: AsyncSessionDep, token: OAuth2_Dep) -> User:
     """
     user_id = verify_access_token(token)
     if not user_id:
-        raise invalid_expire_token_exception
+        raise invalid_expire_token_exception()
 
     try:
         user_id_uuid = uuid.UUID(str(user_id.sub))
     except (TypeError, ValueError) as exception:
-        raise invalid_expire_token_exception from exception
+        raise invalid_expire_token_exception() from exception
 
     repository = AuthRepository(session)
     user = await repository.get_user_by_id(user_id_uuid)
     if not user:
-        raise user_doesnt_exist_exception
+        raise user_doesnt_exist_exception()
     if not user.is_active:
-        raise user_inactive_exception
+        raise user_inactive_exception()
 
     return user
 

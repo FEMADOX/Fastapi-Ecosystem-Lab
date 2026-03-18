@@ -45,7 +45,7 @@ class ItemService:
         """
         item = await self.repository.get_item(id_param)
         if item is None:
-            raise item_not_found_exception
+            raise item_not_found_exception()
         return ItemSchema(**item.__dict__)
 
     async def get_user_items(self, owner: User) -> list[ItemSchema]:
@@ -63,7 +63,7 @@ class ItemService:
         """
         items = await self.repository.get_user_items(owner)
         if not items:
-            raise item_not_found_or_not_belong_to_user_exception
+            raise item_not_found_or_not_belong_to_user_exception()
         return [ItemSchema(**item.__dict__) for item in items]
 
     async def get_user_item(self, item_id: UUID, owner: User) -> ItemSchema:
@@ -83,7 +83,7 @@ class ItemService:
         """
         item = await self.repository.get_user_item(item_id, owner)
         if item is None:
-            raise item_not_found_or_not_belong_to_user_exception
+            raise item_not_found_or_not_belong_to_user_exception()
         return ItemSchema(**item.__dict__)
 
     async def create_item(self, item_data: ItemUpdateSchema, owner: User) -> ItemSchema:
@@ -135,7 +135,7 @@ class ItemService:
         """
         existing = await self.repository.get_item_by_name(name)
         if existing is not None:
-            raise item_not_found_exception
+            raise item_not_found_exception()
 
         item_data = ItemUpdateSchema(
             name=name, description=description, price=price, tax=tax
@@ -173,7 +173,7 @@ class ItemService:
         owner_scope = None if owner and owner.is_superuser else owner
         item = await self.repository.update_item(item_id, item_data, owner_scope)
         if item is None:
-            raise item_not_found_or_not_belong_to_user_exception
+            raise item_not_found_or_not_belong_to_user_exception()
         return ItemSchema(**item.__dict__)
 
     async def patch_item(
@@ -201,7 +201,7 @@ class ItemService:
         owner_scope = None if owner and owner.is_superuser else owner
         item = await self.repository.patch_item(item_id, item_data, owner_scope)
         if item is None:
-            raise item_not_found_or_not_belong_to_user_exception
+            raise item_not_found_or_not_belong_to_user_exception()
         return ItemSchema(**item.__dict__)
 
     async def delete_item(self, item_id: UUID, owner: User) -> None:
@@ -222,7 +222,7 @@ class ItemService:
             item = await self.repository.get_user_item(item_id, owner)
 
         if item is None:
-            raise item_not_found_or_not_belong_to_user_exception
+            raise item_not_found_or_not_belong_to_user_exception()
         await self.repository.delete_item(item)
 
     async def update_item_image(
@@ -245,5 +245,5 @@ class ItemService:
         image = await save_image_file(image_file, caption)
         item = await self.repository.update_item_image(item_id, image.url)
         if item is None:
-            raise item_not_found_exception
+            raise item_not_found_exception()
         return ItemSchema(**item.__dict__)
