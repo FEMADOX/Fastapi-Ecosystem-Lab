@@ -1,9 +1,15 @@
 """HTTP client wrapper for the learn_fastapi backend API."""
 
+import os
+
 import httpx
 import streamlit as st
 
-API_BASE = "http://localhost:8000/api/v1"
+# Allow overriding the backend URL via an environment variable so the
+# Streamlit app can be deployed to Streamlit Community Cloud and still
+# reach a separately-hosted FastAPI backend.
+# Local default: http://localhost:8000/api/v1
+API_BASE = os.environ.get("FASTAPI_BASE_URL", "http://localhost:8000/api/v1")
 
 
 def _auth_headers() -> dict[str, str]:

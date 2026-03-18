@@ -1,0 +1,79 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Grant GITHUB_TOKEN the permissions needed to publish to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one concurrent deployment; cancel in-progress runs when a new one is triggered
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ── Build ──────────────────────────────────────────────────────────────────
+  build:
+    name: Build static site
+    runs-on: ubuntu-latest
+
+    env:
+      # Minimal settings needed to import the FastAPI app without a real database
+      SECRET_KEY: "github-pages-docs-generation-key"
+      DATABASE_URL: "sqlite+aiosqlite:///./test.db"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14"
+          enable-cache: true
+
+      - name: Install project dependencies
+        run: uv sync --no-dev --locked
+
+      - name: Generate OpenAPI spec from FastAPI app
+        run: |
+          uv run python - <<'PYEOF'
+          import json
+          from learn_fastapi.src.main import app
+
+          spec = app.openapi()
+          with open("docs/openapi.json", "w", encoding="utf-8") as fh:
+              json.dump(spec, fh, indent=2)
+
+          print(f"✅  OpenAPI spec written to docs/openapi.json  "
+                f"({len(spec.get('paths', {}))} paths)")
+          PYEOF
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs
+
+  # ── Deploy ─────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

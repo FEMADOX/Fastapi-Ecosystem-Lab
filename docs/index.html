@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FastAPI Ecosystem Lab</title>
+  <meta name="description" content="A comprehensive learning resource for building modern Python APIs with FastAPI, SQLAlchemy, JWT authentication, and a Streamlit frontend." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: {
+              950: '#020617',
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .hero-bg {
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.25) 0%, transparent 60%),
+                  linear-gradient(135deg, #020617 0%, #0f172a 100%);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #60a5fa 0%, #818cf8 50%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .card-hover {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.2);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+    }
+    pre, code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .endpoint-row:hover {
+      background-color: rgba(99, 102, 241, 0.07);
+    }
+    .method-get    { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .method-post   { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .method-put    { background: rgba(234, 179, 8, 0.15);  color: #facc15; }
+    .method-patch  { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+    .method-delete { background: rgba(239, 68, 68, 0.15);  color: #f87171; }
+  </style>
+</head>
+<body class="bg-slate-950 text-gray-100 font-sans antialiased">
+
+  <!-- ─── Navigation ─────────────────────────────────────────────────────── -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="#" class="flex items-center gap-2 font-bold text-xl hover:opacity-80 transition-opacity">
+          <span class="text-2xl">⚡</span>
+          <span>FastAPI Ecosystem Lab</span>
+        </a>
+        <div class="hidden md:flex items-center gap-6 text-sm font-medium">
+          <a href="#features"   class="text-gray-400 hover:text-white transition-colors">Features</a>
+          <a href="#api"        class="text-gray-400 hover:text-white transition-colors">API</a>
+          <a href="#tech-stack" class="text-gray-400 hover:text-white transition-colors">Stack</a>
+          <a href="#quickstart" class="text-gray-400 hover:text-white transition-colors">Quick Start</a>
+          <a href="api.html"    class="text-gray-400 hover:text-white transition-colors">API Docs</a>
+          <a href="https://github.com/FEMADOX/Fastapi-Ecosystem-Lab" target="_blank"
+             class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg transition-colors">
+            GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ─── Hero ───────────────────────────────────────────────────────────── -->
+  <section class="hero-bg min-h-screen flex items-center justify-center pt-16 px-4">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-6">
+        <span>🚀</span> FastAPI · SQLAlchemy · Streamlit · PostgreSQL
+      </div>
+      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
+        <span class="gradient-text">FastAPI</span><br />
+        Ecosystem Lab
+      </h1>
+      <p class="text-xl sm:text-2xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+        A production-ready learning resource for building modern Python web APIs
+        with JWT authentication, async SQLAlchemy, and an interactive Streamlit frontend.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="api.html"
+           class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors text-center">
+          Explore API Docs →
+        </a>
+        <a href="https://github.com/FEMADOX/Fastapi-Ecosystem-Lab" target="_blank"
+           class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white font-semibold px-8 py-3 rounded-xl transition-colors border border-slate-700 text-center">
+          View on GitHub
+        </a>
+      </div>
+      <div class="mt-12 flex flex-wrap justify-center gap-3">
+        <span class="badge bg-green-500/10 text-green-400 border border-green-500/20">Python 3.14+</span>
+        <span class="badge bg-blue-500/10 text-blue-400 border border-blue-500/20">FastAPI 0.135+</span>
+        <span class="badge bg-purple-500/10 text-purple-400 border border-purple-500/20">Streamlit 1.55+</span>
+        <span class="badge bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">SQLAlchemy 2.0+</span>
+        <span class="badge bg-pink-500/10 text-pink-400 border border-pink-500/20">JWT Auth</span>
+        <span class="badge bg-orange-500/10 text-orange-400 border border-orange-500/20">Pydantic v2</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Features ──────────────────────────────────────────────────────── -->
+  <section id="features" class="py-24 px-4 bg-slate-900">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">What's inside</h2>
+        <p class="text-gray-400 text-lg max-w-xl mx-auto">
+          A full-stack Python application covering all the essentials for modern web development.
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- FastAPI Backend -->
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-2xl p-6">
+          <div class="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center text-2xl mb-4">🚀</div>
+          <h3 class="text-xl font-bold mb-2">FastAPI Backend</h3>
+          <p class="text-gray-400 text-sm mb-4 leading-relaxed">
+            REST API with automatic OpenAPI docs, async SQLAlchemy ORM, Alembic migrations, Pydantic v2 validation,
+            and a clean Repository + Service architecture.
+          </p>
+          <ul class="space-y-1.5 text-sm text-gray-300">
+            <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Items CRUD with image upload</li>
+            <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Users management</li>
+            <li class="flex items-center gap-2"><span class="text-green-400">✓</span> PostgreSQL &amp; SQLite support</li>
+            <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 1,400+ lines of pytest coverage</li>
+          </ul>
+        </div>
+
+        <!-- Streamlit Frontend -->
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-2xl p-6">
+          <div class="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center text-2xl mb-4">🎨</div>
+          <h3 class="text-xl font-bold mb-2">Streamlit Frontend</h3>
+          <p class="text-gray-400 text-sm mb-4 leading-relaxed">
+            A full-featured web UI built with Streamlit that consumes the FastAPI backend,
+            demonstrating real-world integration patterns.
+          </p>
+          <ul class="space-y-1.5 text-sm text-gray-300">
+            <li class="flex items-center gap-2"><span class="text-red-400">✓</span> Browse &amp; manage items</li>
+            <li class="flex items-center gap-2"><span class="text-red-400">✓</span> Login / register forms</li>
+            <li class="flex items-center gap-2"><span class="text-red-400">✓</span> Account settings page</li>
+            <li class="flex items-center gap-2"><span class="text-red-400">✓</span> Image upload support</li>
+          </ul>
+        </div>
+
+        <!-- Authentication -->
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-2xl p-6">
+          <div class="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-2xl mb-4">🔐</div>
+          <h3 class="text-xl font-bold mb-2">Authentication</h3>
+          <p class="text-gray-400 text-sm mb-4 leading-relaxed">
+            Production-grade security using JWT access tokens, refresh token rotation,
+            HTTP-only cookies, and CSRF protection.
+          </p>
+          <ul class="space-y-1.5 text-sm text-gray-300">
+            <li class="flex items-center gap-2"><span class="text-indigo-400">✓</span> JWT access &amp; refresh tokens</li>
+            <li class="flex items-center gap-2"><span class="text-indigo-400">✓</span> Argon2 password hashing</li>
+            <li class="flex items-center gap-2"><span class="text-indigo-400">✓</span> OAuth2 password flow</li>
+            <li class="flex items-center gap-2"><span class="text-indigo-400">✓</span> CSRF token protection</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── API Overview ──────────────────────────────────────────────────── -->
+  <section id="api" class="py-24 px-4 bg-slate-950">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">API Overview</h2>
+        <p class="text-gray-400 text-lg">
+          All endpoints are prefixed with <code class="bg-slate-800 px-2 py-0.5 rounded text-indigo-300">/api/v1</code>.
+          View the full interactive docs below.
+        </p>
+      </div>
+
+      <!-- Auth endpoints -->
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-300 mb-3 flex items-center gap-2">
+          <span class="w-1.5 h-5 bg-indigo-500 rounded-full inline-block"></span> Auth
+        </h3>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden text-sm">
+          <table class="w-full">
+            <thead class="border-b border-slate-800">
+              <tr class="text-left text-gray-500 text-xs uppercase tracking-wider">
+                <th class="px-4 py-3 w-24">Method</th>
+                <th class="px-4 py-3">Path</th>
+                <th class="px-4 py-3 hidden sm:table-cell">Description</th>
+                <th class="px-4 py-3 hidden md:table-cell text-center">Auth</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-post">POST</span></td><td class="px-4 py-3 font-mono text-gray-300">/auth/register</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Register a new account</td><td class="px-4 py-3 text-center hidden md:table-cell text-gray-500">—</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-post">POST</span></td><td class="px-4 py-3 font-mono text-gray-300">/auth/token</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Login · get access + refresh token</td><td class="px-4 py-3 text-center hidden md:table-cell text-gray-500">—</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-post">POST</span></td><td class="px-4 py-3 font-mono text-gray-300">/auth/refresh</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Refresh access token</td><td class="px-4 py-3 text-center hidden md:table-cell">🍪</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-post">POST</span></td><td class="px-4 py-3 font-mono text-gray-300">/auth/logout</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Revoke refresh token &amp; logout</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Items endpoints -->
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-300 mb-3 flex items-center gap-2">
+          <span class="w-1.5 h-5 bg-green-500 rounded-full inline-block"></span> Items
+        </h3>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden text-sm">
+          <table class="w-full">
+            <thead class="border-b border-slate-800">
+              <tr class="text-left text-gray-500 text-xs uppercase tracking-wider">
+                <th class="px-4 py-3 w-24">Method</th>
+                <th class="px-4 py-3">Path</th>
+                <th class="px-4 py-3 hidden sm:table-cell">Description</th>
+                <th class="px-4 py-3 hidden md:table-cell text-center">Auth</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-get">GET</span></td><td class="px-4 py-3 font-mono text-gray-300">/items/</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">List all items</td><td class="px-4 py-3 text-center hidden md:table-cell text-gray-500">—</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-get">GET</span></td><td class="px-4 py-3 font-mono text-gray-300">/items/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Get a single item</td><td class="px-4 py-3 text-center hidden md:table-cell text-gray-500">—</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-post">POST</span></td><td class="px-4 py-3 font-mono text-gray-300">/items/</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Create a new item</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-put">PUT</span></td><td class="px-4 py-3 font-mono text-gray-300">/items/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Full update of an item</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-patch">PATCH</span></td><td class="px-4 py-3 font-mono text-gray-300">/items/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Partial update of an item</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-delete">DELETE</span></td><td class="px-4 py-3 font-mono text-gray-300">/items/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Delete an item</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-post">POST</span></td><td class="px-4 py-3 font-mono text-gray-300">/items/image/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Upload item image</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Users endpoints -->
+      <div class="mb-10">
+        <h3 class="text-lg font-semibold text-gray-300 mb-3 flex items-center gap-2">
+          <span class="w-1.5 h-5 bg-yellow-500 rounded-full inline-block"></span> Users
+        </h3>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden text-sm">
+          <table class="w-full">
+            <thead class="border-b border-slate-800">
+              <tr class="text-left text-gray-500 text-xs uppercase tracking-wider">
+                <th class="px-4 py-3 w-24">Method</th>
+                <th class="px-4 py-3">Path</th>
+                <th class="px-4 py-3 hidden sm:table-cell">Description</th>
+                <th class="px-4 py-3 hidden md:table-cell text-center">Auth</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-get">GET</span></td><td class="px-4 py-3 font-mono text-gray-300">/users/me</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Get current user profile</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-get">GET</span></td><td class="px-4 py-3 font-mono text-gray-300">/users/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Get a specific user</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-patch">PATCH</span></td><td class="px-4 py-3 font-mono text-gray-300">/users/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Update email or password</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+              <tr class="endpoint-row"><td class="px-4 py-3"><span class="badge method-delete">DELETE</span></td><td class="px-4 py-3 font-mono text-gray-300">/users/{id}</td><td class="px-4 py-3 text-gray-400 hidden sm:table-cell">Delete user account</td><td class="px-4 py-3 text-center hidden md:table-cell">🔒</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <a href="api.html"
+           class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors">
+          Open Interactive API Docs →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Tech Stack ─────────────────────────────────────────────────────── -->
+  <section id="tech-stack" class="py-24 px-4 bg-slate-900">
+    <div class="max-w-5xl mx-auto text-center">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4">Tech Stack</h2>
+      <p class="text-gray-400 text-lg mb-12">
+        Built with the best tools from the Python ecosystem.
+      </p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">⚡</span>
+          <span class="font-semibold text-sm">FastAPI</span>
+          <span class="text-xs text-gray-500">0.135+</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">🔴</span>
+          <span class="font-semibold text-sm">Streamlit</span>
+          <span class="text-xs text-gray-500">1.55+</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">🐘</span>
+          <span class="font-semibold text-sm">PostgreSQL</span>
+          <span class="text-xs text-gray-500">via asyncpg</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">🧩</span>
+          <span class="font-semibold text-sm">SQLAlchemy</span>
+          <span class="text-xs text-gray-500">2.0+ async</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">🔑</span>
+          <span class="font-semibold text-sm">JWT + Argon2</span>
+          <span class="text-xs text-gray-500">Auth &amp; Security</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">🧪</span>
+          <span class="font-semibold text-sm">pytest</span>
+          <span class="text-xs text-gray-500">+ httpx</span>
+        </div>
+      </div>
+      <div class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">🐍</span>
+          <span class="font-semibold text-sm">Python 3.14+</span>
+          <span class="text-xs text-gray-500">via uv</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">🔄</span>
+          <span class="font-semibold text-sm">Alembic</span>
+          <span class="text-xs text-gray-500">Migrations</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">✅</span>
+          <span class="font-semibold text-sm">Pydantic v2</span>
+          <span class="text-xs text-gray-500">Validation</span>
+        </div>
+        <div class="card-hover bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col items-center gap-2">
+          <span class="text-3xl">⚙️</span>
+          <span class="font-semibold text-sm">Docker Compose</span>
+          <span class="text-xs text-gray-500">Local DB</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Quick Start ────────────────────────────────────────────────────── -->
+  <section id="quickstart" class="py-24 px-4 bg-slate-950">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Quick Start</h2>
+        <p class="text-gray-400 text-lg">Get the full stack running locally in minutes.</p>
+      </div>
+      <div class="space-y-6">
+
+        <!-- Step 1 -->
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold">1</div>
+          <div class="flex-1">
+            <p class="font-semibold mb-2">Clone the repository &amp; install dependencies</p>
+            <pre class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-green-300 overflow-x-auto"><code>git clone https://github.com/FEMADOX/Fastapi-Ecosystem-Lab.git
+cd Fastapi-Ecosystem-Lab
+uv sync</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold">2</div>
+          <div class="flex-1">
+            <p class="font-semibold mb-2">Configure environment variables</p>
+            <pre class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-green-300 overflow-x-auto"><code>cp learn_fastapi/.env.example learn_fastapi/.env
+# Edit learn_fastapi/.env with your settings</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold">3</div>
+          <div class="flex-1">
+            <p class="font-semibold mb-2">Start PostgreSQL with Docker</p>
+            <pre class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-green-300 overflow-x-auto"><code>cd learn_fastapi
+docker compose up -d</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold">4</div>
+          <div class="flex-1">
+            <p class="font-semibold mb-2">Run database migrations</p>
+            <pre class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-green-300 overflow-x-auto"><code>cd learn_fastapi
+uv run alembic upgrade head</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold">5</div>
+          <div class="flex-1">
+            <p class="font-semibold mb-2">Start the FastAPI server</p>
+            <pre class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-green-300 overflow-x-auto"><code># From the repository root:
+uv run run-api-server
+# API available at http://localhost:8000/api/v1
+# Interactive docs at http://localhost:8000/api/docs</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm font-bold">6</div>
+          <div class="flex-1">
+            <p class="font-semibold mb-2">Launch the Streamlit frontend</p>
+            <pre class="bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-green-300 overflow-x-auto"><code># In a second terminal, from the repository root:
+uv run streamlit run learn_streamlit/src/app.py
+# UI available at http://localhost:8501</code></pre>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Streamlit Cloud note -->
+      <div class="mt-10 bg-red-500/10 border border-red-500/20 rounded-xl p-6">
+        <h4 class="font-semibold text-red-300 mb-2">☁️ Deploy Streamlit to the cloud</h4>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          The Streamlit frontend can be hosted for free on
+          <a href="https://streamlit.io/cloud" target="_blank" class="text-red-300 hover:text-red-200 underline">Streamlit Community Cloud</a>.
+          Point it at <code class="bg-slate-800 px-1 rounded">learn_streamlit/src/app.py</code> in this repository,
+          and set the FastAPI backend URL via the <code class="bg-slate-800 px-1 rounded">FASTAPI_BASE_URL</code> environment variable
+          in Streamlit Cloud's secrets manager.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ────────────────────────────────────────────────────────── -->
+  <footer class="bg-slate-900 border-t border-slate-800 py-10 px-4">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">⚡</span>
+        <span>FastAPI Ecosystem Lab — MIT License</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="api.html" class="hover:text-gray-300 transition-colors">API Docs</a>
+        <a href="https://github.com/FEMADOX/Fastapi-Ecosystem-Lab" target="_blank" class="hover:text-gray-300 transition-colors">GitHub</a>
+        <a href="https://fastapi.tiangolo.com" target="_blank" class="hover:text-gray-300 transition-colors">FastAPI</a>
+        <a href="https://streamlit.io" target="_blank" class="hover:text-gray-300 transition-colors">Streamlit</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
