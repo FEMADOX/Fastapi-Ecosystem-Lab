@@ -3,6 +3,7 @@
 import streamlit as st
 
 from learn_streamlit.src.api_client import (
+    API_ERROR_STATE_KEY,
     API_BASE,
     create_item,
     create_item_with_image,
@@ -71,8 +72,13 @@ def show_item_list() -> None:
         st.rerun()
 
     items = get_items()
+    api_error = st.session_state.get(API_ERROR_STATE_KEY)
+    if api_error:
+        st.warning(api_error)
+
     if not items:
-        st.info("No items yet.")
+        if not api_error:
+            st.info("No items yet.")
         return
 
     display_items(items)

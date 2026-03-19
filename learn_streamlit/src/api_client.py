@@ -1,9 +1,13 @@
 """HTTP client wrapper for the learn_fastapi backend API."""
 
+import os
+
 import httpx
 import streamlit as st
 
-API_BASE = "http://localhost:8000/api/v1"
+API_BASE = os.getenv("LEARN_FASTAPI_API_BASE", "http://localhost:8000/api/v1")
+API_ERROR_STATE_KEY = "api_client_error"
+HTTP_TIMEOUT_SECONDS = 10.0
 
 
 def _auth_headers() -> dict[str, str]:
@@ -23,12 +27,36 @@ def _extract_error(response: httpx.Response) -> str:
     detail = body.get("detail", "")
     if isinstance(detail, list):
         return "; ".join(
-            f"{'.'.join(str(loc) for loc in exceptions.get('loc', []))}: {
-                exceptions.get('msg', '')
-            }"
+            f"{'.'.join(str(loc) for loc in exceptions.get('loc', []))}: {exceptions.get('msg', '')}"
             for exceptions in detail
         )
     return str(detail) if detail else response.text
+
+
+def _set_api_error(message: str) -> None:
+    st.session_state[API_ERROR_STATE_KEY] = message
+
+
+def _clear_api_error() -> None:
+    st.session_state.pop(API_ERROR_STATE_KEY, None)
+
+
+def _request(method: str, path: str, **kwargs: object) -> httpx.Response | None:
+    try:
+        response = httpx.request(
+            method,
+            f"{API_BASE}{path}",
+            timeout=HTTP_TIMEOUT_SECONDS,
+            **kwargs,
+        )
+    except httpx.RequestError:
+        _set_api_error(
+            f"Cannot reach backend API at {API_BASE}. Start the FastAPI server and refresh."
+        )
+        return None
+
+    _clear_api_error()
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -37,19 +65,24 @@ def _extract_error(response: httpx.Response) -> str:
 
 
 def register(email: str, password: str) -> dict | str:
-    response = httpx.post(
-        f"{API_BASE}/auth/register", json={"email": email, "password": password}
+    response = _request(
+        "POST", "/auth/register", json={"email": email, "password": password}
     )
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:
         return _extract_error(response)
     return response.json()
 
 
 def login(email: str, password: str) -> dict | str:
-    response = httpx.post(
-        f"{API_BASE}/auth/token",
+    response = _request(
+        "POST",
+        "/auth/token",
         data={"username": email, "password": password},
     )
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
 
     if not response.is_success:
         return _extract_error(response)
@@ -68,7 +101,7 @@ def login(email: str, password: str) -> dict | str:
     user_data = get_me()
     if isinstance(user_data, dict):
         st.session_state["user_id"] = user_data["id"]
-        st.session_state["is_admin"] = user_data["is_admin"]
+        st.session_state["is_superuser"] = user_data["is_superuser"]
 
     return data
 
@@ -85,7 +118,7 @@ def logout() -> None:
     if "csrf_cookie" in st.session_state:
         cookies["csrf_token"] = st.session_state["csrf_cookie"]
 
-    httpx.post(f"{API_BASE}/auth/logout", headers=headers, cookies=cookies)
+    _request("POST", "/auth/logout", headers=headers, cookies=cookies)
 
     for key in (
         "access_token",
@@ -105,7 +138,9 @@ def logout() -> None:
 
 
 def get_me() -> dict | str:
-    response = httpx.get(f"{API_BASE}/users/me", headers=_auth_headers())
+    response = _request("GET", "/users/me", headers=_auth_headers())
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
 
     if not response.is_success:
         return _extract_error(response)
@@ -121,9 +156,9 @@ def update_account(
         payload["new_email"] = new_email
     if new_password:
         payload["new_password"] = new_password
-    response = httpx.patch(
-        f"{API_BASE}/users/{user_id}", json=payload, headers=_auth_headers()
-    )
+    response = _request("PATCH", f"/users/{user_id}", json=payload, headers=_auth_headers())
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
 
     if not response.is_success:
         return _extract_error(response)
@@ -132,12 +167,14 @@ def update_account(
 
 
 def delete_account(user_id: str, password: str) -> bool | str:
-    response = httpx.request(
+    response = _request(
         "DELETE",
-        f"{API_BASE}/users/{user_id}",
+        f"/users/{user_id}",
         json={"password": password},
         headers=_auth_headers(),
     )
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
 
     if not response.is_success:
         return _extract_error(response)
@@ -152,7 +189,9 @@ def delete_account(user_id: str, password: str) -> bool | str:
 
 
 def get_items() -> list[dict]:
-    response = httpx.get(f"{API_BASE}/items/")
+    response = _request("GET", "/items/")
+    if response is None:
+        return []
 
     if not response.is_success:
         return []
@@ -161,20 +200,25 @@ def get_items() -> list[dict]:
 
 
 def get_item(item_id: str) -> dict | str:
-    response = httpx.get(f"{API_BASE}/items/{item_id}")
+    response = _request("GET", f"/items/{item_id}")
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
 
-    if response.is_success:
+    if not response.is_success:
         return _extract_error(response)
 
     return response.json()
 
 
 def create_item(name: str, description: str, price: float, tax: float) -> dict | str:
-    response = httpx.post(
-        f"{API_BASE}/items/",
+    response = _request(
+        "POST",
+        "/items/",
         json={"name": name, "description": description, "price": price, "tax": tax},
         headers=_auth_headers(),
     )
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:
         return _extract_error(response)
     return response.json()
@@ -183,29 +227,32 @@ def create_item(name: str, description: str, price: float, tax: float) -> dict |
 def update_item(
     item_id: str, name: str, description: str, price: float, tax: float
 ) -> dict | str:
-    response = httpx.put(
-        f"{API_BASE}/items/{item_id}",
+    response = _request(
+        "PUT",
+        f"/items/{item_id}",
         json={"name": name, "description": description, "price": price, "tax": tax},
         headers=_auth_headers(),
     )
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:
         return _extract_error(response)
     return response.json()
 
 
 def patch_item(item_id: str, **fields: object) -> dict | str:
-    response = httpx.patch(
-        f"{API_BASE}/items/{item_id}",
-        json=fields,
-        headers=_auth_headers(),
-    )
+    response = _request("PATCH", f"/items/{item_id}", json=fields, headers=_auth_headers())
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:
         return _extract_error(response)
     return response.json()
 
 
 def delete_item(item_id: str) -> dict | str:
-    response = httpx.delete(f"{API_BASE}/items/{item_id}", headers=_auth_headers())
+    response = _request("DELETE", f"/items/{item_id}", headers=_auth_headers())
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:
         return _extract_error(response)
     return response.json()
@@ -217,11 +264,14 @@ def upload_item_image(
     filename: str,
     caption: str = "No description provided",
 ) -> dict | str:
-    response = httpx.post(
-        f"{API_BASE}/items/image/{item_id}",
+    response = _request(
+        "POST",
+        f"/items/image/{item_id}",
         files={"image_file": (filename, file_bytes)},
         data={"caption": caption},
     )
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:
         return _extract_error(response)
     return response.json()
@@ -246,12 +296,15 @@ def create_item_with_image(  # noqa: PLR0913, PLR0917
     files = {}
     if file_bytes and filename:
         files["image_file"] = (filename, file_bytes)
-    response = httpx.post(
-        f"{API_BASE}/items/with-image/",
+    response = _request(
+        "POST",
+        "/items/with-image/",
         data=data_fields,
         files=files or None,
         headers=_auth_headers(),
     )
+    if response is None:
+        return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:
         return _extract_error(response)
     return response.json()
