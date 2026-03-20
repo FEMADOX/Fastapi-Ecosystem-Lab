@@ -439,6 +439,7 @@ dependencies = [
     { name = "asyncpg" },
     { name = "email-validator" },
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },
+    { name = "fastapi-versionizer" },
     { name = "httpx" },
     { name = "pre-commit" },
     { name = "psycopg", extra = ["binary"] },
@@ -471,6 +472,7 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = ">=0.135.1" },
+    { name = "fastapi-versionizer", specifier = ">=4.0.2" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
@@ -493,6 +495,16 @@ dev = [
     { name = "ty", specifier = ">=0.0.17" },
     { name = "types-sqlalchemy", specifier = ">=1.4.53.38" },
 ]
+
+[[package]]
+name = "fastapi-versionizer"
+version = "4.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "natsort" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/58/ce437607e9c0127651171c06dbc95edfa3113e42ccfb123ddbc879dc203f/fastapi_versionizer-4.0.2.tar.gz", hash = "sha256:0f3bd1a17d8be7bb9d830d19396e8235478bbe1f872ea314a8969868f5750ba4", size = 10183, upload-time = "2025-08-03T00:31:29.11Z" }
 
 [[package]]
 name = "filelock"
@@ -804,6 +816,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/47/b4/02a8add181b8d2cd5da3b667cd102ae536e8c9572ab1a130816d70a89edb/narwhals-2.18.0.tar.gz", hash = "sha256:1de5cee338bc17c338c6278df2c38c0dd4290499fcf70d75e0a51d5f22a6e960", size = 620222, upload-time = "2026-03-10T15:51:27.14Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fe/75/0b4a10da17a44cf13567d08a9c7632a285297e46253263f1ae119129d10a/narwhals-2.18.0-py3-none-any.whl", hash = "sha256:68378155ee706ac9c5b25868ef62ecddd62947b6df7801a0a156bc0a615d2d0d", size = 444865, upload-time = "2026-03-10T15:51:24.085Z" },
+]
+
+[[package]]
+name = "natsort"
+version = "8.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/a9/a0c57aee75f77794adaf35322f8b6404cbd0f89ad45c87197a937764b7d0/natsort-8.4.0.tar.gz", hash = "sha256:45312c4a0e5507593da193dedd04abb1469253b601ecaf63445ad80f0a1ea581", size = 76575, upload-time = "2023-06-20T04:17:19.925Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ef/82/7a9d0550484a62c6da82858ee9419f3dd1ccc9aa1c26a1e43da3ecd20b0d/natsort-8.4.0-py3-none-any.whl", hash = "sha256:4732914fb471f56b5cce04d7bae6f164a592c7712e1c85f9ef585e197299521c", size = 38268, upload-time = "2023-06-20T04:17:17.522Z" },
 ]
 
 [[package]]

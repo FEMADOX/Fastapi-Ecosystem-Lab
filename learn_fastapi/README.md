@@ -79,7 +79,11 @@ learn_fastapi/
 
 ## Topics Covered
 
-The API base path is `/api/v1` (configured in `src/main.py`), and the main topics covered include:
+The API base path is `/api` (configured in `src/main.py`), and the main topics covered include:
+
+## API Version 1: Core Concepts and Patterns
+
+`/v1` is the main versioned API prefix for all endpoints in this project. It includes three main "apps" or modules:
 
 ### `items` App
 
@@ -94,8 +98,8 @@ The API base path is `/api/v1` (configured in `src/main.py`), and the main topic
 | Full CRUD: GET / POST / PUT / PATCH / DELETE | [`router.py`](src/items/router.py)                                               |
 | HTTP status codes via `starlette.status`     | [`router.py`](src/items/router.py)                                               |
 | `HTTPException` for 404 responses            | [`router.py`](src/items/router.py)                                               |
-| Integration tests with `httpx.AsyncClient`   | [`tests/items/test_router.py`](tests/items/test_router.py)                       |
-| Authorization and ownership tests            | [`tests/test_items_authorization.py`](tests/test_items_authorization.py)         |
+| Integration tests with `httpx.AsyncClient`   | [`tests/items/test_router.py`](tests/v1/items/test_router.py)                    |
+| Authorization and ownership tests            | [`tests/test_items_authorization.py`](tests/v1/test_items_authorization.py)      |
 
 #### `items` Endpoints
 
@@ -127,7 +131,7 @@ Base prefix: `/items`
 | Custom exceptions for auth errors            | [`exceptions.py`](src/auth/exceptions.py)                                      |
 | RefreshToken model with SQLAlchemy ORM       | [`models.py`](src/auth/models.py)                                              |
 | Circular import avoidance with TYPE_CHECKING | [`models.py`](src/auth/models.py)                                              |
-| Integration tests for authentication flow    | [`tests/auth/test_router.py`](tests/auth/test_router.py)                       |
+| Integration tests for authentication flow    | [`tests/auth/test_router.py`](tests/v1/auth/test_router.py)                    |
 
 #### `auth` Endpoints (Authentication flows only)
 
@@ -150,16 +154,16 @@ Base prefix: `/auth`
 
 ### `users` App
 
-| Concept                                       | Where                                                                             |
-|:----------------------------------------------|:----------------------------------------------------------------------------------|
-| Repository + Service pattern                  | [`repository.py`](src/users/repository.py), [`service.py`](src/users/service.py)  |
-| User model with SQLAlchemy ORM                | [`models.py`](src/users/models.py)                                                |
-| Ownership-aware operations (user only access) | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)          |
-| Superuser override capability                 | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)          |
-| Account update (email + password with verify) | [`service.py`](src/users/service.py)                                              |
-| Account deletion with cascading cleanup       | [`service.py`](src/users/service.py), [`repository.py`](src/users/repository.py)  |
-| Test fixtures with dependency chains          | [`conftest.py`](tests/users/conftest.py)                                          |
-| Integration tests for account flows           | [`tests/users/test_router.py`](tests/users/test_router.py)                        |
+| Concept                                       | Where                                                                            |
+|:----------------------------------------------|:---------------------------------------------------------------------------------|
+| Repository + Service pattern                  | [`repository.py`](src/users/repository.py), [`service.py`](src/users/service.py) |
+| User model with SQLAlchemy ORM                | [`models.py`](src/users/models.py)                                               |
+| Ownership-aware operations (user only access) | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)         |
+| Superuser override capability                 | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)         |
+| Account update (email + password with verify) | [`service.py`](src/users/service.py)                                             |
+| Account deletion with cascading cleanup       | [`service.py`](src/users/service.py), [`repository.py`](src/users/repository.py) |
+| Test fixtures with dependency chains          | [`conftest.py`](tests/v1/users/conftest.py)                                      |
+| Integration tests for account flows           | [`tests/users/test_router.py`](tests/v1/users/test_router.py)                    |
 
 #### `users` Endpoints (Account management only)
 

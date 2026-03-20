@@ -1,5 +1,9 @@
+from typing import TYPE_CHECKING
+
 import pytest
-from httpx import AsyncClient
+
+if TYPE_CHECKING:
+    from httpx import AsyncClient
 
 
 @pytest.fixture

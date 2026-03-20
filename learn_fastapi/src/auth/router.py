@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Header
+from fastapi_versionizer.versionizer import api_version
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.status import HTTP_201_CREATED
@@ -13,9 +14,10 @@ from .annotations import X_CSRF_TOKEN
 from .dependencies import AuthServiceDep, OAuth2PRFDep
 from .schema import Token
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+@api_version(1)
 @router.post("/register", response_model=UserResponse, status_code=HTTP_201_CREATED)
 async def register(service: AuthServiceDep, user_data: UserCreate) -> User:
     """Register a new user account.
@@ -31,6 +33,7 @@ async def register(service: AuthServiceDep, user_data: UserCreate) -> User:
     return await service.register(user_data)
 
 
+@api_version(1)
 @router.post("/token")
 async def login(
     service: AuthServiceDep,
@@ -51,6 +54,7 @@ async def login(
     return await service.login(form_data, response)
 
 
+@api_version(1)
 @router.post("/refresh")
 async def refresh_token(
     service: AuthServiceDep,
@@ -75,6 +79,7 @@ async def refresh_token(
     return await service.refresh_token(current_user, request, response, x_csrf_token)
 
 
+@api_version(1)
 @router.post("/logout", status_code=204)
 async def logout(
     service: AuthServiceDep,

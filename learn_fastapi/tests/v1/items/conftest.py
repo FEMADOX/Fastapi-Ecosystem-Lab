@@ -1,15 +1,20 @@
-from collections.abc import AsyncGenerator, Generator
+from typing import TYPE_CHECKING
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from httpx import AsyncClient
 
-from learn_fastapi.src.users.models import User
 from learn_fastapi.src.auth.utils import hash_password
-from learn_fastapi.src.database import get_session
 from learn_fastapi.src.items.models import Item
-from learn_fastapi.src.main import app
+from learn_fastapi.src.users.models import User
 from learn_fastapi.src.utils.dependencies import get_current_user
+from learn_fastapi.tests.v1.conftest import TEST_API_PREFIX
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Callable
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from learn_fastapi.tests.conftest import ClientContext
 
 
 @pytest.fixture
@@ -35,39 +40,27 @@ async def test_user(test_session: AsyncSession) -> User:
 
 @pytest.fixture
 async def client(
-    test_session: AsyncSession, test_user: User
+    client_context_factory: Callable[..., ClientContext],
+    test_user: User,
 ) -> AsyncGenerator[AsyncClient]:
-    """Return a TestClient with both session and current-user overrides.
+    """Return a TestClient for v1 routes using the shared test session.
 
     Shadows the global ``client`` fixture for all tests in this package.
-    Overrides ``get_session`` to use the in-memory test DB and
-    ``get_current_user`` to inject ``test_user``, bypassing JWT auth.
+    Overrides ``get_session`` to use the in-memory test DB.
 
     Args:
-        test_session: The test database session (from global fixture).
+        client_context_factory: Factory that creates a test client context.
         test_user: A pre-created user to act as the authenticated owner.
 
     Yields:
         Configured AsyncClient instance.
 
     """
-
-    def override_get_async_session() -> Generator[AsyncSession]:
-        yield test_session
-
-    def override_get_user() -> User:
-        return test_user
-
-    previous = app.dependency_overrides.copy()
-    app.dependency_overrides[get_session] = override_get_async_session
-    app.dependency_overrides[get_current_user] = override_get_user
-
-    async with AsyncClient(
-        transport=ASGITransport(app), base_url="http://testserver"
+    async with client_context_factory(
+        api_prefix=TEST_API_PREFIX,
+        dependency_overrides={get_current_user: lambda: test_user},
     ) as async_client:
         yield async_client
-
-    app.dependency_overrides = previous
 
 
 @pytest.fixture

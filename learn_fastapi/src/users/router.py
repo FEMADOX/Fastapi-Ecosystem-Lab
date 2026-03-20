@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter
+from fastapi_versionizer.versionizer import api_version
 from starlette.responses import Response
 from starlette.status import HTTP_200_OK, HTTP_204_NO_CONTENT
 
@@ -10,9 +11,10 @@ from .dependencies import UsersServiceDep
 from .models import User
 from .schema import DeleteAccount, UserResponse, UserUpdate
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["users"])
 
 
+@api_version(1)
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: CurrentUserDep) -> User:
     """Return the currently authenticated user's profile.
@@ -24,6 +26,7 @@ async def get_me(current_user: CurrentUserDep) -> User:
     return current_user
 
 
+@api_version(1)
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_account(
     user_id: UUID,
@@ -39,6 +42,7 @@ async def get_account(
     return await service.get_account(user_id, current_user)
 
 
+@api_version(1)
 @router.patch("/{user_id}", response_model=UserResponse, status_code=HTTP_200_OK)
 async def update_account(
     user_id: UUID,
@@ -55,6 +59,7 @@ async def update_account(
     return await service.update_account(user_id, current_user, data)
 
 
+@api_version(1)
 @router.delete("/{user_id}", status_code=HTTP_204_NO_CONTENT)
 async def delete_account(
     user_id: UUID,

@@ -1,39 +1,46 @@
+import uvicorn
 from fastapi import APIRouter, FastAPI
+from fastapi_versionizer.versionizer import Versionizer, api_version
 
 from learn_fastapi.src.auth.router import router as auth_router
 from learn_fastapi.src.config import lifespan
 from learn_fastapi.src.items.router import router as items_router
 from learn_fastapi.src.users.router import router as users_router
 
-API_PREFIX = "/api/v1"
-
 app = FastAPI(
     lifespan=lifespan,
     title="Learn FastAPI",
     version="1.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
+    root_path="/api",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 # register_dev_reload(app)
 
 
+@api_version(1)
 @app.get("/")
 async def root() -> dict[str, str]:
     return {"message": "Hello World"}
 
 
-versioned_router = APIRouter(prefix=API_PREFIX)
-versioned_router.add_api_route("/", root, methods=["GET"], tags=["root"])
-versioned_router.include_router(items_router, prefix="/items", tags=["items"])
-versioned_router.include_router(auth_router, prefix="/auth", tags=["auth"])
-versioned_router.include_router(users_router, prefix="/users", tags=["users"])
+router = APIRouter()
+router.include_router(items_router)
+router.include_router(auth_router)
+router.include_router(users_router)
 
-app.include_router(versioned_router)
+app.include_router(router)
+
+versions = Versionizer(
+    app=app,
+    prefix_format="/v{major}",
+    semantic_version_format="{major}",
+    latest_prefix="/latest",
+    sort_routes=True,
+).versionize()
 
 
 def main() -> None:
-    import uvicorn
-
     uvicorn.run(
         "learn_fastapi.src.main:app",
         host="0.0.0.0",
@@ -41,6 +48,7 @@ def main() -> None:
         reload=True,
         reload_delay=0,
     )
+
 
 if __name__ == "__main__":
     main()

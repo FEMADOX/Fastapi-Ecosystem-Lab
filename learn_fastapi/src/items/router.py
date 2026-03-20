@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
+from fastapi_versionizer.versionizer import api_version
 from starlette.status import HTTP_200_OK
 
 from learn_fastapi.src.constants import IMAGES_DIR
@@ -25,9 +26,10 @@ from .schema import (
     ItemUpdateSchema,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/items", tags=["items"])
 
 
+@api_version(1)
 @router.get("/")
 async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
     """Return all items stored in the database.
@@ -42,6 +44,7 @@ async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
     return await service.get_all_items()
 
 
+@api_version(1)
 @router.get("/{id_param}")
 async def read_item(id_param: UUID, service: ItemServiceDep) -> ItemSchema:
     """Return a single item by its UUID.
@@ -57,6 +60,7 @@ async def read_item(id_param: UUID, service: ItemServiceDep) -> ItemSchema:
     return await service.get_item(id_param)
 
 
+@api_version(1)
 @router.post("/")
 async def create_item(
     item: ItemUpdateSchema, service: ItemServiceDep, current_user: CurrentUserDep
@@ -75,6 +79,7 @@ async def create_item(
     return await service.create_item(item, current_user)
 
 
+@api_version(1)
 @router.put("/{id_param}")
 async def update_item(
     id_param: UUID,
@@ -100,6 +105,7 @@ async def update_item(
     return await service.update_item(id_param, item_param, current_user)
 
 
+@api_version(1)
 @router.patch("/{id_param}")
 async def patch_item(
     id_param: UUID,
@@ -125,6 +131,7 @@ async def patch_item(
     return await service.patch_item(id_param, item_param, current_user)
 
 
+@api_version(1)
 @router.delete("/{id_param}")
 async def delete_item(
     id_param: UUID, service: ItemServiceDep, current_user: CurrentUserDep
@@ -144,6 +151,7 @@ async def delete_item(
     return {"detail": "Item deleted successfully", "status_code": HTTP_200_OK}
 
 
+@api_version(1)
 @router.post("/image/{id_param}")
 async def submit_an_item_image(
     id_param: UUID,
@@ -166,6 +174,7 @@ async def submit_an_item_image(
     return await service.update_item_image(id_param, image_file, caption)
 
 
+@api_version(1)
 @router.get("/image/")
 async def get_image(filename: ImageFilename) -> FileResponse:
     """Serve a stored image file by its base filename (without extension).
@@ -195,6 +204,7 @@ async def get_image(filename: ImageFilename) -> FileResponse:
     )
 
 
+@api_version(1)
 @router.post("/with-image/")
 async def create_item_with_image(  # noqa: PLR0913, PLR0917
     service: ItemServiceDep,

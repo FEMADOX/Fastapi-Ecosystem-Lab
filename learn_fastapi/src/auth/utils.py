@@ -16,6 +16,7 @@ ACCESS_TOKEN_EXPIRE = auth_config.access_token_expire
 
 # Password hasher instance
 ph = PasswordHasher()
+AUTH_COOKIE_PATH = "/v1/auth"
 
 
 def hash_password(password: str) -> str:
@@ -164,7 +165,7 @@ def set_auth_cookies(response: Response, refresh_token: str, csrf_token: str) ->
         secure=auth_config.cookie_secure,
         samesite=auth_config.cookie_samesite,
         max_age=max_age,  # 7 days
-        path="/auth",
+        path=AUTH_COOKIE_PATH,
         domain=auth_config.cookie_domain,
     )
     response.set_cookie(
@@ -174,7 +175,7 @@ def set_auth_cookies(response: Response, refresh_token: str, csrf_token: str) ->
         secure=auth_config.cookie_secure,
         samesite=auth_config.cookie_samesite,
         max_age=max_age,
-        path="/auth",
+        path=AUTH_COOKIE_PATH,
         domain=auth_config.cookie_domain,
     )
 
@@ -187,8 +188,8 @@ def clear_auth_cookies(response: Response) -> None:
 
     """
     response.delete_cookie(
-        key="refresh_token", path="/auth", domain=auth_config.cookie_domain
+        key="refresh_token", path=AUTH_COOKIE_PATH, domain=auth_config.cookie_domain
     )
     response.delete_cookie(
-        key="csrf_token", path="/auth", domain=auth_config.cookie_domain
+        key="csrf_token", path=AUTH_COOKIE_PATH, domain=auth_config.cookie_domain
     )

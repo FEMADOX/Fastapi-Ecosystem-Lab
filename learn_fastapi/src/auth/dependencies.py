@@ -9,7 +9,7 @@ from .service import AuthService
 
 OAuth2PRFDep = Annotated[OAuth2PasswordRequestForm, Depends()]
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/auth/token")
 OAuth2_Dep = Annotated[str, Depends(oauth2_scheme)]
 
 

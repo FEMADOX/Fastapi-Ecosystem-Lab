@@ -1,9 +1,13 @@
-import pytest
-from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import TYPE_CHECKING
 
-from learn_fastapi.src.users.models import User
+import pytest
+
 from learn_fastapi.src.auth.utils import hash_password
+from learn_fastapi.src.users.models import User
+
+if TYPE_CHECKING:
+    from httpx import AsyncClient
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.fixture

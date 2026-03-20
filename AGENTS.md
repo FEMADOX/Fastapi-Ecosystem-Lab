@@ -8,6 +8,7 @@
 - Use `ruff format --check <project_name>` to check for formatting issues and `ruff format --fix <project_name>` to automatically fix them.
 - Use `ty check <project_name>` to check for type errors.
 - Use `ty explain <rule_name>` to get an explanation of a specific linting rule.
+- If you replace code, make sure to add a comment explaining why you made the change, especially if it’s not obvious. This helps reviewers understand your intent and makes it easier to maintain the code in the future.
 
 ## Testing instructions
 
