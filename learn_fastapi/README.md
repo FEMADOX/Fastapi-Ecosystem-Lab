@@ -296,45 +296,9 @@ The project includes several Alembic enhancements in `alembic/env.py`:
 - **Explicit model imports** — All SQLAlchemy models are imported directly to ensure Alembic detects schema changes
 - **Logger preservation** — `disable_existing_loggers=False` keeps uvicorn and app loggers active during migrations
 - **SQLite compatibility** — Automatic configuration for SQLite-specific features:
-    - `render_as_batch=True` — enables batch mode for better ALTER TABLE support
-    - `check_same_thread=False` — allows SQLite access from multiple threads
+  - `render_as_batch=True` — enables batch mode for better ALTER TABLE support
+  - `check_same_thread=False` — allows SQLite access from multiple threads
 - **Server default comparison** — Detects changes in column default values
-
-### Environment Configuration
-
-Alembic and the application use environment variables defined in `.env` (see `.env.example` for reference).
-
-**Required environment variables:**
-
-```bash
-# Auth
-SECRET_KEY=your-secret-key-here
-AUTH_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# Database
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=fastapi_db
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-
-# Security
-COOKIE_SECURE=false        # true in production (HTTPS only)
-COOKIE_SAMESITE=lax        # strict/lax/none
-COOKIE_DOMAIN=             # empty for localhost, set domain in production
-```
-
-**For SQLite (development):**
-
-```bash
-DATABASE_URL=sqlite+aiosqlite:///./learn_fastapi/test.db
-```
-
-**Note:** Alembic automatically reads `DATABASE_URL` from the environment. The `alembic.ini` file is only used as a
-fallback.
 
 ## Testing
 

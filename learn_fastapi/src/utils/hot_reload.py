@@ -28,3 +28,7 @@ async def _hot_reload_ws(websocket: WebSocket) -> None:
     finally:
         if websocket in _clients:
             _clients.remove(websocket)
+
+
+watch_files = _watch_files
+hot_reload_ws = _hot_reload_ws

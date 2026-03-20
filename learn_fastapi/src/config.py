@@ -1,5 +1,4 @@
 import asyncio
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 from typing import TYPE_CHECKING
 
@@ -15,9 +14,11 @@ from .constants import (
 )
 from .middleware import SwaggerHotReloadMiddleware
 from .utils.alembic import check_pending_migrations
-from .utils.hot_reload import _hot_reload_ws, _watch_files
+from .utils.hot_reload import hot_reload_ws, watch_files
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
     from fastapi import FastAPI
 
 
@@ -31,14 +32,14 @@ def mount_static_files(app: FastAPI) -> None:
 
 def register_dev_reload(app: FastAPI) -> None:
     app.add_middleware(SwaggerHotReloadMiddleware)  # ty:ignore[invalid-argument-type]
-    app.add_websocket_route("/hot-reload", _hot_reload_ws, name="hot-reload")
+    app.add_websocket_route("/hot-reload", hot_reload_ws, name="hot-reload")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     mount_static_files(app)
     await check_pending_migrations()
-    task = asyncio.create_task(_watch_files())
+    task = asyncio.create_task(watch_files())
     yield
     task.cancel()
     with suppress(asyncio.CancelledError):
@@ -55,7 +56,7 @@ class Settings(BaseSettings):
     database_url: str
 
     model_config = SettingsConfigDict(
-        env_file=str(PROJECT_DIR / ".env"),
+        env_file=str(PROJECT_DIR.parent / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",

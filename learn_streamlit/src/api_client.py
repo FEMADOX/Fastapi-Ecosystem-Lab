@@ -1,6 +1,7 @@
 """HTTP client wrapper for the learn_fastapi backend API."""
 
 import os
+from typing import Any
 
 import httpx
 import streamlit as st
@@ -18,16 +19,22 @@ def _auth_headers() -> dict[str, str]:
 
 
 def _extract_error(response: httpx.Response) -> str:
-    """Normalize FastAPI error responses into a single string."""
+    """Normalize FastAPI error responses into a single string.
+
+    Returns:
+        A string representation of the error message(s) from the API response.
+
+    """
     try:
         body = response.json()
-    except Exception:
+    except ValueError:
         return response.text
 
     detail = body.get("detail", "")
     if isinstance(detail, list):
         return "; ".join(
-            f"{'.'.join(str(loc) for loc in exceptions.get('loc', []))}: {exceptions.get('msg', '')}"
+            f"{'.'.join(str(loc) for loc in exceptions.get('loc', []))}: \
+                {exceptions.get('msg', '')}"
             for exceptions in detail
         )
     return str(detail) if detail else response.text
@@ -41,7 +48,7 @@ def _clear_api_error() -> None:
     st.session_state.pop(API_ERROR_STATE_KEY, None)
 
 
-def _request(method: str, path: str, **kwargs: object) -> httpx.Response | None:
+def _request(method: str, path: str, **kwargs: Any) -> httpx.Response | None:  # noqa: ANN401
     try:
         response = httpx.request(
             method,
@@ -51,7 +58,8 @@ def _request(method: str, path: str, **kwargs: object) -> httpx.Response | None:
         )
     except httpx.RequestError:
         _set_api_error(
-            f"Cannot reach backend API at {API_BASE}. Start the FastAPI server and refresh."
+            f"Cannot reach backend API at {API_BASE}. \
+                Start the FastAPI server and refresh."
         )
         return None
 
@@ -156,7 +164,9 @@ def update_account(
         payload["new_email"] = new_email
     if new_password:
         payload["new_password"] = new_password
-    response = _request("PATCH", f"/users/{user_id}", json=payload, headers=_auth_headers())
+    response = _request(
+        "PATCH", f"/users/{user_id}", json=payload, headers=_auth_headers()
+    )
     if response is None:
         return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
 
@@ -241,7 +251,9 @@ def update_item(
 
 
 def patch_item(item_id: str, **fields: object) -> dict | str:
-    response = _request("PATCH", f"/items/{item_id}", json=fields, headers=_auth_headers())
+    response = _request(
+        "PATCH", f"/items/{item_id}", json=fields, headers=_auth_headers()
+    )
     if response is None:
         return st.session_state.get(API_ERROR_STATE_KEY, "Backend unavailable")
     if not response.is_success:

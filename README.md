@@ -27,14 +27,53 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 ```text
 Fastapi-Ecosystem-Lab/
 ├── learn_fastapi/                      # 🧪 Practical implementations (Read more details in learn_fastapi/README.md)
+├── .env.example                        # Example environment variables file
 ├── .gitignore                          # Git ignore file
+├── .gitmessage                         # Git commit message template
 ├── .pre-commit-config.yaml             # pre-commit hooks configuration
 ├── .python-version                     # Python version for pyenv
+├── .AGENTS.md                          # AI agents documentation
 ├── FastAPI_Learning.code-workspace     # VSCode workspace file
 ├── pyproject.toml                      # uv project configuration
 ├── README.md                           # This file
 └── uv.lock                             # uv lock file (auto-generated)
 ```
+
+### Environment Configuration
+
+Alembic and the application use environment variables defined in `.env` (see `.env.example` for reference).
+
+**Required environment variables:**
+
+```bash
+# Auth
+SECRET_KEY=your-secret-key-here
+AUTH_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# Database
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_DB=fastapi_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# Security
+COOKIE_SECURE=false        # true in production (HTTPS only)
+COOKIE_SAMESITE=lax        # strict/lax/none
+COOKIE_DOMAIN=             # empty for localhost, set domain in production
+```
+
+**For SQLite (development):**
+
+```bash
+DATABASE_URL=sqlite+aiosqlite:///./learn_fastapi/test.db
+```
+
+**Note:** Alembic automatically reads `DATABASE_URL` from the environment. The `alembic.ini` file is only used as a
+fallback.
 
 ## 🐳 Local Database
 
