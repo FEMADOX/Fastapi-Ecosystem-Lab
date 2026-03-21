@@ -81,7 +81,7 @@ fallback.
 ## 🐳 Local Database
 
 PostgreSQL can be started locally with Docker Compose
-using [learn_fastapi/docker-compose.yaml](learn_fastapi/docker-compose.yaml).
+using [learn_fastapi/docker-compose.yaml](docker-compose.yaml).
 
 ```bash
 cd learn_fastapi

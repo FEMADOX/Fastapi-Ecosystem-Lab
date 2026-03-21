@@ -12,8 +12,8 @@ app = FastAPI(
     title="Learn FastAPI",
     version="1.0.0",
     root_path="/api",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    # docs_url="/docs",
+    # redoc_url="/redoc",
 )
 # register_dev_reload(app)
 
