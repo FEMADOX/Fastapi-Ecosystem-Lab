@@ -5,11 +5,11 @@ import importlib
 import streamlit as st
 
 from learn_streamlit.src.api_client import logout
-from learn_streamlit.src.pages import account, auth, items
-from learn_streamlit.src.pages.account import render as account_render
-from learn_streamlit.src.pages.auth import is_authenticated
-from learn_streamlit.src.pages.auth import render as auth_render
-from learn_streamlit.src.pages.items import render as items_render
+from learn_streamlit.src import account, auth, items
+from learn_streamlit.src.account import render as account_render
+from learn_streamlit.src.auth import is_authenticated
+from learn_streamlit.src.auth import render as auth_render
+from learn_streamlit.src.items import render as items_render
 
 
 def _load_pages_modules() -> tuple[object, object, object]:

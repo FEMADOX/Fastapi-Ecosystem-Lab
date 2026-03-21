@@ -210,6 +210,7 @@ class TestItemsAuthorization:
                 "description": "Updated by admin",
                 "price": 50.0,
                 "tax": 5.0,
+                "user_id": str(owner_item_id),
             },
             headers={"Authorization": f"Bearer {admin_token}"},
         )

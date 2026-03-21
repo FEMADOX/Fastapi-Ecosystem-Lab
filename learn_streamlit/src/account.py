@@ -3,7 +3,7 @@
 import streamlit as st
 
 from learn_streamlit.src.api_client import delete_account, get_me, update_account
-from learn_streamlit.src.pages.auth import is_authenticated
+from learn_streamlit.src.auth import is_authenticated
 
 
 def _load_profile() -> dict | None:

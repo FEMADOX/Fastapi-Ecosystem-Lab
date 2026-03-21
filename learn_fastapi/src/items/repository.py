@@ -100,11 +100,34 @@ class ItemRepository:
             The freshly created and refreshed Item instance.
 
         """
-        item = Item(**item_data.model_dump(), user_id=owner.id, user=owner)
+        item = Item(
+            **item_data.model_dump(exclude={"user_id"}), user_id=owner.id, user=owner
+        )
         self.session.add(item)
         await self.commit()
         await self.session.refresh(item)
         return item
+
+    def _superuser_management(
+        self, item_id: UUID, owner: User | None
+    ) -> tuple[and_, set[str] | None]:
+        """Check if the user has permission to modify the item.
+
+        Args:
+            item_id: The UUID of the item to check permissions for.
+            owner: The user attempting the operation, or None if unauthenticated.
+
+        Returns:
+            True if the user has permission to modify the item, False otherwise.
+
+        """
+        exclude_args = None
+        if owner:
+            condition = and_(Item.id == item_id, Item.user_id == owner.id)
+            exclude_args = {"user_id"}
+        else:
+            condition = Item.id == item_id
+        return condition, exclude_args
 
     async def update_item(
         self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
@@ -120,15 +143,13 @@ class ItemRepository:
             item_id: The UUID of the item to update.
             item_data: Field values to write — all fields are applied.
             owner: If given, restricts the update to items owned by this user.
+                Else the user is a superuser.
 
         Returns:
             The updated Item, or None if not found.
 
         """
-        if owner:
-            condition = and_(Item.id == item_id, Item.user_id == owner.id)
-        else:
-            condition = Item.id == item_id
+        condition, exclude_args = self._superuser_management(item_id, owner)
 
         result = await self.session.execute(select(Item).where(condition))
         item = result.scalar_one_or_none()
@@ -136,7 +157,9 @@ class ItemRepository:
             return None
 
         await self.session.execute(
-            update(Item).where(condition).values(**item_data.model_dump())
+            update(Item)
+            .where(condition)
+            .values(**item_data.model_dump(exclude=exclude_args))
         )
         await self.session.commit()
         await self.session.refresh(item)
@@ -161,10 +184,7 @@ class ItemRepository:
             The updated Item, or None if not found.
 
         """
-        if owner:
-            condition = and_(Item.id == item_id, Item.user_id == owner.id)
-        else:
-            condition = Item.id == item_id
+        condition, exclude_args = self._superuser_management(item_id, owner)
 
         result = await self.session.execute(select(Item).where(condition))
         item = result.scalar_one_or_none()
@@ -174,7 +194,7 @@ class ItemRepository:
         await self.session.execute(
             update(Item)
             .where(condition)
-            .values(**item_data.model_dump(exclude_unset=True))
+            .values(**item_data.model_dump(exclude=exclude_args, exclude_unset=True))
         )
         await self.commit()
         await self.session.refresh(item)

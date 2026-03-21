@@ -64,7 +64,7 @@ async def client(
 
 
 @pytest.fixture
-def sample_item() -> dict:
+def sample_item(test_user: User) -> dict:
     """Item payload for use in POST / PUT requests.
 
     Returns:
@@ -76,6 +76,7 @@ def sample_item() -> dict:
         "description": "A new test description",
         "price": 9.99,
         "tax": 1.0,
+        "user_id": str(test_user.id),
     }
 
 

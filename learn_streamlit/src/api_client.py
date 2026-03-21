@@ -2,6 +2,7 @@
 
 import os
 from typing import Any
+from uuid import UUID
 
 import httpx
 import streamlit as st
@@ -127,17 +128,7 @@ def logout() -> None:
         cookies["csrf_token"] = st.session_state["csrf_cookie"]
 
     _request("POST", "/auth/logout", headers=headers, cookies=cookies)
-
-    for key in (
-        "access_token",
-        "csrf_token",
-        "refresh_token",
-        "csrf_cookie",
-        "expires_in",
-        "user",
-        "user_id",
-    ):
-        st.session_state.pop(key, None)
+    st.session_state.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -235,12 +226,24 @@ def create_item(name: str, description: str, price: float, tax: float) -> dict |
 
 
 def update_item(
-    item_id: str, name: str, description: str, price: float, tax: float
+    item_id: str,
+    name: str,
+    description: str,
+    price: float,
+    tax: float,
+    user_id: UUID | None = None,
 ) -> dict | str:
+    data = {
+        "name": name,
+        "description": description,
+        "price": price,
+        "tax": tax,
+        "user_id": str(user_id) if user_id else None,
+    }
     response = _request(
         "PUT",
         f"/items/{item_id}",
-        json={"name": name, "description": description, "price": price, "tax": tax},
+        json=data,
         headers=_auth_headers(),
     )
     if response is None:

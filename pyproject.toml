@@ -1,7 +1,6 @@
 [project]
 dependencies = [
   "aiofiles>=25.1.0",
-  "aiosqlite>=0.22.1",
   "alembic>=1.18.4",
   "argon2-cffi>=25.1.0",
   "asyncpg>=0.31.0",
@@ -26,6 +25,17 @@ name = "fastapi-ecosystem-lab"
 readme = "README.md"
 requires-python = ">=3.14.3"
 version = "2026.2"
+
+[dependency-groups]
+dev = [
+  "aiosqlite>=0.22.1",
+  "ruff>=0.15.2",
+  "sqlalchemy-stubs>=0.4",
+  "sqlalchemy[mypy]>=2.0.47",
+  "ty>=0.0.17",
+  "types-sqlalchemy>=1.4.53.38",
+]
+
 
 [project.scripts]
 run-api-server = "learn_fastapi.src.main:main"
@@ -73,15 +83,6 @@ src.exclude = ["./.venv/**", "**/alembic/versions/*"]
 
 [tool.ty.rules]
 unresolved-import = "ignore"
-
-[dependency-groups]
-dev = [
-  "ruff>=0.15.2",
-  "sqlalchemy-stubs>=0.4",
-  "sqlalchemy[mypy]>=2.0.47",
-  "ty>=0.0.17",
-  "types-sqlalchemy>=1.4.53.38",
-]
 
 [tool.pytest.ini_options]
 addopts = "-v --tb=short"

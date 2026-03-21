@@ -43,3 +43,7 @@ class ItemUpdateSchema(BaseModel):
     )
     price: float = Field(ge=0, description="The price of the item", default=0.00)
     tax: float = Field(ge=0, description="The tax of the item", default=0.00)
+    user_id: UUID | None = Field(
+        description="The id of the owner user (Only admins users can update this attribute)",
+        default=None,
+    )

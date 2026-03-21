@@ -433,7 +433,6 @@ version = "2026.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
-    { name = "aiosqlite" },
     { name = "alembic" },
     { name = "argon2-cffi" },
     { name = "asyncpg" },
@@ -456,6 +455,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "aiosqlite" },
     { name = "ruff" },
     { name = "sqlalchemy", extra = ["mypy"] },
     { name = "sqlalchemy-stubs" },
@@ -466,7 +466,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0" },
-    { name = "aiosqlite", specifier = ">=0.22.1" },
     { name = "alembic", specifier = ">=1.18.4" },
     { name = "argon2-cffi", specifier = ">=25.1.0" },
     { name = "asyncpg", specifier = ">=0.31.0" },
@@ -489,6 +488,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "aiosqlite", specifier = ">=0.22.1" },
     { name = "ruff", specifier = ">=0.15.2" },
     { name = "sqlalchemy", extras = ["mypy"], specifier = ">=2.0.47" },
     { name = "sqlalchemy-stubs", specifier = ">=0.4" },

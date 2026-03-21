@@ -3,8 +3,8 @@
 import streamlit as st
 
 from learn_streamlit.src.api_client import (
-    API_ERROR_STATE_KEY,
     API_BASE,
+    API_ERROR_STATE_KEY,
     create_item,
     create_item_with_image,
     delete_item,
@@ -12,11 +12,12 @@ from learn_streamlit.src.api_client import (
     update_item,
     upload_item_image,
 )
-from learn_streamlit.src.pages.auth import is_authenticated
+from learn_streamlit.src.auth import is_authenticated
 
 
 def _show_item_card(item: dict) -> None:
     """Render a single item card inside a container."""
+    is_superuser = st.session_state.get("is_superuser")
     with st.container(border=True):
         col_info, col_img = st.columns([3, 1])
         with col_info:
@@ -24,9 +25,13 @@ def _show_item_card(item: dict) -> None:
             st.caption(item.get("description", ""))
             price = item.get("price", 0)
             tax = item.get("tax", 0)
+            user_id = item.get("user_id")
+
             st.write(f"Price: ${price:.2f}")
             st.write(f"Tax: ${tax:.2f}")
             st.write(f"Total: ${price + tax:.2f}")
+            if is_superuser:
+                st.write(f"User ID: ${user_id}")
         with col_img:
             image_url = item.get("image_url")
             if image_url:
@@ -35,7 +40,7 @@ def _show_item_card(item: dict) -> None:
 
 def display_items(items: list[dict[str, str]]) -> None:
     current_user_id = str(st.session_state.get("user_id"))
-    is_admin = str(st.session_state.get("is_admin"))
+    is_superuser = bool(st.session_state.get("is_superuser"))
 
     for item in items:
         _show_item_card(item)
@@ -43,7 +48,7 @@ def display_items(items: list[dict[str, str]]) -> None:
         is_owner = bool(
             current_user_id and (str(item.get("user_id", "")) == current_user_id)
         )
-        if not is_owner or not is_admin:
+        if not is_owner and not is_superuser:
             continue
 
         butt_edit, butt_del, butt_img = st.columns(3)
@@ -128,6 +133,7 @@ def show_create_item() -> None:
 
 def show_edit_item() -> None:
     item = st.session_state.get("editing_item")
+    is_superuser = bool(st.session_state.get("is_superuser"))
     if not item:
         return
 
@@ -146,10 +152,13 @@ def show_edit_item() -> None:
         tax = st.number_input(
             "Tax", min_value=0.0, value=float(item.get("tax", 0)), step=0.01
         )
+        if is_superuser:
+            user_id = st.text_input("User ID", value=item["user_id"])
+        user_id = None
         submitted = st.form_submit_button("Save")
 
     if submitted:
-        result = update_item(item["id"], name, description, price, tax)
+        result = update_item(item["id"], name, description, price, tax, user_id)
         if isinstance(result, dict):
             st.success("Item updated!")
             st.session_state.pop("editing_item", None)
