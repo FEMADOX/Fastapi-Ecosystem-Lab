@@ -53,7 +53,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Database
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db  # For PostgreSQL
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_secure_password
 POSTGRES_DB=fastapi_db
@@ -64,6 +64,9 @@ POSTGRES_PORT=5432
 COOKIE_SECURE=false        # true in production (HTTPS only)
 COOKIE_SAMESITE=lax        # strict/lax/none
 COOKIE_DOMAIN=             # empty for localhost, set domain in production
+
+# Frontend
+LEARN_FASTAPI_API_URL=http://localhost:8000/api/v1  # Adjust if your API is hosted elsewhere
 ```
 
 **For SQLite (development):**

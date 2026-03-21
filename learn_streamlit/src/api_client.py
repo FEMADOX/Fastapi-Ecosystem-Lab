@@ -7,7 +7,7 @@ from uuid import UUID
 import httpx
 import streamlit as st
 
-API_BASE = os.getenv("LEARN_FASTAPI_API_BASE", "http://localhost:8000/api/v1")
+API_BASE = os.getenv("LEARN_FASTAPI_API_URL", "http://localhost:8000/api/v1")
 API_ERROR_STATE_KEY = "api_client_error"
 HTTP_TIMEOUT_SECONDS = 10.0
 

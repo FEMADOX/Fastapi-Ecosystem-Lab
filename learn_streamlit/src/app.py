@@ -4,9 +4,9 @@ import importlib
 
 import streamlit as st
 
-from learn_streamlit.src.api_client import logout
 from learn_streamlit.src import account, auth, items
 from learn_streamlit.src.account import render as account_render
+from learn_streamlit.src.api_client import logout
 from learn_streamlit.src.auth import is_authenticated
 from learn_streamlit.src.auth import render as auth_render
 from learn_streamlit.src.items import render as items_render
@@ -21,8 +21,6 @@ def _load_pages_modules() -> tuple[object, object, object]:
 
 
 def render() -> None:
-    auth_module, account_module, items_module = _load_pages_modules()
-
     st.set_page_config(page_title="Learn FastAPI", page_icon="⚡", layout="wide")
 
     # Sidebar navigation
