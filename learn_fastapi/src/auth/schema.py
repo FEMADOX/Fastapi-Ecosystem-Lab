@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
-from dateutil.tz import UTC
 from pydantic import BaseModel, Field
 
 from .config import auth_config

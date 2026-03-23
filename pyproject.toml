@@ -7,7 +7,6 @@ dependencies = [
   "email-validator>=2.3.0",
   "fastapi-versionizer>=4.0.2",
   "fastapi[standard-no-fastapi-cloud-cli]>=0.135.1",
-  "httpx>=0.28.1",
   "pre-commit>=4.5.1",
   "psycopg[binary]>=3.3.3",
   "pydantic-settings>=2.13.1",
@@ -17,7 +16,6 @@ dependencies = [
   "pytest-xdist[psutil]>=3.8.0",
   "python-multipart>=0.0.22",
   "sqlalchemy[asyncio]>=2.0.46",
-  "streamlit>=1.55.0",
   "uvicorn>=0.41.0",
 ]
 description = "This project is a learning resource for FastAPI ecosystem, a modern, fast (high-performance) web framework for building APIs with Python 3.14+ based on standard Python type hints."
@@ -34,6 +32,10 @@ dev = [
   "sqlalchemy[mypy]>=2.0.47",
   "ty>=0.0.17",
   "types-sqlalchemy>=1.4.53.38",
+]
+streamlit-deps = [
+    "httpx>=0.28.1",
+    "streamlit>=1.55.0",
 ]
 
 
