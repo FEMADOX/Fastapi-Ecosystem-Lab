@@ -52,7 +52,7 @@ def _request(method: str, path: str, **kwargs: Any) -> httpx.Response | None:  #
     try:
         response = httpx.request(
             method,
-            f"{API_BASE}{path}",
+            f"{API_BASE}/latest{path}",
             timeout=HTTP_TIMEOUT_SECONDS,
             **kwargs,
         )
