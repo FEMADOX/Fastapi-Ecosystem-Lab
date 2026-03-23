@@ -1,13 +1,12 @@
 """HTTP client wrapper for the learn_fastapi backend API."""
 
-import os
 from typing import Any
 from uuid import UUID
 
 import httpx
 import streamlit as st
 
-API_BASE = os.getenv("LEARN_FASTAPI_API_URL", "http://localhost:8000/api/v1")
+API_BASE = st.secrets.get("LEARN_FASTAPI_API_URL", "http://localhost:8000")
 API_ERROR_STATE_KEY = "api_client_error"
 HTTP_TIMEOUT_SECONDS = 10.0
 
@@ -225,7 +224,7 @@ def create_item(name: str, description: str, price: float, tax: float) -> dict |
     return response.json()
 
 
-def update_item(
+def update_item(  # noqa: PLR0913, PLR0917
     item_id: str,
     name: str,
     description: str,
