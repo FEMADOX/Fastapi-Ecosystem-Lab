@@ -46,6 +46,8 @@ Alembic and the application use environment variables defined in `.env` (see `.e
 **Required environment variables:**
 
 ```bash
+DEBUG=True  # Set to False in production
+
 # Auth
 SECRET_KEY=your-secret-key-here
 AUTH_ALGORITHM=HS256

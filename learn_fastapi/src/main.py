@@ -3,7 +3,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi_versionizer.versionizer import Versionizer, api_version
 
 from learn_fastapi.src.auth.router import router as auth_router
-from learn_fastapi.src.config import lifespan
+from learn_fastapi.src.config import lifespan, settings
 from learn_fastapi.src.items.router import router as items_router
 from learn_fastapi.src.users.router import router as users_router
 
@@ -12,8 +12,6 @@ app = FastAPI(
     title="Learn FastAPI",
     version="1.0.0",
     root_path="/api",
-    # docs_url="/docs",
-    # redoc_url="/redoc",
 )
 # register_dev_reload(app)
 
@@ -45,8 +43,7 @@ def main() -> None:
         "learn_fastapi.src.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        reload_delay=0,
+        reload=settings.debug,
     )
 
 
