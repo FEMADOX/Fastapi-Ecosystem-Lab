@@ -10,6 +10,8 @@ API_BASE = st.secrets.get("LEARN_FASTAPI_API_URL")
 API_ERROR_STATE_KEY = "api_client_error"
 HTTP_TIMEOUT_SECONDS = 10.0
 
+st.write(API_BASE)
+
 
 def _auth_headers() -> dict[str, str]:
     token = st.session_state.get("access_token")
