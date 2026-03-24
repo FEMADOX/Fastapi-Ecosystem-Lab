@@ -2,6 +2,9 @@
 
 A personal repository documenting my learning journey through the FastAPI ecosystem and modern Python web development.
 
+🌐 API Deployed in the Koyeb platform:
+https://fastapi-ecosystem-lab-api.koyeb.app/api/docs#
+
 ## 🗺️ What's covered
 
 | Topic                                        | Status      |
