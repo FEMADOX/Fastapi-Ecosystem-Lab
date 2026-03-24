@@ -9,7 +9,6 @@ learn_fastapi/
 ├── alembic/
 |   ├── versions/        # Auto-generated migration scripts
 |   ├── env.py           # Alembic configuration and setup
-|   ├── README.md        # Alembic usage instructions
 |   └── script.py.mako   # Template for generating migration scripts
 ├── docs/
 |   ├── fastapi-best-practices.md
@@ -59,21 +58,21 @@ learn_fastapi/
 │   ├── main.py         # uvicorn runner (__main__)
 │   └── middleware.py   # Custom middleware (e.g. Swagger hot reload, CORS, etc.)
 ├── tests/
-|   ├── auth/
-|   |   ├── conftest.py     # Auth fixtures (seeded user)
-|   |   └── test_router.py  # Authentication endpoints tests
-|   ├── users/
-|   |   ├── conftest.py     # User fixtures (user_data, registered_user, access_token, auth_headers)
-|   |   └── test_router.py  # User account endpoints tests
-│   ├── items/
-│   |   ├── conftest.py     # Item fixtures (test_user, test_client override, sample_item, seeded_item)
-│   |   └── test_router.py  # Item CRUD endpoints tests
-|   ├── test_items_authorization.py # Authorization tests for item ownership
+|   ├── v1/
+|   |   ├── auth/
+|   |   |   ├── conftest.py     # Auth fixtures (seeded user)
+|   |   |   └── test_router.py  # Authentication endpoints tests
+|   |   ├── users/
+|   |   |   ├── conftest.py     # User fixtures (user_data, registered_user, access_token, auth_headers)
+|   |   |   └── test_router.py  # User account endpoints tests
+|   |   ├── items/
+|   |   |   ├── conftest.py     # Item fixtures (test_user, sample_item, seeded_item)
+|   |   |   └── test_router.py  # Item CRUD endpoints tests
+|   |   └── test_items_authorization.py # Authorization tests for item ownership
 |   ├── conftest.py     # Global test fixtures (test_async_engine, test_session, client)
 |   └── test_main.py    # Basic smoke test for app startup
 ├── .env.example
 ├── alembic.ini
-├── docker-compose.yaml
 └── README.md
 ```
 
@@ -179,14 +178,14 @@ Base prefix: `/users`
 ## Running
 
 ```bash
-uv run learn_fastapi/src/main.py
+uv run run-api-server
 ```
 
 ## Local PostgreSQL with Docker Compose
 
-This project includes `docker-compose.yaml` to run PostgreSQL locally.
+The Docker Compose file is located at the repository root (`../docker-compose.yaml`).
 
-From `learn_fastapi/`:
+From the repository root:
 
 ```bash
 docker compose up -d

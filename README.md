@@ -8,10 +8,10 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 |:---------------------------------------------|-------------|
 | FastAPI — routing, dependencies, middleware  | ✅ Completed |
 | SQLAlchemy + PostgreSQL + Alembic            | ✅ Completed |
-| Streamlit — dashboards & data apps           | 🔁 Process  |
+| Streamlit — dashboards & data apps           | ✅ Completed |
 | Authentication + Authorization — JWT, OAuth2 | ✅ Completed |
 | Testing — pytest, httpx                      | ✅ Completed |
-| Docker & deployment                          | 🔁 Process  |
+| Docker & deployment                          | ✅ Completed |
 
 ## 🛠️ Tech Stack
 
@@ -27,6 +27,8 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 ```text
 Fastapi-Ecosystem-Lab/
 ├── learn_fastapi/                      # 🧪 Practical implementations (Read more details in learn_fastapi/README.md)
+├── learn_streamlit/                    # 🎛️ Streamlit frontend/UI module
+├── .streamlit/                         # Streamlit config and secrets template
 ├── .env.example                        # Example environment variables file
 ├── .gitignore                          # Git ignore file
 ├── .gitmessage                         # Git commit message template
@@ -34,6 +36,8 @@ Fastapi-Ecosystem-Lab/
 ├── .python-version                     # Python version for pyenv
 ├── .AGENTS.md                          # AI agents documentation
 ├── FastAPI_Learning.code-workspace     # VSCode workspace file
+├── Dockerfile                          # Container image for API app
+├── docker-compose.yaml                 # Local orchestration for API and services
 ├── pyproject.toml                      # uv project configuration
 ├── README.md                           # This file
 └── uv.lock                             # uv lock file (auto-generated)
@@ -43,7 +47,7 @@ Fastapi-Ecosystem-Lab/
 
 Alembic and the application use environment variables defined in `.env` (see `.env.example` for reference).
 
-**Required environment variables:**
+**Required backend environment variables (`.env`):**
 
 ```bash
 DEBUG=True  # Set to False in production
@@ -66,10 +70,15 @@ POSTGRES_PORT=5432
 COOKIE_SECURE=false        # true in production (HTTPS only)
 COOKIE_SAMESITE=lax        # strict/lax/none
 COOKIE_DOMAIN=             # empty for localhost, set domain in production
-
-# Frontend
-LEARN_FASTAPI_API_URL=http://localhost:8000/api/v1  # Adjust if your API is hosted elsewhere
 ```
+
+**Streamlit frontend API configuration (`.streamlit/secrets.toml`):**
+
+```toml
+LEARN_FASTAPI_API_URL = "http://localhost:8000/api"
+```
+
+Use `.streamlit/secrets.example.toml` as your starting template.
 
 **For SQLite (development):**
 
@@ -83,11 +92,30 @@ fallback.
 ## 🐳 Local Database
 
 PostgreSQL can be started locally with Docker Compose
-using [learn_fastapi/docker-compose.yaml](docker-compose.yaml).
+using [docker-compose.yaml](docker-compose.yaml).
 
 ```bash
-cd learn_fastapi
 docker compose up -d
+```
+
+## ▶️ Run Apps
+
+Run FastAPI backend:
+
+```bash
+uv run run-api-server
+```
+
+Run Streamlit frontend:
+
+```bash
+uv run streamlit run learn_streamlit/src/app.py
+```
+
+If port `8501` is already in use, run Streamlit on another port:
+
+```bash
+uv run streamlit run learn_streamlit/src/app.py --server.port 8502
 ```
 
 ## 📚 Resources
