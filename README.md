@@ -9,25 +9,39 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 | FastAPI — routing, dependencies, middleware  | ✅ Completed |
 | SQLAlchemy + PostgreSQL + Alembic            | ✅ Completed |
 | Streamlit — dashboards & data apps           | ✅ Completed |
+| Next.js — modern frontend framework          | ✅ Completed |
 | Authentication + Authorization — JWT, OAuth2 | ✅ Completed |
 | Testing — pytest, httpx                      | ✅ Completed |
-| Docker & deployment                          | ✅ Completed |
+| Docker & deployment                          | 🔁 Process  |
 
 ## 🛠️ Tech Stack
+
+**Backend:**
 
 - **[FastAPI](https://fastapi.tiangolo.com/)** — modern Python web framework
 - **[SQLAlchemy](https://www.sqlalchemy.org/)** — ORM for Python
 - **[PostgreSQL](https://www.postgresql.org/)** — relational database
-- **[Streamlit](https://streamlit.io/)** — data apps & dashboards
 - **[Pydantic v2](https://docs.pydantic.dev/)** — data validation
 - **[uv](https://docs.astral.sh/uv/)** — fast Python package manager
+
+**Frontends:**
+
+- **[Streamlit](https://streamlit.io/)** — Python-based dashboards (rapid prototyping)
+- **[Next.js 15](https://nextjs.org/)** — React framework (production web apps)
+- **[TypeScript](https://www.typescriptlang.org/)** — type-safe JavaScript
+- **[Tailwind CSS](https://tailwindcss.com/)** — utility-first styling
+
+**Deployment:**
+
+- **[Docker](https://www.docker.com/)** — containerization
 
 ## 📁 Structure
 
 ```text
 Fastapi-Ecosystem-Lab/
-├── learn_fastapi/                      # 🧪 Practical implementations (Read more details in learn_fastapi/README.md)
-├── learn_streamlit/                    # 🎛️ Streamlit frontend/UI module
+├── learn_fastapi/                      # 🧪 FastAPI backend implementations (see learn_fastapi/README.md)
+├── learn_streamlit/                    # 🎛️ Streamlit data dashboards & prototyping frontend
+├── learn_nextjs/                       # ⚡ Next.js production-grade web frontend (see learn_nextjs/README.md)
 ├── .streamlit/                         # Streamlit config and secrets template
 ├── .env.example                        # Example environment variables file
 ├── .gitignore                          # Git ignore file
@@ -100,25 +114,78 @@ docker compose up -d
 
 ## ▶️ Run Apps
 
-Run FastAPI backend:
+### FastAPI Backend
 
 ```bash
 uv run run-api-server
 ```
 
-Run Streamlit frontend:
+API will be available at `http://localhost:8000` with docs at `/api/docs#`
+
+### Streamlit Frontend (Data Dashboard)
+
+Run in a separate terminal:
 
 ```bash
 uv run streamlit run learn_streamlit/src/app.py
 ```
 
-If port `8501` is already in use, run Streamlit on another port:
+App will be available at `http://localhost:8501`
+
+If port `8501` is in use, specify another:
 
 ```bash
 uv run streamlit run learn_streamlit/src/app.py --server.port 8502
 ```
 
-## 📚 Resources
+### Next.js Frontend (Production Web App)
+
+Run in another terminal:
+
+```bash
+cd learn_nextjs && pnpm dev
+```
+
+App will be available at `http://localhost:3000`
+
+### Running All Components
+
+Best practice: use 3 terminals
+
+**Terminal 1 — Backend API:**
+
+```bash
+uv run run-api-server
+```
+
+**Terminal 2 — Streamlit Dashboard:**
+
+```bash
+streamlit run learn_streamlit/src/app.py
+```
+
+**Terminal 3 — Next.js Web App:**
+
+```bash
+cd learn_nextjs && pnpm dev
+```
+
+Then visit:
+
+- **FastAPI Docs**: <http://localhost:8000/api/docs>
+- **Streamlit**: <http://localhost:8501>
+- **Next.js**: <http://localhost:3000>
+
+## 📚 Modules & Documentation
+
+### Backend
+
+- **[learn_fastapi](learn_fastapi/README.md)** — Complete FastAPI guide with auth, CRUD, database migrations
+
+### Frontends
+
+- **[learn_streamlit](learn_streamlit/)** — Python-based dashboard UI using Streamlit
+- **[learn_nextjs](learn_nextjs/README.md)** — TypeScript + React web framework for production apps
 
 ### Learning Guides (Spanish)
 
@@ -134,4 +201,23 @@ uv run streamlit run learn_streamlit/src/app.py --server.port 8502
 
 ## 📝 Notes
 
-This is a learning repository. Code here prioritizes clarity over production-readiness.
+This is a learning repository for exploring the FastAPI ecosystem and modern Python web development.
+
+### Frontend Comparison
+
+**Streamlit** (`learn_streamlit/`)
+
+- ✅ Rapid prototyping in Python
+- ✅ Perfect for dashboards & data visualization
+- ✅ Minimal frontend knowledge required
+- ❌ Limited customization & routing
+
+**Next.js** (`learn_nextjs/`)
+
+- ✅ Production-ready web apps
+- ✅ Full TypeScript type safety
+- ✅ SEO-friendly (Server-Side Rendering)
+- ✅ Advanced styling & customization
+- ❌ Requires JavaScript/TypeScript knowledge
+
+Both frontends consume the same FastAPI backend, demonstrating different approaches to UI development.

@@ -16,3 +16,8 @@ database.db
 
 # STREAMLIT
 secrets.toml
+
+# NextJS
+node_modules/
+.next/
+restaurants/
