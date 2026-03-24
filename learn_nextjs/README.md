@@ -150,15 +150,15 @@ const response = await fetch(
 
 ## Comparison: Streamlit vs Next.js
 
-| Aspect | Streamlit | Next.js |
-|--------|-----------|---------|
-| **Use Case** | Data dashboards, prototypes | Production web apps |
-| **Development Speed** | Very fast | Moderate |
-| **Customization** | Limited | Highly customizable |
-| **Performance** | Good for dashboards | Optimized for web |
-| **Deployment** | Simple (Streamlit Cloud) | Flexible (Vercel, Docker, etc.) |
-| **Styling** | Built-in, minimal | Full CSS framework support |
-| **SEO** | Limited | Excellent (SSR, metadata) |
+| Aspect                | Streamlit                   | Next.js                         |
+|-----------------------|-----------------------------|---------------------------------|
+| **Use Case**          | Data dashboards, prototypes | Production web apps             |
+| **Development Speed** | Very fast                   | Moderate                        |
+| **Customization**     | Limited                     | Highly customizable             |
+| **Performance**       | Good for dashboards         | Optimized for web               |
+| **Deployment**        | Simple (Streamlit Cloud)    | Flexible (Vercel, Docker, etc.) |
+| **Styling**           | Built-in, minimal           | Full CSS framework support      |
+| **SEO**               | Limited                     | Excellent (SSR, metadata)       |
 
 ## Resources
 
