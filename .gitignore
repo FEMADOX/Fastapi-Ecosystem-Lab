@@ -13,3 +13,6 @@ fastapi_notes/
 learn_fastapi/src/static/images/*
 database.db
 .env
+
+# STREAMLIT
+secrets.toml

@@ -7,6 +7,10 @@ import httpx
 import streamlit as st
 
 API_BASE = st.secrets.get("LEARN_FASTAPI_API_URL")
+# API_BASE = os.environ.get("LEARN_FASTAPI_API_URL")
+# env_variables = os.environ.items()
+# print(API_BASE)
+# print(dict(env_variables).get("LEARN_FASTAPI_API_URL"))
 API_ERROR_STATE_KEY = "api_client_error"
 HTTP_TIMEOUT_SECONDS = 10.0
 
