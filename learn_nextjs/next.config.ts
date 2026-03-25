@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
     fetches: {
       fullUrl: true
     }
-  }
+  },
+  cacheComponents: true
 }
 
 export default nextConfig

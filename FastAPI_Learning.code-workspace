@@ -8,6 +8,5 @@
 		"chat.tools.terminal.autoApprove": {
 			".venv\\Scripts\\python.exe": true
 		},
-		"prettier.configPath": "./learn_nextjs/.prettierrc"
 	}
 }

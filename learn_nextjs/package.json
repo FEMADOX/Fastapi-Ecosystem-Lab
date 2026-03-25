@@ -1,5 +1,5 @@
 {
-  "name": "restaurancy",
+  "name": "fastapi-ecosystem",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,8 @@
   "dependencies": {
     "next": "canary",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^2.13.0",
@@ -24,6 +25,7 @@
     "@types/node": "^22.19.15",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/parser": "^8.57.2",
     "babel-plugin-react-compiler": "0.0.0-experimental-592953e-20240517",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
