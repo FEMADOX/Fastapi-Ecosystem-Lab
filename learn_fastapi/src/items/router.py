@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 from fastapi_versionizer.versionizer import api_version
-from starlette.status import HTTP_200_OK
+from starlette.status import HTTP_204_NO_CONTENT
 
 from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
@@ -148,7 +148,7 @@ async def delete_item(
 
     """
     await service.delete_item(id_param, current_user)
-    return {"detail": "Item deleted successfully", "status_code": HTTP_200_OK}
+    return {"detail": "Item deleted successfully", "status_code": HTTP_204_NO_CONTENT}
 
 
 @api_version(1)

@@ -9,7 +9,7 @@ This module showcases a complete Next.js 15 setup with:
 - **App Router** — modern file-based routing
 - **TypeScript** — full type safety
 - **Tailwind CSS** — utility-first styling
-- **ESLint + Prettier** — code quality and formatting
+- **ESLint + StandardJS** — code quality and style consistency
 - **React 19** — latest React features
 
 ## Project Structure
@@ -49,13 +49,12 @@ Built with Next.js App Router, enabling:
 
 - **Tailwind CSS 4** for utility-first styling
 - **PostCSS** for advanced CSS processing
-- **Prettier plugin** for automatic class sorting
+- **StandardJS** as the base JavaScript and TypeScript style guide
 
 ### Code Quality
 
-- **ESLint 9** with Next.js & React plugins
+- **ESLint 9** with Next.js, React, and StandardJS rules
 - **TypeScript** for type-safe development
-- **Prettier** for consistent code formatting
 - **React Compiler** (experimental) for auto-optimizations
 
 ### API Integration
@@ -104,7 +103,7 @@ pnpm build
 pnpm start
 ```
 
-### Linting & Formatting
+### Linting
 
 Check for lint issues:
 
@@ -112,10 +111,10 @@ Check for lint issues:
 pnpm lint
 ```
 
-Format code with Prettier:
+Automatically apply StandardJS-compatible fixes:
 
 ```bash
-pnpm format
+pnpm lint:fix
 ```
 
 ## Environment Variables

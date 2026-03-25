@@ -1,12 +1,12 @@
-import {NextConfig} from "next";
+import { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
   logging: {
     fetches: {
-      fullUrl: true,
-    },
-  },
-};
+      fullUrl: true
+    }
+  }
+}
 
-export default nextConfig;
+export default nextConfig

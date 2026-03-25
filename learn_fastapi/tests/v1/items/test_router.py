@@ -8,6 +8,7 @@ from starlette.status import (
     HTTP_201_CREATED,
     HTTP_404_NOT_FOUND,
     HTTP_422_UNPROCESSABLE_CONTENT,
+    HTTP_204_NO_CONTENT,
 )
 
 from learn_fastapi.src.constants import IMAGES_DIR
@@ -182,7 +183,7 @@ class TestUpdateItem:
 
 
 class TestDeleteItem:
-    async def test_returns_200(
+    async def test_returns_204(
         self, client: AsyncClient, seeded_item: ItemModel
     ) -> None:
         response = await client.delete(f"/items/{seeded_item.id}")
@@ -194,7 +195,7 @@ class TestDeleteItem:
         response = await client.delete(f"/items/{seeded_item.id}")
         body = response.json()
         assert body["detail"] == "Item deleted successfully"
-        assert body["status_code"] == HTTP_200_OK
+        assert body["status_code"] == HTTP_204_NO_CONTENT
 
     async def test_item_removed_from_db(
         self, client: AsyncClient, seeded_item: ItemModel
