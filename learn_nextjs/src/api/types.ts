@@ -16,3 +16,25 @@ export type Item = {
 }
 
 export type Items = Item[]
+
+export type User = {
+  id: string
+  email: string
+  isActive: boolean
+  isSuperuser: boolean
+}
+
+export type Users = User[]
+
+export type UserUpdate = {
+  currentPassword: string
+  email?: string
+  newPassword?: string
+}
+
+export type Token = {
+  accessToken: string
+  tokenType: string
+  expiresIn: number
+  csrfToken: string
+}

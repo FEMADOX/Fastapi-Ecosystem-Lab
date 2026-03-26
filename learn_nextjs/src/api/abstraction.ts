@@ -1,6 +1,7 @@
-// FastAPI API endpoints in the frontend
+// FastAPI API abstraction layer for Next.js frontend
+// Provides a consistent interface for making API calls and handling responses/errors
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/latest'
+import { API_BASE_URL } from '@/common/const'
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -8,7 +9,7 @@ type RequestFactoryOptions = {
   method?: HttpMethod
   pathParam?: string | null
   body?: unknown
-  token?: string | null
+  accessToken?: string | null
   headers?: HeadersInit
   queryParams?: Record<string, string>
 }
@@ -26,7 +27,7 @@ const apiRequest = async <T>(endpoint: string, options: RequestFactoryOptions = 
     method = 'GET',
     pathParam = null,
     body,
-    token = null,
+    accessToken = null,
     headers = {},
     queryParams
   } = options
@@ -35,7 +36,7 @@ const apiRequest = async <T>(endpoint: string, options: RequestFactoryOptions = 
 
   const requestHeaders: HeadersInit = {
     ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...headers
   }
 
@@ -60,19 +61,19 @@ const apiRequest = async <T>(endpoint: string, options: RequestFactoryOptions = 
 }
 
 export const api = {
-  get: <T>(endpoint: string, pathParam?: string | null, token?: string | null, queryParams?: Record<string, string>) => {
-    return apiRequest<T>(endpoint, { method: 'GET', pathParam, token, queryParams })
+  get: <T>(endpoint: string, pathParam?: string | null, accessToken?: string | null, queryParams?: Record<string, string>) => {
+    return apiRequest<T>(endpoint, { method: 'GET', pathParam, accessToken, queryParams })
   },
-  post: <T, B = unknown>(endpoint: string, body: B, token?: string | null) => {
-    return apiRequest<T>(endpoint, { method: 'POST', body, token })
+  post: <T, B = unknown>(endpoint: string, body: B, accessToken?: string | null, contentType?: string) => {
+    return apiRequest<T>(endpoint, { method: 'POST', body, accessToken, headers: contentType ? { 'Content-Type': contentType } : undefined })
   },
-  put: <T, B = unknown>(endpoint: string, pathParam: string | null, body: B, token?: string | null) => {
-    return apiRequest<T>(endpoint, { method: 'PUT', body, pathParam, token })
+  put: <T, B = unknown>(endpoint: string, pathParam: string | null, body: B, accessToken?: string | null, contentType?: string) => {
+    return apiRequest<T>(endpoint, { method: 'PUT', body, pathParam, accessToken, headers: contentType ? { 'Content-Type': contentType } : undefined })
   },
-  patch: <T, B = unknown>(endpoint: string, pathParam: string | null, body: B, token?: string | null) => {
-    return apiRequest<T>(endpoint, { method: 'PATCH', body, pathParam, token })
+  patch: <T, B = unknown>(endpoint: string, pathParam: string | null, body: B, accessToken?: string | null, contentType?: string) => {
+    return apiRequest<T>(endpoint, { method: 'PATCH', body, pathParam, accessToken, headers: contentType ? { 'Content-Type': contentType } : undefined })
   },
-  delete: (endpoint: string, pathParam: string | null, token?: string | null) => {
-    return apiRequest<void>(endpoint, { method: 'DELETE', pathParam, token })
+  delete: (endpoint: string, pathParam: string | null, accessToken?: string | null) => {
+    return apiRequest<void>(endpoint, { method: 'DELETE', pathParam, accessToken })
   }
 }
