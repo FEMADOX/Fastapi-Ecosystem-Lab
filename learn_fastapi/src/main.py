@@ -5,6 +5,7 @@ from fastapi_versionizer.versionizer import Versionizer, api_version
 from learn_fastapi.src.auth.router import router as auth_router
 from learn_fastapi.src.config import lifespan, settings
 from learn_fastapi.src.items.router import router as items_router
+from learn_fastapi.src.middleware import CorsMiddlewareConfigurer
 from learn_fastapi.src.users.router import router as users_router
 
 app = FastAPI(
@@ -14,6 +15,7 @@ app = FastAPI(
     root_path="/api",
 )
 # register_dev_reload(app)
+CorsMiddlewareConfigurer(settings.allowed_hosts).add_middleware(app)
 
 
 @api_version(1)

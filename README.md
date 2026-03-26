@@ -66,8 +66,9 @@ Alembic and the application use environment variables defined in `.env` (see `.e
 
 **Required backend environment variables (`.env`):**
 
-```bash
-DEBUG=True  # Set to False in production
+```.env
+ALLOWED_HOSTS=[""]         # Allowed host for CORS (defaults: localhost:3000, 127.0.0.1:3000)
+DEBUG=True                 # Set to False in production
 
 # Auth
 SECRET_KEY=your-secret-key-here
@@ -77,6 +78,8 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Database
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db  # For PostgreSQL
+
+# Docker Compose (Local Postgres Database)
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_secure_password
 POSTGRES_DB=fastapi_db

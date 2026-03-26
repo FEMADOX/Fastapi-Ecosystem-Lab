@@ -109,6 +109,10 @@ export const patchUser = async (id: string, user: UserUpdate): Promise<User> => 
   return api.patch<User>(USERS_PATH, id, user)
 }
 
+export const deleteUser = async (id: string, accessToken: string): Promise<void> => {
+  return api.delete(USERS_PATH, id, accessToken)
+}
+
 // ==================  AUTH  ==================
 const AUTH_PATH = '/auth'
 
