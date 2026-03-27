@@ -1,8 +1,8 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { login } from '@/api/endpoints'
 import { useRouter } from 'next/navigation'
-import { API_BASE_URL } from '@/common/const'
+import { FormEvent, useState } from 'react'
 
 const LoginPage = () => {
   const router = useRouter()
@@ -18,12 +18,7 @@ const LoginPage = () => {
     setLoading(true)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-
+      const response = await login(email, password)
       const data = await response.json()
 
       if (!response.ok) {

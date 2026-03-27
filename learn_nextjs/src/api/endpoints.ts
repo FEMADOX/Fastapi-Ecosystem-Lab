@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '@/common/const'
 import { api } from './abstraction'
-import { Item, Items, User, Token, UserUpdate } from './types'
+import { Item, Token, User, UserUpdate } from './interfaces'
+import { Items } from './types'
 
 // ==================  ITEMS  ==================
 const ITEMS_PATH = '/items'
