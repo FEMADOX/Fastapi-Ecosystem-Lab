@@ -7,15 +7,16 @@ https://fastapi-ecosystem-lab-api.koyeb.app/api/docs#
 
 ## 🗺️ What's covered
 
-| Topic                                        | Status      |
-|:---------------------------------------------|-------------|
-| FastAPI — routing, dependencies, middleware  | ✅ Completed |
-| SQLAlchemy + PostgreSQL + Alembic            | ✅ Completed |
-| Streamlit — dashboards & data apps           | ✅ Completed |
-| Next.js — modern frontend framework          | ✅ Completed |
-| Authentication + Authorization — JWT, OAuth2 | ✅ Completed |
-| Testing — pytest, httpx                      | ✅ Completed |
-| Docker & deployment                          | 🔁 Process  |
+| Topic                                        | Status       |
+|:---------------------------------------------|--------------|
+| FastAPI — routing, dependencies, middleware  | ✅ Completed  |
+| SQLAlchemy + PostgreSQL + Alembic            | ✅ Completed  |
+| Streamlit — dashboards & data apps           | ✅ Completed  |
+| Next.js — modern frontend framework          | ✅ Completed  |
+| Authentication + Authorization — JWT, OAuth2 | ✅ Completed  |
+| Testing — pytest, httpx                      | ✅ Completed  |
+| Docker & deployment                          | ✅ Completed  |
+| NextJS - Frontend implementation             | 🔁 Completed |
 
 ## 🛠️ Tech Stack
 
@@ -67,7 +68,7 @@ Alembic and the application use environment variables defined in `.env` (see `.e
 **Required backend environment variables (`.env`):**
 
 ```.env
-ALLOWED_HOSTS=[""]         # Allowed host for CORS (defaults: localhost:3000, 127.0.0.1:3000)
+ALLOWED_HOSTS=[""]         # Allowed host for CORS (defaults: localhost, 127.0.0.1, localhost:3000, 127.0.0.1:3000)
 DEBUG=True                 # Set to False in production
 
 # Auth
