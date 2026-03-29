@@ -1,4 +1,4 @@
-import { getItems } from '@/api/endpoints'
+import { getItems } from '@/app/api/endpoints'
 import Link from 'next/dist/client/link'
 
 const ItemsPage = async () => {

@@ -1,4 +1,4 @@
-import { getItem } from '@/api/endpoints'
+import { getItem } from '@/app/api/endpoints'
 import { PromiseIdProp, IdProp } from '@/common/types'
 import { Suspense } from 'react'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { createItem } from '@/api/endpoints'
+import { createItem } from '@/app/api/endpoints'
 import { FormEvent, useState } from 'react'
 import { newItemFormSchema } from './schema'
 
@@ -9,9 +9,7 @@ const ItemNewPage = () => {
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const submitForm = async (
-    event: FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSubmitError('')
     setFieldErrors({})
@@ -39,22 +37,21 @@ const ItemNewPage = () => {
 
     setIsSubmitting(true)
 
-    try {
-      await createItem(parseResult.data)
-      event.currentTarget.reset()
-    } catch (error) {
-      console.error('Error creating item:', error)
-      setSubmitError('Unable to create item. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
+    const item = parseResult.data
+
+    await createItem(item)
+    event.currentTarget.reset()
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
-    submitForm(event).catch((error) => {
-      console.error('Error creating item:', error)
-      setSubmitError('Unable to create item. Please try again.')
-    })
+    submitForm(event)
+      .catch((error) => {
+        console.error('Error creating item:', error)
+        setSubmitError('Unable to create item. Please try again.')
+      })
+      .finally(() => {
+        setIsSubmitting(false)
+      })
   }
 
   return (

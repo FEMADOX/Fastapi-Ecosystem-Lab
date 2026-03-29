@@ -1,3 +1,4 @@
+import { HttpMethod } from './types'
 export interface Image {
   name: string
   description: string
@@ -30,9 +31,28 @@ export interface UserUpdate {
   newPassword?: string
 }
 
+export interface UserCreate {
+  email: string
+  password: string
+}
+
 export interface Token {
   accessToken: string
   tokenType: string
   expiresIn: number
   csrfToken: string
+}
+
+export interface RequestFactoryOptions {
+  method?: HttpMethod
+  pathParam?: string | null
+  body?: unknown
+  accessToken?: string | null
+  headers?: HeadersInit
+  queryParams?: Record<string, string>
+}
+
+export interface ApiResponse<T> {
+  data: T | undefined
+  error?: string
 }

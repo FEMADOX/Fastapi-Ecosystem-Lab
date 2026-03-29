@@ -171,7 +171,6 @@ def set_auth_cookies(response: Response, refresh_token: str, csrf_token: str) ->
     response.set_cookie(
         key="csrf_token",
         value=csrf_token,
-        # httponly=False,
         secure=auth_config.cookie_secure,
         samesite=auth_config.cookie_samesite,
         max_age=max_age,

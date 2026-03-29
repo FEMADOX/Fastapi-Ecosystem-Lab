@@ -1,4 +1,4 @@
-import { Item } from '@/api/interfaces'
+import { Item } from '@/app/api/interfaces'
 import { z } from 'zod'
 import { nonNegativeNumberFromForm, nullableImageUrlFromForm, stringFromForm } from '@/app/utils/formInputValidators'
 
