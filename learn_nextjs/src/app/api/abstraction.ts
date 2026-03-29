@@ -2,7 +2,7 @@
 // Provides a consistent interface for making API calls and handling responses/errors
 
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
-import { RequestFactoryOptions, ApiResponse } from './interfaces'
+import { RequestFactoryOptions, ApiProxyResponse } from './interfaces'
 
 const buildUrl = (endpoint: string, pathParam?: string | null, queryParams?: Record<string, string>): string => {
   const base = `${NEXT_API_PROXY_PREFIX}${endpoint}${pathParam ? `/${pathParam}` : ''}`
@@ -12,7 +12,7 @@ const buildUrl = (endpoint: string, pathParam?: string | null, queryParams?: Rec
   return base
 }
 
-const apiRequest = async <T>(endpoint: string, options: RequestFactoryOptions = {}): Promise<ApiResponse<T>> => {
+const apiRequest = async <T>(endpoint: string, options: RequestFactoryOptions = {}): Promise<ApiProxyResponse<T>> => {
   const {
     method = 'GET',
     pathParam = null,

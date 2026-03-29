@@ -2,7 +2,7 @@
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
 import { api } from './abstraction'
 import { Item, Token, User, UserUpdate } from './interfaces'
-import { Items, LoginResponse } from './types'
+import { Items, ApiProxyLoginResponse, ApiProxyLogoutResponse } from './types'
 
 // ==================  ITEMS  ==================
 const ITEMS_PATH = '/items'
@@ -133,7 +133,7 @@ export const register = async (email: string, password: string) => {
 
 export const login = async (email: string, password: string) => {
   const body = new URLSearchParams({ username: email, password })
-  return api.post<LoginResponse>(`${AUTH_PATH}/token`, body)
+  return api.post<ApiProxyLoginResponse>(`${AUTH_PATH}/token`, body)
 }
 
 export const refreshToken = async () => {
@@ -141,5 +141,5 @@ export const refreshToken = async () => {
 }
 
 export const logout = async () => {
-  return api.post<void>(`${AUTH_PATH}/logout`, {})
+  return api.post<ApiProxyLogoutResponse>(`${AUTH_PATH}/logout`, {})
 }
