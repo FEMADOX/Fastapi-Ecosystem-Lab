@@ -1,8 +1,15 @@
 // import { API_BASE_URL } from '@/common/const'
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
 import { api } from './abstraction'
-import { Item, Token, User, UserUpdate } from './interfaces'
-import { Items, ApiProxyLoginResponse, ApiProxyLogoutResponse } from './types'
+import {
+  Item,
+  Token,
+  User,
+  UserUpdate,
+  Items,
+  ApiProxyLoginResponse,
+  ApiProxyLogoutResponse
+} from './types'
 
 // ==================  ITEMS  ==================
 const ITEMS_PATH = '/items'
