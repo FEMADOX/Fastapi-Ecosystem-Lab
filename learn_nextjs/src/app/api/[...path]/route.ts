@@ -29,8 +29,7 @@ const handler = async (
   })
 
   if (!backendRes.ok) {
-    const body = await backendRes.text().catch(() => '')
-    return new NextResponse(body, {
+    return new NextResponse(backendRes.body, {
       status: backendRes.status,
       headers: {
         'Content-Type':
@@ -44,17 +43,16 @@ const handler = async (
 
   if (isLogin) {
     const rawData: unknown = await backendRes.json()
-    const { data, error } = await TokenSchema.safeParseAsync(rawData)
-    if (!data || error) {
+    const { data, error, success } = TokenSchema.safeParse(rawData)
+    if (!success || error) {
       return NextResponse.json(
-        { detail: error.message ?? 'Invalid login response' },
+        { detail: `Invalid login response: ${error?.message ?? 'Unknown error'}` },
         { status: 502 }
       )
     }
 
     const response = NextResponse.json({ loggedIn: true })
 
-    // Guardar tokens como HTTP-only cookies — JS nunca los ve
     response.cookies.set('access_token', data.access_token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -75,7 +73,7 @@ const handler = async (
   }
   if (isLogout) {
     if (backendRes.status !== 204) {
-      NextResponse.json(
+      return NextResponse.json(
         { detail: 'Invalid logout response' },
         { status: 502 }
       )
@@ -88,7 +86,6 @@ const handler = async (
     return response
   }
 
-  // Para cualquier otra ruta, pasar la respuesta tal cual
   const body = await backendRes.text()
   return new NextResponse(body, {
     status: backendRes.status,
