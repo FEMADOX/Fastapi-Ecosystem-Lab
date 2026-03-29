@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 class Settings(BaseSettings):
     secret_key: SecretStr
     database_url: str
-    allowed_hosts: list[str]
+    allowed_hosts: list[str] = ["localhost", "127.0.0.1"]
     debug: bool = False
     postgres_user: str = "postgres"
     postgres_password: str = "postgres"  # noqa: S105
