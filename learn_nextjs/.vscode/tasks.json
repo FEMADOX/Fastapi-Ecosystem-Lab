@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "next: dev (debug)",
+      "type": "shell",
+      "command": "pnpm dev",
+      "options": {
+        "env": {
+          "NODE_OPTIONS": "--inspect"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "next",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting|Compiling|Turbopack",
+          "endsPattern": "- Local:"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

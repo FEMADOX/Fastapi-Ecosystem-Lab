@@ -1,0 +1,51 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js — Full Stack (one-click)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev",
+      "serverReadyAction": {
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      "name": "Next.js — Server only (attach)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "cwd": "${workspaceFolder}",
+      "sourceMaps": true,
+      "restart": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/node_modules/**"
+      ]
+    },
+    {
+      "name": "Next.js — Client only (Chrome)",
+      "type": "chrome",
+      "request": "attach",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMaps": true,
+      "skipFiles": [
+        "${workspaceFolder}/node_modules/**"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Next.js — Full Stack (compound)",
+      "configurations": [
+        "Next.js — Server only (attach)",
+        "Next.js — Client only (Chrome)"
+      ],
+      "preLaunchTask": "next: dev (debug)",
+      "stopAll": true
+    }
+  ]
+}
