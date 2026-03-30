@@ -5,27 +5,35 @@ import { Suspense } from 'react'
 // Layer 3: stable id in, data out — cacheable
 const ItemDetail = async ({ id }: IdProp) => {
   'use cache'
-  const item = await getItem(id)
+  const { data: item, error } = await getItem(id)
+
+  if (error) {
+    throw new Error(`Failed to fetch item: ${error}`)
+  }
 
   return (
-    <>
-      <h1 className="text-3xl mb-8 font-bold">Item: {item.name}</h1>
-      <p className="text-xl mb-5 font-bold">
-        ID: <span className="font-normal">{item.id}</span>
-      </p>
-      <p className="text-xl mb-5 font-bold">
-        Name: <span className="font-normal">{item.name}</span>
-      </p>
-      <p className="text-xl mb-5 font-bold">
-        Description: <span className="font-normal">{item.description}</span>
-      </p>
-      <p className="text-xl mb-5 font-bold">
-        Price: <span className="font-normal">{item.price}</span>
-      </p>
-      <p className="text-xl mb-5 font-bold">
-        Tax: <span className="font-normal">{item.tax}</span>
-      </p>
-    </>
+    <div>
+      {item && (
+        <>
+          <h1 className="text-3xl mb-8 font-bold">Item: {item.name}</h1>
+          <p className="text-xl mb-5 font-bold">
+            ID: <span className="font-normal">{item.id}</span>
+          </p>
+          <p className="text-xl mb-5 font-bold">
+            Name: <span className="font-normal">{item.name}</span>
+          </p>
+          <p className="text-xl mb-5 font-bold">
+            Description: <span className="font-normal">{item.description}</span>
+          </p>
+          <p className="text-xl mb-5 font-bold">
+            Price: <span className="font-normal">{item.price}</span>
+          </p>
+          <p className="text-xl mb-5 font-bold">
+            Tax: <span className="font-normal">{item.tax}</span>
+          </p>
+        </>
+      )}
+    </div>
   )
 }
 

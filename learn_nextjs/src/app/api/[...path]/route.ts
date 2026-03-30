@@ -6,6 +6,9 @@ import { TokenSchema } from '../schemas'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL
 
+// Loading environment variables from .env.local
+// const ENVIRONMENT = process.env.NEXT_PUBLIC_ENVIRONMENT
+
 const handler = async (
   request: NextRequest,
   pathname: string
@@ -56,7 +59,8 @@ const handler = async (
     response.cookies.set('access_token', data.access_token, {
       httpOnly: true,
       sameSite: 'lax',
-      path: '/'
+      path: '/',
+      expires: new Date(Date.now() + data.expires_in * 1000)
       // TODO (FENYXZ): en producción, agregar `secure: true` para que solo se envíen por HTTPS
       // secure: true, // descomenta en producción
     })
@@ -65,6 +69,7 @@ const handler = async (
     //   httpOnly: true,
     //   sameSite: 'lax',
     //   path: '/'
+    //   expires: new Date(Date.now() + data.expires_in * 1000)
     //   TODO (FENYXZ): en producción, agregar `secure: true` para que solo se envíen por HTTPS
     //   secure: true, // descomenta en producción
     // })
