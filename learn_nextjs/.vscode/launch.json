@@ -5,7 +5,7 @@
       "name": "Next.js — Full Stack (one-click)",
       "type": "node-terminal",
       "request": "launch",
-      "command": "pnpm dev",
+      "command": "pnpm dev:watch",
       "serverReadyAction": {
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
@@ -44,7 +44,6 @@
         "Next.js — Server only (attach)",
         "Next.js — Client only (Chrome)"
       ],
-      "preLaunchTask": "next: dev (debug)",
       "stopAll": true
     }
   ]
