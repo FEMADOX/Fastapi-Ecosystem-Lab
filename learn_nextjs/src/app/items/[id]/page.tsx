@@ -1,10 +1,9 @@
 import { getItem } from '@/app/api/endpoints'
-import { PromiseIdProp, IdProp } from '@/common/types'
-import { Suspense } from 'react'
+import { PromiseIdProp } from '@/common/types'
 
-// Layer 3: stable id in, data out — cacheable
-const ItemDetail = async ({ id }: IdProp) => {
+const ItemPage = async ({ params }: PromiseIdProp) => {
   'use cache'
+  const { id } = await params
   const { data: item, error } = await getItem(id)
 
   if (error) {
@@ -36,18 +35,5 @@ const ItemDetail = async ({ id }: IdProp) => {
     </div>
   )
 }
-
-// Layer 2: awaits params inside Suspense, passes plain id down
-const ItemResolver = async ({ params }: PromiseIdProp) => {
-  const { id } = await params
-  return <ItemDetail id={id} />
-}
-
-// Layer 1: non-async page — Suspense wraps the params access
-const ItemPage = ({ params }: PromiseIdProp) => (
-  <Suspense fallback={<p>Loading item...</p>}>
-    <ItemResolver params={params} />
-  </Suspense>
-)
 
 export default ItemPage

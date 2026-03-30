@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Literal
 
-from learn_fastapi.src.config import Settings
+from learn_fastapi.src.config import Settings, settings
 
 
 class AuthConfig(Settings):
@@ -11,7 +11,7 @@ class AuthConfig(Settings):
     refresh_token_expire_days: int = 7
 
     # Set to True in production when using HTTPS
-    cookie_secure: bool = False
+    cookie_secure: bool = settings.environment == "production"
     # Use "none" if your frontend is on a different domain,
     # "strict" for same-site only and "lax" for a balance between security and usability
     cookie_samesite: Literal["strict", "lax", "none"] = "lax"

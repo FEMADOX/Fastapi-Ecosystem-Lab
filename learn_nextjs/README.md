@@ -119,10 +119,10 @@ pnpm lint:fix
 
 ## Environment Variables
 
-Create a `.env.local` file for environment-specific configuration:
+Create a `.env.local` file using `.env.local.example` as a template for environment-specific configuration:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 **Note**: Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser.
@@ -138,7 +138,8 @@ Example with fetch:
 
 ```typescript
 const response = await fetch(
-  `${process.env.NEXT_PUBLIC_API_BASE_URL}/latest/items`,
+  // LEARN_FASTAPI_API_URL is injected at build time from .env in the root directory
+  `${process.env.LEARN_FASTAPI_API_URL}/latest/items`,
   {
     headers: {
       Authorization: `Bearer ${accessToken}`,

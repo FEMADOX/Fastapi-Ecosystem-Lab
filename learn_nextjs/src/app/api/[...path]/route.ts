@@ -1,13 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { API_BASE_URL } from '@/common/const'
+import { API_BASE_URL as BACKEND_URL } from '@/common/const'
 import { PromisePathProps } from '../interfaces'
 import { TokenSchema } from '../schemas'
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || API_BASE_URL
-
-// Loading environment variables from .env.local
-// const ENVIRONMENT = process.env.NEXT_PUBLIC_ENVIRONMENT
 
 const handler = async (
   request: NextRequest,
@@ -60,9 +55,8 @@ const handler = async (
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
-      expires: new Date(Date.now() + data.expires_in * 1000)
-      // TODO (FENYXZ): en producción, agregar `secure: true` para que solo se envíen por HTTPS
-      // secure: true, // descomenta en producción
+      expires: new Date(Date.now() + data.expires_in * 1000),
+      secure: process.env.ENVIRONMENT === 'production'
     })
     // TODO (FENYXZ): Uncomment after implementing returning of refresh token from the API
     // response.cookies.set('refresh_token', data.refresh_token, {
@@ -70,8 +64,7 @@ const handler = async (
     //   sameSite: 'lax',
     //   path: '/'
     //   expires: new Date(Date.now() + data.expires_in * 1000)
-    //   TODO (FENYXZ): en producción, agregar `secure: true` para que solo se envíen por HTTPS
-    //   secure: true, // descomenta en producción
+    //   secure: process.env.ENVIRONMENT === 'production'
     // })
 
     return response
@@ -106,7 +99,8 @@ const methodHanlder = async (
   { params }: PromisePathProps
 ) => {
   const { path } = await params
-  return handler(request, path.join('/'))
+  const pathName = path.length > 1 ? path.join('/') : path[0] + '/'
+  return handler(request, pathName)
 }
 
 export const GET = methodHanlder
