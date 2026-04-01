@@ -59,6 +59,7 @@ const LoginPage = () => {
     }
 
     router.push('/')
+    router.refresh()
   }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -112,40 +113,6 @@ const LoginPage = () => {
               <FieldError>{fieldErrors.password}</FieldError>
             </Field>
           </FieldGroup>
-          {/* <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-md border px-3 py-2 focus:ring"
-            />
-            <p className={'text-sm text-destructive' + (fieldErrors.email ? '' : ' p-2')}>{fieldErrors.email}</p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-md border px-3 py-2 focus:ring"
-            />
-            <p className={'text-sm text-destructive' + (fieldErrors.password ? '' : ' p-2')}>{fieldErrors.password}</p>
-          </div> */}
 
           {submitError && (
             <p className="text-sm text-destructive">{submitError}</p>
@@ -154,7 +121,11 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60 transition-colors hover:cursor-pointer hover:bg-gray-800"
+            className={`
+              w-full rounded-md border bg-primary px-4 py-2 text-primary-foreground font-semibold
+              disabled:opacity-60 transition-colors
+              hover:cursor-pointer hover:bg-transparent hover:text-primary hover:border hover:border-primary
+            `}
           >
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </button>

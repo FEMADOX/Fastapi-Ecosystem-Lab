@@ -68,7 +68,6 @@ const ItemsPage = async () => {
                       onSale={item.price != null}
                       className="text-lg font-semibold"
                     >
-                      {/* TODO (FENYXZ): fetch real price discount, fallback to placeholder if not available */}
                       <PriceValue
                         price={item.price ? item.price / 1.05 : 0}
                         currency="USD"
