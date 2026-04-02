@@ -24,7 +24,14 @@ class Token(BaseModel):
     csrf_token: str = Field(description="CSRF token")
 
 
-# TODO (FENYXZ): Create a Schema for API v2 that includes:
-#   - expires_in => access_token_expires_in: int = Field(description="Access token expiration timestamp")
-#   - refresh_token: str = Field(description="JWT refresh token")
-#   - refresh_token_expires_in: int = Field(description="Refresh token expiration timestamp")
+class TokenV2(BaseModel):
+    """Schema for token response v2."""
+
+    access_token: str = Field(description="JWT access token")
+    access_expires_in: int = Field(description="Expiration timestamp of access token")
+    access_token_type: str = Field(
+        description="Token type of access token", default="bearer"
+    )
+    refresh_token: str = Field(description="JWT refresh token")
+    refresh_expires_in: int = Field(description="Expiration timestamp of refresh token")
+    csrf_token: str = Field(description="CSRF token")

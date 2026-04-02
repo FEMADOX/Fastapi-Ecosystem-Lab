@@ -11,8 +11,8 @@ from learn_fastapi.src.users.schema import UserCreate, UserResponse
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
 from .annotations import X_CSRF_TOKEN
-from .dependencies import AuthServiceDep, OAuth2PRFDep
-from .schema import Token
+from .dependencies import AuthServiceDep, AuthServiceV2Dep, OAuth2PRFDep
+from .schema import Token, TokenV2
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -49,6 +49,34 @@ async def login(
 
     Returns:
         Token: Returns the JWT access token.
+
+    """
+    return await service.login(form_data, response)
+
+
+@api_version(2)
+@router.post("/token")
+async def login(  # noqa: F811
+    service: AuthServiceV2Dep,
+    form_data: OAuth2PRFDep,
+    response: Response,
+) -> TokenV2:
+    """Authenticate a user and return a TokenV2.
+
+    Args:
+        service: Injected AuthServiceV2 dependency.
+        form_data: The OAuth2 password request form data (username and password).
+        response: The FastAPI Response object to set cookies on.
+
+    Returns:
+        TokenV2: Returns a new TokenV2 instance.
+        - access_token: JWT access token
+        - access_expires_in: Expiration timestamp of access token
+        - access_token_type: Token type of access token
+        - refresh_token: JWT refresh token
+        - refresh_expires_in: Expiration timestamp of refresh token
+        - csrf_token: CSRF token
+
 
     """
     return await service.login(form_data, response)
