@@ -1,37 +1,44 @@
-// import { jwtVerify } from 'jose'
+import { jwtVerify } from 'jose'
 import { NextRequest, NextResponse } from 'next/server'
-// import { SECRET_KEY } from './common/const'
+import { SECRET_KEY } from './common/const'
 
 const PROTECTED = ['/items/new']
 const AUTH_ONLY = ['/login', '/signup']
+const JWT_SECRET = new TextEncoder().encode(SECRET_KEY)
 
 export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl
+  const redirectTo = (redirectPath: string) => NextResponse.redirect(new URL(`${redirectPath}`, request.url))
+
   const token = request.cookies.get('access_token')?.value
 
-  const isProtected = PROTECTED.some((response) => pathname.startsWith(response))
-  const isAuthOnly = AUTH_ONLY.some((response) => pathname.startsWith(response))
+  const isProtected = PROTECTED.some((route) => pathname.startsWith(route))
+  const isAuthOnly = AUTH_ONLY.some((route) => pathname.startsWith(route))
 
   if (isProtected) {
-    if (!token) return NextResponse.redirect(new URL('/login', request.url))
+    if (!token) return redirectTo('/login')
 
-    // TODO (FENYXZ): Re-enable JWT verification once we have a refresh token mechanism in place. For now, we just check if the token exists.
-    // try {
-    //   await jwtVerify(token, new TextEncoder().encode(SECRET_KEY), {
-    //     algorithms: ['HS256']
-    //   })
-    //   return NextResponse.next()
-    // } catch (error) {
-    //   console.error('JWT verification failed in proxy', error)
-    //   // Token expired or invalid - clear it and redirect
-    //   const response = NextResponse.redirect(new URL('/login', request.url))
-    //   response.cookies.delete('access_token')
-    //   return response
-    // }
+    // TODO (FENYXZ): Replace with full refresh token flow (Opción 2).
+    // For now: verify signature only, ignore expiration.
+    // The FastAPI API returns 401 on expired tokens → auth-provider handles logout.
+    try {
+      await jwtVerify(token, JWT_SECRET, {
+        algorithms: ['HS256']
+      })
+    } catch (error) {
+      // Only ignore expiration errors; block all other verification issues.
+      const code = (error as { code?: string }).code
+      if (code !== 'ERR_JWT_EXPIRED') {
+        console.error('JWT verification failed in proxy, blocking request', error)
+        const response = redirectTo('/login')
+        response.cookies.delete('access_token')
+        return response
+      }
+    }
   }
 
   if (isAuthOnly && token) {
-    return NextResponse.redirect(new URL('/', request.url))
+    return redirectTo('/')
   }
 
   return NextResponse.next()

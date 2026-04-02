@@ -145,7 +145,7 @@ def get_refresh_token_expiration() -> datetime:
         The expiration datetime for a refresh token.
 
     """
-    return datetime.now(tz=UTC) + auth_config.refresh_token_expire
+    return datetime.now(UTC).astimezone() + auth_config.refresh_token_expire
 
 
 def set_auth_cookies(response: Response, refresh_token: str, csrf_token: str) -> None:

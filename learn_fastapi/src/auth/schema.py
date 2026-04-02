@@ -11,7 +11,7 @@ class TokenData(BaseModel):
     sub: str = Field(description="Subject (usually user email)")
     exp: datetime | None = Field(
         description="Expiration timestamp",
-        default=datetime.now(tz=UTC) + auth_config.access_token_expire,
+        default=datetime.now(tz=UTC).astimezone() + auth_config.access_token_expire,
     )
 
 
