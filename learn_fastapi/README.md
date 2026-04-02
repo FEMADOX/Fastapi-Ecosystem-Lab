@@ -68,7 +68,13 @@ learn_fastapi/
 |   |   ├── items/
 |   |   |   ├── conftest.py     # Item fixtures (test_user, sample_item, seeded_item)
 |   |   |   └── test_router.py  # Item CRUD endpoints tests
+|   |   ├── conftest.py # V1 global fixtures (if needed)
 |   |   └── test_items_authorization.py # Authorization tests for item ownership
+|   ├── v2/
+|   |   ├── auth/
+|   |   |   ├── conftest.py     # Auth fixtures (seeded user)
+|   |   |   └── test_router.py  # Authentication endpoints tests
+|   |   └── conftest.py # V2 global fixtures (if needed)
 |   ├── conftest.py     # Global test fixtures (test_async_engine, test_session, client)
 |   └── test_main.py    # Basic smoke test for app startup
 ├── .env.example
