@@ -20,7 +20,7 @@ const handler = async (
     forwardHeaders.set('Authorization', `Bearer ${accessToken}`)
   }
 
-  const backendRes = await fetch(`${BACKEND_URL}/${pathname}`, {
+  const backendRes = await fetch(`${BACKEND_URL}/latest/${pathname}`, {
     method: request.method,
     headers: forwardHeaders,
     body: request.method !== 'GET' ? await request.text() : undefined

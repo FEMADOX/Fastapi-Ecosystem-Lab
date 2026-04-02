@@ -1,9 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { logout } from '../api/endpoints'
-import { ButtonGroup } from '@/components/ui/button-group'
+import { logout } from '@/app/api/endpoints'
 import { Button } from '@/components/ui/button'
+import { ButtonGroup } from '@/components/ui/button-group'
+import { useRouter } from 'next/navigation'
 
 interface LogoutButtonProps {
   isLoggedIn: boolean
@@ -32,11 +32,15 @@ export const LogoutGroup = ({ isLoggedIn }: LogoutButtonProps) => {
   return (
     <ButtonGroup
       hidden={!isLoggedIn}
-      className="ml-auto md:ml-0"
       role="form"
       onClick={handleLogout}
     >
-      <Button className="text-md font-semibold cursor-pointer py-3.5 hover:opacity-80 transition-opacity" variant="default" type="submit" size="sm">
+      <Button
+        className="text-md font-semibold cursor-pointer py-3.5 hover:opacity-80 transition-opacity"
+        variant="default"
+        type="submit"
+        size="sm"
+      >
         Logout
       </Button>
     </ButtonGroup>

@@ -71,7 +71,7 @@ export const NavBar = async () => {
             </li>
           </ul>
         </div>
-        <ButtonGroup className="ml-auto">
+        <ButtonGroup className="ml-auto md:ml-0">
           <LogoutGroup isLoggedIn={isLoggedIn} />
           <ButtonGroup
             className="flex gap-2 px-1 items-center ml-auto md:ml-0"

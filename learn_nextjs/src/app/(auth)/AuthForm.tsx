@@ -1,20 +1,16 @@
 'use client'
 
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { ApiProxyResponse } from '@/app/api/interfaces'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
 import { z } from 'zod'
-
-interface AuthFormProps {
-  title: string
-  submitLabel: string
-  submittingLabel: string
-  schema: z.ZodTypeAny
-  actionApi: (email: string, password: string) => Promise<ApiProxyResponse<unknown>>
-  redirectPath: string
-}
+import { AuthFormProps } from './interfaces'
 
 export const AuthForm = ({
   title,
@@ -28,6 +24,7 @@ export const AuthForm = ({
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState('')
@@ -45,8 +42,13 @@ export const AuthForm = ({
       const flattenedErrors = z.flattenError(parseResult.error).fieldErrors
       const nextFieldErrors = Object.fromEntries(
         Object.entries(flattenedErrors)
-          .filter(([, messages]) => Array.isArray(messages) && messages.length > 0)
-          .map(([fieldName, messages]) => [fieldName, (messages as string[])[0] ?? 'Invalid value'])
+          .filter(
+            ([, messages]) => Array.isArray(messages) && messages.length > 0
+          )
+          .map(([fieldName, messages]) => [
+            fieldName,
+            (messages as string[])[0] ?? 'Invalid value'
+          ])
       )
       setFieldErrors(nextFieldErrors)
       return
@@ -70,7 +72,9 @@ export const AuthForm = ({
       .catch((error: unknown) => {
         console.error(`Auth error (${title}):`, error)
         setSubmitError(
-          error instanceof Error ? error.message : 'Something went wrong. Please try again.'
+          error instanceof Error
+            ? error.message
+            : 'Something went wrong. Please try again.'
         )
       })
       .finally(() => {
@@ -86,7 +90,9 @@ export const AuthForm = ({
         <form method="post" onSubmit={handleSubmit} className="space-y-4">
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <FieldLabel htmlFor="email">
+                Email<span className="text-destructive">*</span>
+              </FieldLabel>
               <Input
                 id="email"
                 name="email"
@@ -100,7 +106,9 @@ export const AuthForm = ({
               <FieldError>{fieldErrors.email}</FieldError>
             </Field>
             <Field>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <FieldLabel htmlFor="password">
+                Password<span className="text-destructive">*</span>
+              </FieldLabel>
               <Input
                 id="password"
                 name="password"

@@ -1,13 +1,21 @@
 'use client'
 
 import { createItem } from '@/app/api/endpoints'
+import { useAuth } from '@/app/hooks/useAuth'
 import { FormEvent, useState } from 'react'
+import { z } from 'zod'
 import { newItemFormSchema } from './schema'
 
 const ItemNewPage = () => {
+  const { state } = useAuth()
+
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  if (state.status !== 'authenticated') return
+
+  const { user } = state
 
   const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -19,7 +27,7 @@ const ItemNewPage = () => {
     const parseResult = newItemFormSchema.safeParse(rawFormData)
 
     if (!parseResult.success) {
-      const flattenedErrors = parseResult.error.flatten().fieldErrors
+      const flattenedErrors = z.flattenError(parseResult.error).fieldErrors
       const nextFieldErrors = Object.fromEntries(
         Object.entries(flattenedErrors)
           .filter(
@@ -27,7 +35,7 @@ const ItemNewPage = () => {
           )
           .map(([fieldName, messages]) => [
             fieldName,
-            messages[0] ?? 'Invalid value'
+            (messages as string[])[0] ?? 'Invalid value'
           ])
       )
 
@@ -62,7 +70,14 @@ const ItemNewPage = () => {
           grid gap-2 gap-y-3 max-w-md grid-cols-[max-content_1fr]
          [&>div>input]:bg-gray-300 [&>div>input]:rounded [&>div>input]:text-black [&>div>input]:px-2 [&>div>input]:w-full
          "
-        onSubmit={handleSubmit}
+        // onSubmit={handleSubmit}
+        onSubmit={(event) => {
+          event.preventDefault()
+          console.log(
+            'Submitting form with data:',
+            Object.fromEntries(new FormData(event.currentTarget).entries())
+          )
+        }}
         method="POST"
         noValidate
       >
@@ -76,7 +91,7 @@ const ItemNewPage = () => {
         </div> */}
         {/* TODO (FENYXZ): Implement the logic to fetch the current user's ID through the authentication context or API */}
         {/* User ID is hidden for non-admin users and the default value is the current user's ID obtained from the authorization */}
-        <input type="hidden" id="userId" name="userId" value={''} />
+        <input type="hidden" id="userId" name="userId" value={user.id} />
 
         <label htmlFor="name">Name:</label>
         <div>
