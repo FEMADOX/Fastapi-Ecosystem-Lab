@@ -18,9 +18,6 @@ export const proxy = async (request: NextRequest) => {
   if (isProtected) {
     if (!token) return redirectTo('/login')
 
-    // TODO (FENYXZ): Replace with full refresh token flow (Opción 2).
-    // For now: verify signature only, ignore expiration.
-    // The FastAPI API returns 401 on expired tokens → auth-provider handles logout.
     try {
       await jwtVerify(token, JWT_SECRET, {
         algorithms: ['HS256']

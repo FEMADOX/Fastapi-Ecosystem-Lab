@@ -1,4 +1,3 @@
-// import { API_BASE_URL } from '@/common/const'
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
 import { api } from './abstraction'
 import {
@@ -8,32 +7,33 @@ import {
   UserUpdate,
   Items,
   ApiProxyLoginResponse,
-  ApiProxyLogoutResponse
+  ApiProxyLogoutResponse,
+  ApiVersion
 } from './types'
 
 // ==================  ITEMS  ==================
 const ITEMS_PATH = '/items'
 
-export const getItems = async () => api.get<Items>(ITEMS_PATH)
+export const getItems = async () => api.get<Items>({ endpoint: ITEMS_PATH })
 
 export const getItem = async (id: string) => {
-  return api.get<Item>(ITEMS_PATH, id)
+  return api.get<Item>({ endpoint: ITEMS_PATH, pathParam: id })
 }
 
 export const createItem = async (item: Omit<Item, 'id'>) => {
-  return api.post<Item>(ITEMS_PATH, item)
+  return api.post<Item>({ endpoint: ITEMS_PATH }, item)
 }
 
 export const updateItem = async (id: string, item: Omit<Item, 'id'>) => {
-  return api.put<Item>(ITEMS_PATH, id, item)
+  return api.put<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item)
 }
 
 export const patchItem = async (id: string, item: Omit<Item, 'id'>) => {
-  return api.patch<Item>(ITEMS_PATH, id, item)
+  return api.patch<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item)
 }
 
 export const deleteItem = async (id: string) => {
-  return api.delete(ITEMS_PATH, id)
+  return api.delete({ endpoint: ITEMS_PATH, pathParam: id })
 }
 
 export const getItemImage = async (filename: string) => {
@@ -116,37 +116,38 @@ export const createItemWithImage = async (
 const USERS_PATH = '/users'
 
 export const getMe = async () => {
-  return api.get<User>(`${USERS_PATH}/me`, null)
+  return api.get<User>({ endpoint: `${USERS_PATH}/me` })
 }
 
 export const getUser = async (id: string) => {
-  return api.get<User>(USERS_PATH, id)
+  return api.get<User>({ endpoint: USERS_PATH, pathParam: id })
 }
 
 export const patchUser = async (id: string, user: UserUpdate) => {
-  return api.patch<User>(USERS_PATH, id, user)
+  return api.patch<User>({ endpoint: USERS_PATH, pathParam: id }, user)
 }
 
 export const deleteUser = async (id: string) => {
-  return api.delete(USERS_PATH, id)
+  return api.delete({ endpoint: USERS_PATH, pathParam: id })
 }
 
 // ==================  AUTH  ==================
 const AUTH_PATH = '/auth'
 
-export const register = async (email: string, password: string) => {
-  return api.post<User>(`${AUTH_PATH}/register`, { email, password })
+// ==================   (Versioned)   ==================
+export const register = async (email: string, password: string, apiVersion?: ApiVersion) => {
+  return api.post<User>({ endpoint: `${AUTH_PATH}/register`, apiVersion }, { email, password })
 }
 
-export const login = async (email: string, password: string) => {
+export const login = async (email: string, password: string, apiVersion?: ApiVersion) => {
   const body = new URLSearchParams({ username: email, password })
-  return api.post<ApiProxyLoginResponse>(`${AUTH_PATH}/token`, body)
+  return api.post<ApiProxyLoginResponse>({ endpoint: `${AUTH_PATH}/token`, apiVersion }, body)
 }
 
-export const refreshToken = async () => {
-  return api.post<Token>(`${AUTH_PATH}/refresh`, {})
+export const refreshToken = async (apiVersion?: ApiVersion) => {
+  return api.post<Token>({ endpoint: `${AUTH_PATH}/refresh`, apiVersion }, {})
 }
 
-export const logout = async () => {
-  return api.post<ApiProxyLogoutResponse>(`${AUTH_PATH}/logout`, {})
+export const logout = async (apiVersion?: ApiVersion) => {
+  return api.post<ApiProxyLogoutResponse>({ endpoint: `${AUTH_PATH}/logout`, apiVersion }, {})
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BACKEND_API_VERSIONS } from './consts'
 import {
   ImageSchema,
   ItemSchema,
@@ -27,3 +28,5 @@ export type User = z.infer<typeof UserSchema>
 export type Users = User[]
 export type UserUpdate = z.infer<typeof UserUpdateSchema>
 export type UserCreate = z.infer<typeof UserCreateSchema>
+
+export type ApiVersion = typeof BACKEND_API_VERSIONS[number]

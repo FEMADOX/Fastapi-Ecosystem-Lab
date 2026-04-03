@@ -41,3 +41,12 @@ export const TokenSchema = z.object({
   expires_in: z.number(),
   csrf_token: z.string()
 })
+
+export const TokenV2Schema = z.object({
+  access_token: z.string(),
+  access_expires_in: z.number(),
+  access_token_type: z.string().default('bearer'),
+  refresh_token: z.string(),
+  refresh_expires_in: z.number(),
+  csrf_token: z.string()
+})

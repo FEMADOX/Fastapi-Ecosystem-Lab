@@ -2,16 +2,20 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { API_BASE_URL as BACKEND_URL } from '@/common/const'
 import { PromisePathProps } from '../interfaces'
-import { TokenSchema } from '../schemas'
+import { TokenV2Schema } from '../schemas'
 
 const handler = async (
   request: NextRequest,
   pathname: string
 ): Promise<NextResponse> => {
+  const [apiVersion, ...pathParts] = pathname.split('/')
+  const apiPath = pathParts.join('/')
+
   const cookieStore = await cookies()
   const accessToken = cookieStore.get('access_token')?.value
-
+  const refreshToken = cookieStore.get('refresh_token')?.value
   const forwardHeaders = new Headers()
+
   forwardHeaders.set(
     'Content-Type',
     request.headers.get('Content-Type') ?? 'application/json'
@@ -19,8 +23,12 @@ const handler = async (
   if (accessToken) {
     forwardHeaders.set('Authorization', `Bearer ${accessToken}`)
   }
+  const isRefreshEndpoint = apiPath === 'auth/refresh'
+  if (refreshToken && isRefreshEndpoint) {
+    forwardHeaders.set('X-Refresh-Token', refreshToken)
+  }
 
-  const backendRes = await fetch(`${BACKEND_URL}/latest/${pathname}`, {
+  const backendRes = await fetch(`${BACKEND_URL}/${apiVersion}/${apiPath}`, {
     method: request.method,
     headers: forwardHeaders,
     body: request.method !== 'GET' ? await request.text() : undefined
@@ -36,36 +44,43 @@ const handler = async (
     })
   }
 
-  const isLogin = pathname === 'auth/token'
-  const isLogout = pathname === 'auth/logout'
+  const isLogin = apiPath === 'auth/token'
+  const isLogout = apiPath === 'auth/logout'
 
   if (isLogin) {
     const rawData: unknown = await backendRes.json()
-    const { data, error, success } = TokenSchema.safeParse(rawData)
+    const { data, error, success } = TokenV2Schema.safeParse(rawData)
     if (!success || error) {
       return NextResponse.json(
-        { detail: `Invalid login response: ${error?.message ?? 'Unknown error'}` },
+        {
+          detail: `Invalid login response: ${error?.message ?? 'Unknown error'}`
+        },
         { status: 502 }
       )
     }
 
     const response = NextResponse.json({ loggedIn: true })
 
-    response.cookies.set('access_token', data.access_token, {
+    const {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      access_expires_in: accessExpiresIn,
+      refresh_expires_in: refreshExpiresIn
+    } = data
+    response.cookies.set('access_token', accessToken, {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
-      expires: new Date(Date.now() + data.expires_in * 1000),
+      expires: new Date(Date.now() + accessExpiresIn * 1000),
       secure: process.env.ENVIRONMENT === 'production'
     })
-    // TODO (FENYXZ): Uncomment after implementing returning of refresh token from the API
-    // response.cookies.set('refresh_token', data.refresh_token, {
-    //   httpOnly: true,
-    //   sameSite: 'lax',
-    //   path: '/'
-    //   expires: new Date(Date.now() + data.expires_in * 1000)
-    //   secure: process.env.ENVIRONMENT === 'production'
-    // })
+    response.cookies.set('refresh_token', refreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      expires: new Date(Date.now() + refreshExpiresIn * 1000),
+      secure: process.env.ENVIRONMENT === 'production'
+    })
 
     return response
   }
@@ -79,8 +94,7 @@ const handler = async (
 
     const response = NextResponse.json({ loggedOut: true })
     response.cookies.delete('access_token')
-    // TODO (FENYXZ): Uncomment after implementing returning of refresh token from the API
-    // response.cookies.delete('refresh_token', { path: '/' })
+    response.cookies.delete('refresh_token')
     return response
   }
 

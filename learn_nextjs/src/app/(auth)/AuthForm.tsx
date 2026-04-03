@@ -57,7 +57,7 @@ export const AuthForm = ({
     setIsSubmitting(true)
 
     const parsed = parseResult.data as { email: string; password: string }
-    const { data, error } = await actionApi(parsed.email, parsed.password)
+    const { data, error } = await actionApi(parsed.email, parsed.password, '/v2')
     if (error && !data) {
       setSubmitError(error)
       return

@@ -1,4 +1,4 @@
-import { HttpMethod } from './types'
+import { ApiVersion, HttpMethod } from './types'
 
 export interface RequestFactoryOptions {
   method?: HttpMethod
@@ -7,6 +7,7 @@ export interface RequestFactoryOptions {
   accessToken?: string | null
   headers?: HeadersInit
   queryParams?: Record<string, string>
+  apiVersion?: ApiVersion
 }
 
 export interface ApiProxyResponse<T> {
@@ -16,4 +17,11 @@ export interface ApiProxyResponse<T> {
 
 export interface PromisePathProps {
   params: Promise<{ path: string[] }>
+}
+
+export interface APIBaseProps {
+  endpoint: string
+  pathParam?: string | null
+  accessToken?: string | null
+  apiVersion?: ApiVersion
 }

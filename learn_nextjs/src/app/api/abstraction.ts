@@ -2,7 +2,7 @@
 // Provides a consistent interface for making API calls and handling responses/errors
 
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
-import { RequestFactoryOptions, ApiProxyResponse } from './interfaces'
+import { APIBaseProps, ApiProxyResponse, RequestFactoryOptions } from './interfaces'
 
 const getProxyBase = (): string => {
   // En el servidor (Server Components), fetch necesita URL absoluta
@@ -15,11 +15,10 @@ const getProxyBase = (): string => {
 }
 
 const buildUrl = (
-  endpoint: string,
-  pathParam?: string | null,
+  { endpoint, pathParam, apiVersion }: APIBaseProps,
   queryParams?: Record<string, string>
 ): string => {
-  const base = `${getProxyBase()}${endpoint}${pathParam ? `/${pathParam}` : ''}`
+  const base = `${getProxyBase()}${apiVersion}${endpoint}${pathParam ? `/${pathParam}` : ''}`
   if (queryParams && Object.keys(queryParams).length > 0) {
     return `${base}?${new URLSearchParams(queryParams).toString()}`
   }
@@ -36,7 +35,8 @@ const apiRequest = async <T>(
     body,
     accessToken = null,
     headers = {},
-    queryParams
+    queryParams,
+    apiVersion = '/latest'
   } = options
 
   const hasBody = body !== undefined
@@ -50,13 +50,16 @@ const apiRequest = async <T>(
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...headers
   }
-  const response = await fetch(buildUrl(endpoint, pathParam, queryParams), {
-    method,
-    headers: requestHeaders,
-    ...(hasBody
-      ? { body: isSerializedBody ? (body as BodyInit) : JSON.stringify(body) }
-      : {})
-  })
+  const response = await fetch(
+    buildUrl({ endpoint, pathParam, apiVersion }, queryParams),
+    {
+      method,
+      headers: requestHeaders,
+      ...(hasBody
+        ? { body: isSerializedBody ? (body as BodyInit) : JSON.stringify(body) }
+        : {})
+    }
+  )
 
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`
@@ -83,60 +86,65 @@ const apiRequest = async <T>(
 
 export const api = {
   get: <T>(
-    endpoint: string,
-    pathParam?: string | null,
-    accessToken?: string | null,
+    options: APIBaseProps,
     queryParams?: Record<string, string>
   ) => {
+    const { endpoint, pathParam, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'GET',
       pathParam,
       accessToken,
-      queryParams
+      queryParams,
+      apiVersion
     })
   },
   post: <T, B = unknown>(
-    endpoint: string,
-    body: B,
-    accessToken?: string | null
+    options: APIBaseProps,
+    body?: B
   ) => {
-    return apiRequest<T>(endpoint, { method: 'POST', body, accessToken })
+    const { endpoint, accessToken, apiVersion } = options
+    return apiRequest<T>(endpoint, {
+      method: 'POST',
+      body,
+      accessToken,
+      apiVersion
+    })
   },
   put: <T, B = unknown>(
-    endpoint: string,
-    pathParam: string | null,
-    body: B,
-    accessToken?: string | null
+    options: APIBaseProps,
+    body: B
   ) => {
+    const { endpoint, pathParam, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'PUT',
       body,
       pathParam,
-      accessToken
+      accessToken,
+      apiVersion
     })
   },
   patch: <T, B = unknown>(
-    endpoint: string,
-    pathParam: string | null,
-    body: B,
-    accessToken?: string | null
+    options: APIBaseProps,
+    body: B
   ) => {
+    const { endpoint, pathParam, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'PATCH',
       body,
       pathParam,
-      accessToken
+      accessToken,
+      apiVersion
     })
   },
-  delete: (
-    endpoint: string,
-    pathParam: string | null,
-    accessToken?: string | null
+  delete: <T>(
+    options: APIBaseProps
   ) => {
-    return apiRequest<void>(endpoint, {
+    const { endpoint, pathParam, accessToken, apiVersion } = options
+    return apiRequest<T>(endpoint, {
       method: 'DELETE',
       pathParam,
-      accessToken
+      accessToken,
+      apiVersion
     })
   }
 }

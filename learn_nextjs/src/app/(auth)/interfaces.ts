@@ -1,5 +1,6 @@
-import { ApiProxyResponse } from '../api/interfaces'
 import { z } from 'zod'
+import { ApiProxyResponse } from '../api/interfaces'
+import { ApiVersion } from '../api/types'
 
 export interface AuthFormProps {
   title: string
@@ -8,7 +9,8 @@ export interface AuthFormProps {
   schema: z.ZodTypeAny
   actionApi: (
     email: string,
-    password: string
+    password: string,
+    apiVersion?: ApiVersion
   ) => Promise<ApiProxyResponse<unknown>>
   redirectPath: string
 }
