@@ -27,11 +27,17 @@ const ItemsPage = async () => {
   return (
     <>
       <h1 className="text-3xl mb-8 font-bold">Items</h1>
+      <Link
+        href="/items/new"
+        className="inline-block mb-8 py-2 px-4 border border-primary text-primary hover:bg-primary hover:text-white transition-colors rounded-md"
+      >
+        Add New Item
+      </Link>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6">
         {items &&
           items.map((item) => (
             <Link
-              className="block h-full w-full max-w-md transition-opacity hover:opacity-65"
+              className="block h-full w-full max-w-md opacity-animation"
               href={`/items/${item.id}`}
               key={item.id}
             >
@@ -85,12 +91,6 @@ const ItemsPage = async () => {
             </Link>
           ))}
       </ul>
-      <Link
-        href="/items/new"
-        className="inline-block mt-8 py-2 px-4 border border-primary text-primary hover:bg-primary hover:text-white transition-colors rounded-md"
-      >
-        Add New Item
-      </Link>
     </>
   )
 }

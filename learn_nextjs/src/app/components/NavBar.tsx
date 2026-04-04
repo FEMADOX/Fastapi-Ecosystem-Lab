@@ -53,7 +53,7 @@ export const NavBar = async () => {
           </Sheet>
         </div>
 
-        <Link className="inline-block text-md sm:text-lg font-bold" href="/">
+        <Link className="inline-block text-md sm:text-lg font-bold opacity-animation" href="/">
           FastAPI Ecosystem Lab
         </Link>
 
@@ -77,11 +77,11 @@ export const NavBar = async () => {
             className="flex gap-2 px-1 items-center ml-auto md:ml-0"
             hidden={isLoggedIn}
           >
-            <Link className="text-md font-semibold hover:opacity-60 transition-opacity will-change-auto" href="/login">
+            <Link className="text-md font-semibold opacity-animation" href="/login">
               Login
             </Link>
             <Link
-              className="text-md text-white font-semibold bg-primary rounded-lg px-2 py-0.5 hover:opacity-70 transition-opacity will-change-auto"
+              className="text-md text-white font-semibold bg-primary rounded-lg px-2 py-0.5 opacity-animation"
               href="/signup"
             >
               Signup

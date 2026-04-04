@@ -31,6 +31,7 @@ export const LogoutGroup = ({ isLoggedIn }: LogoutButtonProps) => {
 
   return (
     <ButtonGroup
+      className='px-1'
       hidden={!isLoggedIn}
       role="form"
       onClick={handleLogout}

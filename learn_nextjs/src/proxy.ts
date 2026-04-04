@@ -16,7 +16,11 @@ export const proxy = async (request: NextRequest) => {
   const isAuthOnly = AUTH_ONLY.some((route) => pathname.startsWith(route))
 
   if (isProtected) {
-    if (!token) return redirectTo('/login')
+    if (!token) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+      return NextResponse.redirect(loginUrl)
+    }
 
     try {
       await jwtVerify(token, JWT_SECRET, {
@@ -27,7 +31,9 @@ export const proxy = async (request: NextRequest) => {
       const code = (error as { code?: string }).code
       if (code !== 'ERR_JWT_EXPIRED') {
         console.error('JWT verification failed in proxy, blocking request', error)
-        const response = redirectTo('/login')
+        const loginUrl = new URL('/login', request.url)
+        loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+        const response = NextResponse.redirect(loginUrl)
         response.cookies.delete('access_token')
         return response
       }

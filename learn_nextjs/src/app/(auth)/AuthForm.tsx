@@ -6,7 +6,11 @@ import {
   FieldGroup,
   FieldLabel
 } from '@/components/ui/field'
+import { getMe } from '@/app/api/endpoints'
+import { useAuth } from '@/app/hooks/useAuth'
+import { UserSchema } from '@/app/api/schemas'
 import { Input } from '@/components/ui/input'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
 import { z } from 'zod'
@@ -21,6 +25,8 @@ export const AuthForm = ({
   redirectPath
 }: AuthFormProps) => {
   const router = useRouter()
+  const { onLoginSuccess } = useAuth()
+  const signUpHref = `/signup?next=${encodeURIComponent(redirectPath)}`
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -57,10 +63,22 @@ export const AuthForm = ({
     setIsSubmitting(true)
 
     const parsed = parseResult.data as { email: string; password: string }
-    const { data, error } = await actionApi(parsed.email, parsed.password, '/v2')
+    const { data, error } = await actionApi(
+      parsed.email,
+      parsed.password,
+      '/v2'
+    )
     if (error && !data) {
       setSubmitError(error)
       return
+    }
+
+    const { data: meData } = await getMe()
+    if (meData) {
+      const parsed = UserSchema.safeParse(meData)
+      if (parsed.success) {
+        onLoginSuccess(parsed.data)
+      }
     }
 
     router.push(redirectPath)
@@ -139,6 +157,23 @@ export const AuthForm = ({
             {isSubmitting ? submittingLabel : submitLabel}
           </button>
         </form>
+
+        {(title === 'Login' && (
+          <p className="mt-4 text-center text-sm">
+            Don&apos;t have an account?{' '}
+            <Link href={signUpHref} className="text-primary font-semibold animated-border-bottom">
+              Sign up
+            </Link>
+          </p>
+        )) ||
+          (title === 'Sign Up' && (
+            <p className="mt-4 text-center text-sm">
+              Already have an account?{' '}
+              <Link href={redirectPath} className="text-primary font-semibold animated-border-bottom">
+                Login
+              </Link>
+            </p>
+          ))}
       </section>
     </main>
   )

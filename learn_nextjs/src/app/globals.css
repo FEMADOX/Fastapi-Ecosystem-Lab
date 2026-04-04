@@ -171,11 +171,31 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
   }
+
   html {
     @apply font-sans;
+  }
+
+  html, body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+@layer utilities {
+  .opacity-animation {
+    @apply hover:opacity-70 transition-opacity;
+  }
+  .animated-border-bottom {
+    @apply border-b-2 border-transparent hover:border-primary transition-[border-color];
   }
 }
