@@ -1,30 +1,22 @@
-'use client'
-
-import { register } from '@/app/api/endpoints'
-import { registerFormSchema } from '../schema'
+import { registerAction } from '@/actions/auth/actions'
+import { AuthPageProps } from '@/types/auth/types'
 import { AuthForm } from '../AuthForm'
-import { useSafeNext } from '../useSafeNext'
-import { Suspense } from 'react'
+import { getSafeNextPath } from '../getSafeNextPath'
 
-const SignUpContent = () => {
-  const safeNext = useSafeNext()
+const SignUpPage = async ({ searchParams }: AuthPageProps) => {
+  const { next } = await searchParams
+  const safeNext = getSafeNextPath(next)
   const redirectPath = `/login?next=${encodeURIComponent(safeNext)}`
+
   return (
     <AuthForm
       title="Sign Up"
       submitLabel="Sign up"
       submittingLabel="Signing up..."
-      schema={registerFormSchema}
-      actionApi={register}
+      action={registerAction}
       redirectPath={redirectPath}
     />
   )
 }
-
-const SignUpPage = () => (
-  <Suspense>
-    <SignUpContent />
-  </Suspense>
-)
 
 export default SignUpPage

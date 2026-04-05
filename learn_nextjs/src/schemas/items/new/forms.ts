@@ -1,8 +1,11 @@
-import { Item } from '@/app/api/interfaces'
-import { z } from 'zod'
-import { nonNegativeNumberFromForm, nullableImageUrlFromForm, stringFromForm } from '@/app/utils/formInputValidators'
+import z from 'zod'
+import {
+  nonNegativeNumberFromForm,
+  nullableImageUrlFromForm,
+  stringFromForm
+} from '@/app/utils/formInputValidators'
 
-export const newItemFormSchema: z.ZodType<Omit<Item, 'id'>> = z.object({
+export const clientItemSchema = z.object({
   userId: stringFromForm('User ID is required'),
   name: stringFromForm('Name is required'),
   description: stringFromForm('Description is required'),

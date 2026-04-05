@@ -1,10 +1,19 @@
-import { getItem } from '@/app/api/endpoints'
-import { PromiseIdProp } from '@/common/types'
+import { serverGet } from '@/app/api/server-fetch'
+import { Item } from '@/common/types/api/resources'
+import { PromiseIdProp } from '@/common/types/routing'
+import { cacheTag } from 'next/cache'
+import { cookies } from 'next/headers'
+
+const fetchItem = async (id: string, accessToken?: string) => {
+  'use cache'
+  cacheTag(`item-${id}`)
+  return serverGet<Item>(`/latest/items/${id}`, accessToken)
+}
 
 const ItemPage = async ({ params }: PromiseIdProp) => {
-  'use cache'
-  const { id } = await params
-  const { data: item, error } = await getItem(id)
+  const [{ id }, cookieStore] = await Promise.all([params, cookies()])
+  const accessToken = cookieStore.get('access_token')?.value
+  const { data: item, error } = await fetchItem(id, accessToken)
 
   if (error) {
     throw new Error(`Failed to fetch item: ${error}`)

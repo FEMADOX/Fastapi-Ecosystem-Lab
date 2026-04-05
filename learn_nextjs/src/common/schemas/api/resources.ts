@@ -1,26 +1,26 @@
 import { z } from 'zod'
 
 export const ImageSchema = z.object({
-  name: z.string(),
-  description: z.string().optional(),
+  name: z.string({ message: 'Name is required' }),
+  description: z.string().optional().default('No description provided'),
   content_type: z.string().nullable(),
   url: z.string()
 })
 
 export const ItemSchema = z.object({
   id: z.string(),
-  user_id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  price: z.number().nonnegative().gte(0).optional(),
-  tax: z.number().nonnegative().gte(0).optional(),
+  user_id: z.string({ message: 'User ID is required' }),
+  name: z.string({ message: 'Name is required' }),
+  description: z.string().optional().default('No description provided'),
+  price: z.number().nonnegative().gte(0).optional().default(0.0),
+  tax: z.number().nonnegative().gte(0).optional().default(0.0),
   image_url: z.string().optional()
 })
 
 export const UserSchema = z.object({
   id: z.string(),
   email: z.email({ pattern: z.regexes.email, message: 'Invalid email address' }),
-  is_active: z.boolean(),
+  is_active: z.boolean().default(true),
   is_superuser: z.boolean().default(false)
 })
 

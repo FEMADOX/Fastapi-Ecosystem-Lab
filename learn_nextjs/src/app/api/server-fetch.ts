@@ -1,0 +1,93 @@
+import 'server-only'
+
+import { cookies } from 'next/headers'
+import { API_BASE_URL } from '@/common/const'
+import { ApiProxyResponse } from '@/types/api/types'
+
+export const getAuthHeaders = async (): Promise<HeadersInit> => {
+  const cookieStore = await cookies()
+  const accessToken = cookieStore.get('access_token')?.value
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
+}
+
+const parseErrorMessage = async (res: Response): Promise<string> => {
+  let message = `${res.status} ${res.statusText}`
+  try {
+    const data = (await res.json()) as unknown
+    if (
+      typeof data === 'object' &&
+      data !== null &&
+      'detail' in data &&
+      typeof (data as Record<string, unknown>).detail === 'string'
+    ) {
+      message = String((data as Record<string, unknown>).detail)
+    }
+  } catch {}
+  return message
+}
+
+export const serverRequestBase = async <T>(
+  path: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+  body?: unknown,
+  accessToken?: string
+): Promise<ApiProxyResponse<T>> => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+  }
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(headers)
+    },
+    body: body ? JSON.stringify(body) : undefined
+  })
+
+  if (!response.ok) {
+    return { data: undefined, error: await parseErrorMessage(response) }
+  }
+
+  if (response.status === 204) return { data: undefined }
+
+  return { data: (await response.json()) as T }
+}
+
+export const serverGet = async <T>(
+  path: string,
+  accessToken?: string
+): Promise<ApiProxyResponse<T>> => {
+  return serverRequestBase<T>(path, 'GET', undefined, accessToken)
+}
+
+export const serverPost = async <T>(
+  path: string,
+  body: unknown,
+  accessToken?: string
+): Promise<ApiProxyResponse<T>> => {
+  return serverRequestBase<T>(path, 'POST', body, accessToken)
+}
+
+export const serverPut = async <T>(
+  path: string,
+  body: unknown,
+  accessToken?: string
+): Promise<ApiProxyResponse<T>> => {
+  return serverRequestBase<T>(path, 'PUT', body, accessToken)
+}
+
+export const serverDelete = async <T>(
+  path: string,
+  accessToken?: string
+): Promise<ApiProxyResponse<T>> => {
+  return serverRequestBase<T>(path, 'DELETE', undefined, accessToken)
+}
+
+export const serverPatch = async <T>(
+  path: string,
+  body: unknown,
+  accessToken?: string
+): Promise<ApiProxyResponse<T>> => {
+  return serverRequestBase<T>(path, 'PATCH', body, accessToken)
+}

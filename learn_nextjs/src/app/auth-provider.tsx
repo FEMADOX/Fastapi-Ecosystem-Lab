@@ -1,10 +1,10 @@
 'use client'
 
-import { Children } from '@/common/types'
+import { UserSchema } from '@/common/schemas/api/resources'
+import { User } from '@/common/types/api/resources'
+import { Children } from '@/common/types/layout'
 import { createContext, useCallback, useEffect, useReducer } from 'react'
-import { User } from './api/types'
 import { getMe } from './api/endpoints'
-import { UserSchema } from './api/schemas'
 
 type AuthState =
   | { status: 'loading' }

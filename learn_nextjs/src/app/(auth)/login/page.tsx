@@ -1,29 +1,27 @@
-'use client'
-
-import { login } from '@/app/api/endpoints'
+import { loginAction } from '@/actions/auth/actions'
+import { AuthPageProps } from '@/types/auth/types'
 import { AuthForm } from '../AuthForm'
-import { loginFormSchema } from '../schema'
-import { useSafeNext } from '../useSafeNext'
-// import { Suspense } from 'react'
+import { getSafeNextPath } from '../getSafeNextPath'
 
-const LoginPage = () => {
-  const redirectPath = useSafeNext()
+const LoginPage = async ({ searchParams }: AuthPageProps) => {
+  const { next } = await searchParams
+  const redirectPath = getSafeNextPath(next)
+  const AUTH_PATHS = ['/login', '/signup']
+  const safeRedirectPath =
+    redirectPath === '/' ||
+    AUTH_PATHS.some((path) => redirectPath.startsWith(path))
+      ? ''
+      : redirectPath
+
   return (
     <AuthForm
       title="Login"
       submitLabel="Sign in"
       submittingLabel="Signing in..."
-      schema={loginFormSchema}
-      actionApi={login}
-      redirectPath={redirectPath}
+      action={loginAction}
+      redirectPath={safeRedirectPath}
     />
   )
 }
-
-// const LoginPage = () => (
-//   <Suspense>
-//     <LoginContent />
-//   </Suspense>
-// )
 
 export default LoginPage

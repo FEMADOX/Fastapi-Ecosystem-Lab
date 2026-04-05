@@ -11,13 +11,33 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname
 })
 
+const appCodeFiles = ['src/app/**/*.{ts,tsx,js,mjs,cjs}']
+const appReactFiles = ['src/app/**/*.{tsx,jsx}']
+
+const scopeConfigToFiles = (config, files) => ({
+  ...config,
+  files
+})
+
+const scopeConfigsToFiles = (configs, files) => {
+  const configList = Array.isArray(configs) ? configs : [configs]
+  return configList.map((config) => scopeConfigToFiles(config, files))
+}
+
 const ignoresLintingConfig = defineConfig([
-  globalIgnores(['.next/', 'node_modules/', 'next-env.d.ts'])
+  globalIgnores([
+    '.next/',
+    'node_modules/',
+    'next-env.d.ts',
+    '.agents/**',
+    'src/components/**',
+    'src/lib/**',
+  ])
 ])
 
 const languageLintingConfig = defineConfig([
   {
-    files: ['**/*.{ts,tsx,js,mjs,cjs}'],
+    files: appCodeFiles,
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -28,10 +48,11 @@ const languageLintingConfig = defineConfig([
       }
     }
   },
-  eslintJs.configs.recommended,
-  tseslint.configs.recommendedTypeChecked,
-  compat.extends('standard'),
+  scopeConfigToFiles(eslintJs.configs.recommended, appCodeFiles),
+  ...scopeConfigsToFiles(tseslint.configs.recommendedTypeChecked, appCodeFiles),
+  ...scopeConfigsToFiles(compat.extends('standard'), appCodeFiles),
   {
+    files: appCodeFiles,
     settings: {
       'import/resolver': {
         typescript: true,
@@ -63,18 +84,25 @@ const languageLintingConfig = defineConfig([
 
 const reactLintingConfig = defineConfig([
   {
-    files: ['**/*.{tsx,jsx}'],
+    files: appReactFiles,
     settings: {
       react: {
         version: 'detect'
       }
     }
   },
-  eslintPluginReact.configs.flat.recommended,
-  eslintPluginReact.configs.flat['jsx-runtime'],
-  eslintReact.configs['recommended-type-checked'],
-  eslintPluginReactHooks.configs['recommended-latest'],
+  ...scopeConfigsToFiles(eslintPluginReact.configs.flat.recommended, appReactFiles),
+  ...scopeConfigsToFiles(eslintPluginReact.configs.flat['jsx-runtime'], appReactFiles),
+  ...scopeConfigsToFiles(
+    eslintReact.configs['recommended-type-checked'],
+    appReactFiles
+  ),
+  ...scopeConfigsToFiles(
+    eslintPluginReactHooks.configs['recommended-latest'],
+    appReactFiles
+  ),
   {
+    files: appReactFiles,
     rules: {
       '@eslint-react/no-useless-fragment': 'error',
       '@eslint-react/no-missing-key': 'warn',
@@ -85,10 +113,14 @@ const reactLintingConfig = defineConfig([
 
 const reactA11yLintingConfig = defineConfig([
   {
-    files: ['**/*.{tsx,jsx}']
+    files: appReactFiles
   },
-  eslintPluginJsxA11y.flatConfigs.recommended,
+  ...scopeConfigsToFiles(
+    eslintPluginJsxA11y.flatConfigs.recommended,
+    appReactFiles
+  ),
   {
+    files: appReactFiles,
     rules: {
       'jsx-a11y/click-events-have-key-events': 'off'
     }
@@ -97,10 +129,14 @@ const reactA11yLintingConfig = defineConfig([
 
 const nextLintingConfig = defineConfig([
   {
-    files: ['**/*.{tsx,jsx}']
+    files: appReactFiles
   },
-  compat.extends('plugin:@next/next/recommended'),
+  ...scopeConfigsToFiles(
+    compat.extends('plugin:@next/next/recommended'),
+    appReactFiles
+  ),
   {
+    files: appReactFiles,
     rules: {
       '@next/next/no-img-element': 'off'
     }
@@ -108,9 +144,9 @@ const nextLintingConfig = defineConfig([
 ])
 
 export default defineConfig([
-  ignoresLintingConfig,
-  languageLintingConfig,
-  reactLintingConfig,
-  reactA11yLintingConfig,
-  nextLintingConfig
+  ...ignoresLintingConfig,
+  ...languageLintingConfig,
+  ...reactLintingConfig,
+  ...reactA11yLintingConfig,
+  ...nextLintingConfig
 ])

@@ -2,7 +2,11 @@
 // Provides a consistent interface for making API calls and handling responses/errors
 
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
-import { APIBaseProps, ApiProxyResponse, RequestFactoryOptions } from './interfaces'
+import {
+  APIBaseProps,
+  ApiProxyResponse,
+  RequestFactoryOptions
+} from '@/types/api/types'
 
 const getProxyBase = (): string => {
   // En el servidor (Server Components), fetch necesita URL absoluta

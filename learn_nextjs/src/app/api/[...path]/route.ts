@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { API_BASE_URL as BACKEND_URL } from '@/common/const'
-import { PromisePathProps } from '../interfaces'
-import { TokenV2Schema } from '../schemas'
+import { TokenV2Schema } from '@/common/schemas/api/resources'
+import { PromisePathProps } from '@/types/api/types'
 
 const handler = async (
   request: NextRequest,
@@ -108,7 +108,7 @@ const handler = async (
   })
 }
 
-const methodHanlder = async (
+const methodHandler = async (
   request: NextRequest,
   { params }: PromisePathProps
 ) => {
@@ -117,8 +117,8 @@ const methodHanlder = async (
   return handler(request, pathName)
 }
 
-export const GET = methodHanlder
-export const POST = methodHanlder
-export const PUT = methodHanlder
-export const DELETE = methodHanlder
-export const PATCH = methodHanlder
+export const GET = methodHandler
+export const POST = methodHandler
+export const PUT = methodHandler
+export const DELETE = methodHandler
+export const PATCH = methodHandler

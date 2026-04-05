@@ -6,98 +6,45 @@ import {
   FieldGroup,
   FieldLabel
 } from '@/components/ui/field'
-import { getMe } from '@/app/api/endpoints'
-import { useAuth } from '@/app/hooks/useAuth'
-import { UserSchema } from '@/app/api/schemas'
 import { Input } from '@/components/ui/input'
+import { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { FormEvent, useState } from 'react'
-import { z } from 'zod'
-import { AuthFormProps } from './interfaces'
+import { FormEvent, startTransition, useActionState, useState } from 'react'
+import { parseAuthForm } from '@/schemas/auth/forms'
 
 export const AuthForm = ({
   title,
   submitLabel,
   submittingLabel,
-  schema,
-  actionApi,
+  action,
   redirectPath
 }: AuthFormProps) => {
-  const router = useRouter()
-  const { onLoginSuccess } = useAuth()
-  const signUpHref = `/signup?next=${encodeURIComponent(redirectPath)}`
+  const variant: AuthFormVariant = title === 'Login' ? 'login' : 'signup'
+  const [state, formAction, isPending] = useActionState(action, null)
+  const signUpHref = `/signup?next=${encodeURIComponent('/login')}`
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [submitError, setSubmitError] = useState('')
 
-  const submitForm = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFieldErrors({})
-    setSubmitError('')
 
     const formData = new FormData(event.currentTarget)
     const rawFormData = Object.fromEntries(formData.entries())
-    const parseResult = schema.safeParse(rawFormData)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const parseResult = parseAuthForm(variant, rawFormData)
 
     if (!parseResult.success) {
-      const flattenedErrors = z.flattenError(parseResult.error).fieldErrors
-      const nextFieldErrors = Object.fromEntries(
-        Object.entries(flattenedErrors)
-          .filter(
-            ([, messages]) => Array.isArray(messages) && messages.length > 0
-          )
-          .map(([fieldName, messages]) => [
-            fieldName,
-            (messages as string[])[0] ?? 'Invalid value'
-          ])
-      )
-      setFieldErrors(nextFieldErrors)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      setFieldErrors(parseResult.fieldErrors)
       return
     }
 
-    setIsSubmitting(true)
-
-    const parsed = parseResult.data as { email: string; password: string }
-    const { data, error } = await actionApi(
-      parsed.email,
-      parsed.password,
-      '/v2'
-    )
-    if (error && !data) {
-      setSubmitError(error)
-      return
-    }
-
-    const { data: meData } = await getMe()
-    if (meData) {
-      const parsed = UserSchema.safeParse(meData)
-      if (parsed.success) {
-        onLoginSuccess(parsed.data)
-      }
-    }
-
-    router.push(redirectPath)
-    router.refresh()
-  }
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
-    submitForm(event)
-      .catch((error: unknown) => {
-        console.error(`Auth error (${title}):`, error)
-        setSubmitError(
-          error instanceof Error
-            ? error.message
-            : 'Something went wrong. Please try again.'
-        )
-      })
-      .finally(() => {
-        setIsSubmitting(false)
-      })
+    startTransition(() => {
+      formAction(formData)
+    })
   }
 
   return (
@@ -106,6 +53,7 @@ export const AuthForm = ({
         <h1 className="mb-6 text-2xl font-semibold">{title}</h1>
 
         <form method="post" onSubmit={handleSubmit} className="space-y-4">
+          <Input type="hidden" name="redirectPath" value={redirectPath} />
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="email">
@@ -141,27 +89,30 @@ export const AuthForm = ({
             </Field>
           </FieldGroup>
 
-          {submitError && (
-            <p className="text-sm text-destructive">{submitError}</p>
+          {state?.error && (
+            <p className="text-sm text-destructive">{state.error}</p>
           )}
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isPending}
             className={`
               w-full rounded-md border bg-primary px-4 py-2 text-primary-foreground font-semibold
               disabled:opacity-60 transition-colors
               hover:cursor-pointer hover:bg-transparent hover:text-primary hover:border hover:border-primary
             `}
           >
-            {isSubmitting ? submittingLabel : submitLabel}
+            {isPending ? submittingLabel : submitLabel}
           </button>
         </form>
 
         {(title === 'Login' && (
           <p className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
-            <Link href={signUpHref} className="text-primary font-semibold animated-border-bottom">
+            <Link
+              href={signUpHref}
+              className="text-primary font-semibold animated-border-bottom"
+            >
               Sign up
             </Link>
           </p>
@@ -169,7 +120,10 @@ export const AuthForm = ({
           (title === 'Sign Up' && (
             <p className="mt-4 text-center text-sm">
               Already have an account?{' '}
-              <Link href={redirectPath} className="text-primary font-semibold animated-border-bottom">
+              <Link
+                href={redirectPath}
+                className="text-primary font-semibold animated-border-bottom"
+              >
                 Login
               </Link>
             </p>

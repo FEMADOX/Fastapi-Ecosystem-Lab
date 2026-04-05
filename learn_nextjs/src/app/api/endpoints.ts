@@ -1,15 +1,17 @@
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
-import { api } from './abstraction'
 import {
   Item,
+  Items,
   Token,
   User,
-  UserUpdate,
-  Items,
+  UserUpdate
+} from '@/common/types/api/resources'
+import {
   ApiProxyLoginResponse,
   ApiProxyLogoutResponse,
   ApiVersion
-} from './types'
+} from '@/types/api/types'
+import { api } from './abstraction'
 
 // ==================  ITEMS  ==================
 const ITEMS_PATH = '/items'

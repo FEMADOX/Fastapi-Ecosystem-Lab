@@ -1,4 +1,6 @@
-import { getItems } from '@/app/api/endpoints'
+import { serverGet } from '@/app/api/server-fetch'
+import { Items } from '@/common/types/api/resources'
+import { cacheTag } from 'next/cache'
 import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
 import { Price, PriceValue } from '@/components/price'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
@@ -11,10 +13,18 @@ import {
   CardTitle
 } from '@/components/ui/card'
 import Link from 'next/dist/client/link'
+import { cookies } from 'next/dist/server/request/cookies'
+
+const fetchItems = async (accessToken?: string) => {
+  'use cache'
+  cacheTag('items')
+  return serverGet<Items>('/latest/items', accessToken)
+}
 
 const ItemsPage = async () => {
-  'use cache'
-  const { data: items, error } = await getItems()
+  const cookiesStore = await cookies()
+  const accessToken = cookiesStore.get('access_token')?.value
+  const { data: items, error } = await fetchItems(accessToken)
   const badge = {
     text: 'Badge',
     color: 'red'
@@ -62,6 +72,7 @@ const ItemsPage = async () => {
                     </Badge>
                   )}
                 </CardHeader>
+
                 <CardContent className="flex h-full flex-col gap-4 pb-6">
                   <CardTitle className="text-xl font-semibold">
                     {item.name}

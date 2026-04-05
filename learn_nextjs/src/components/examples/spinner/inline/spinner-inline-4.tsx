@@ -1,5 +1,5 @@
-import { Item, ItemContent, ItemDescription, ItemTitle } from "~/components/ui/item"
-import { Spinner } from "~/components/ui/spinner"
+import { Item, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item"
+import { Spinner } from "@/components/ui/spinner"
 
 const Example = () => (
   <Item>

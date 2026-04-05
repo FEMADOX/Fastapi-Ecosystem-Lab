@@ -1,24 +1,11 @@
+'use client'
+
 import { useSearchParams } from 'next/navigation'
+import { getSafeNextPath } from './getSafeNextPath'
 
-export const getSafeNextPath = (
-  requestedNext?: string | string[]
-): string => {
-  const nextPath = Array.isArray(requestedNext)
-    ? requestedNext[0]
-    : requestedNext
+export { getSafeNextPath }
 
-  if (
-    nextPath &&
-    nextPath.startsWith('/') &&
-    !nextPath.startsWith('//')
-  ) {
-    return nextPath
-  }
-
-  return '/'
-}
-
-export const useSafeNext = (): string => {
+export const useSafeNext = () => {
   const searchParams = useSearchParams()
   return getSafeNextPath(searchParams.get('next') ?? undefined)
 }
