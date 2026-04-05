@@ -166,10 +166,11 @@ pnpm test:coverage   # with v8 coverage report
 
 | Test file | Covers |
 |---|---|
-| `src/app/(auth)/getSafeNextPath.test.ts` | Open-redirect prevention, path validation, array input |
-| `src/app/utils/formInputValidators.test.ts` | `stringFromForm`, `nonNegativeNumberFromForm`, `nullableImageUrlFromForm` |
-| `src/schemas/auth/parseAuthForm.test.ts` | Auth form parsing for login and signup variants, field error shapes |
-| `src/lib/utils.test.ts` | `cn()` class merging and Tailwind conflict resolution |
+| `src/__tests__/app/getSafeNextPath.test.ts` | Open-redirect prevention, path validation, array input |
+| `src/__tests__/app/utils/formInputValidators.test.ts` | `stringFromForm`, `nonNegativeNumberFromForm`, `nullableImageUrlFromForm` |
+| `src/__tests__/schemas/auth/parseAuthForm.test.ts` | Auth form parsing for login and signup variants, field error shapes |
+| `src/__tests__/schemas/items/itemFormSchema.test.ts` | Item form schema coercion, URL handling, negative/invalid value rejection |
+| `src/__tests__/lib/utils.test.ts` | `cn()` class merging and Tailwind conflict resolution |
 
 ## Environment Variables
 
