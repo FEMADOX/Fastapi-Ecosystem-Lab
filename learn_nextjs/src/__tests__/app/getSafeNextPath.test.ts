@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { getSafeNextPath } from '@/app/(auth)/getSafeNextPath'
 
 describe('getSafeNextPath', () => {

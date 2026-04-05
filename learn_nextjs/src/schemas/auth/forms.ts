@@ -1,4 +1,5 @@
 import { z } from 'zod'
+
 import { UserCreateSchema } from '@/common/schemas/api/resources'
 import type { AuthFormVariant } from '@/types/auth/types'
 

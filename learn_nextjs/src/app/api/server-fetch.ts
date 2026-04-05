@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { cookies } from 'next/headers'
+
 import { API_BASE_URL } from '@/common/const'
 import { ApiProxyResponse } from '@/types/api/types'
 

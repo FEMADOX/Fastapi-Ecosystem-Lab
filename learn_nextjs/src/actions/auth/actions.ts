@@ -2,13 +2,14 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+
+import { getSafeNextPath } from '@/app/(auth)/getSafeNextPath'
 import { API_BASE_URL } from '@/common/const'
 import {
   TokenV2Schema,
   UserCreateSchema
 } from '@/common/schemas/api/resources'
 import { AuthActionState } from '@/types/auth/types'
-import { getSafeNextPath } from '@/app/(auth)/getSafeNextPath'
 
 export const loginAction = async (
   _prevState: AuthActionState,

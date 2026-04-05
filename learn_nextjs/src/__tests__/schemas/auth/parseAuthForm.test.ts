@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { parseAuthForm } from '@/schemas/auth/forms'
 
 const VALID_EMAIL = 'user@example.com'
@@ -9,7 +10,7 @@ describe('parseAuthForm', () => {
     it('succeeds with valid email and password', () => {
       const result = parseAuthForm(variant, {
         email: VALID_EMAIL,
-        password: VALID_PASSWORD,
+        password: VALID_PASSWORD
       })
       expect(result.success).toBe(true)
     })
@@ -17,7 +18,7 @@ describe('parseAuthForm', () => {
     it('fails with an invalid email', () => {
       const result = parseAuthForm(variant, {
         email: 'not-an-email',
-        password: VALID_PASSWORD,
+        password: VALID_PASSWORD
       })
       expect(result.success).toBe(false)
       if (!result.success) {
@@ -28,7 +29,7 @@ describe('parseAuthForm', () => {
     it('fails with a password shorter than 8 characters', () => {
       const result = parseAuthForm(variant, {
         email: VALID_EMAIL,
-        password: 'short',
+        password: 'short'
       })
       expect(result.success).toBe(false)
       if (!result.success) {
@@ -39,7 +40,7 @@ describe('parseAuthForm', () => {
     it('fails when both fields are invalid and returns both errors', () => {
       const result = parseAuthForm(variant, {
         email: 'bad',
-        password: 'tiny',
+        password: 'tiny'
       })
       expect(result.success).toBe(false)
       if (!result.success) {

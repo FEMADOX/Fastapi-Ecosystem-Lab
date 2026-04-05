@@ -1,6 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
+
 import { getSafeNextPath } from './getSafeNextPath'
 
 export { getSafeNextPath }

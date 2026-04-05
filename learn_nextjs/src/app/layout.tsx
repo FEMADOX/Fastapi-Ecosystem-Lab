@@ -1,13 +1,15 @@
+import './globals.css'
+
 import type { Metadata } from 'next'
+import { Geist } from 'next/font/google'
 import { Suspense } from 'react'
 
 import CurrentYear from '@/app/components/current-year'
 import { Children } from '@/common/types/layout'
 import { cn } from '@/lib/utils'
-import { Geist } from 'next/font/google'
+
 import { AuthProvider } from './auth-provider'
 import { NavBar } from './components/NavBar'
-import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
 

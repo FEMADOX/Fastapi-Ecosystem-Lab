@@ -1,7 +1,10 @@
-import { serverGet } from '@/app/api/server-fetch'
-import { Items } from '@/common/types/api/resources'
 import { cacheTag } from 'next/cache'
+import Link from 'next/dist/client/link'
+import { cookies } from 'next/dist/server/request/cookies'
+
+import { serverGet } from '@/app/api/server-fetch'
 import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
+import { Items } from '@/common/types/api/resources'
 import { Price, PriceValue } from '@/components/price'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
@@ -12,8 +15,6 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card'
-import Link from 'next/dist/client/link'
-import { cookies } from 'next/dist/server/request/cookies'
 
 const fetchItems = async (accessToken?: string) => {
   'use cache'

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
+
 import {
   nonNegativeNumberFromForm,
   nullableImageUrlFromForm,
-  stringFromForm,
+  stringFromForm
 } from '@/app/utils/formInputValidators'
-import { z } from 'zod'
 
 // Helper to parse a single value through a zod schema
 const parse = (schema: z.ZodTypeAny, value: unknown) => schema.safeParse(value)
@@ -49,7 +50,9 @@ describe('stringFromForm', () => {
 })
 
 describe('nonNegativeNumberFromForm', () => {
-  const schema = nonNegativeNumberFromForm('Price must be a non-negative number')
+  const schema = nonNegativeNumberFromForm(
+    'Price must be a non-negative number'
+  )
 
   it('parses a valid non-negative integer string', () => {
     const result = parse(schema, '10')

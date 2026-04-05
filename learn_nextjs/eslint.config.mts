@@ -1,28 +1,48 @@
-import { FlatCompat } from '@eslint/eslintrc'
-import { defineConfig, globalIgnores } from 'eslint/config'
-import tseslint from 'typescript-eslint'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import eslintJs from '@eslint/js'
 import eslintReact from '@eslint-react/eslint-plugin'
-import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
+import { FlatCompat } from '@eslint/eslintrc'
+import eslintConfigPrettier from 'eslint-config-prettier/flat'
+import { defineConfig, globalIgnores } from 'eslint/config'
+import eslintPluginImportSort from 'eslint-plugin-simple-import-sort'
+// @ts-ignore - No types available for this package
 import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y'
 import eslintPluginReact from 'eslint-plugin-react'
+import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
+import type { Linter } from 'eslint'
+import tseslint from 'typescript-eslint'
+
+const dirnameFromImportMeta = dirname(fileURLToPath(import.meta.url))
 
 const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname
+  baseDirectory: dirnameFromImportMeta
 })
 
+const srcAllFiles = ['src/**/*.{ts,tsx,js,mjs,cjs}']
 const appCodeFiles = ['src/app/**/*.{ts,tsx,js,mjs,cjs}']
 const appReactFiles = ['src/app/**/*.{tsx,jsx}']
 
-const scopeConfigToFiles = (config, files) => ({
+type FlatConfigShape = Linter.Config
+
+const scopeConfigToFiles = (config: FlatConfigShape, files: string[]) => ({
   ...config,
   files
 })
 
-const scopeConfigsToFiles = (configs, files) => {
+const scopeConfigsToFiles = (
+  configs: FlatConfigShape | FlatConfigShape[],
+  files: string[]
+) => {
   const configList = Array.isArray(configs) ? configs : [configs]
   return configList.map((config) => scopeConfigToFiles(config, files))
 }
+
+const reactHooksRecommendedLatest = (
+  eslintPluginReactHooks as unknown as {
+    configs: Record<string, FlatConfigShape | FlatConfigShape[]>
+  }
+).configs['recommended-latest']
 
 const ignoresLintingConfig = defineConfig([
   globalIgnores([
@@ -31,8 +51,20 @@ const ignoresLintingConfig = defineConfig([
     'next-env.d.ts',
     '.agents/**',
     'src/components/**',
-    'src/lib/**',
+    'src/lib/**'
   ])
+])
+
+const srcParserConfig = defineConfig([
+  {
+    files: srcAllFiles,
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        tsconfigRootDir: dirnameFromImportMeta
+      }
+    }
+  }
 ])
 
 const languageLintingConfig = defineConfig([
@@ -44,7 +76,7 @@ const languageLintingConfig = defineConfig([
         projectService: {
           allowDefaultProject: ['*.js', '*.mjs', '*.cjs']
         },
-        tsconfigRootDir: import.meta.dirname
+        tsconfigRootDir: dirnameFromImportMeta
       }
     }
   },
@@ -91,14 +123,20 @@ const reactLintingConfig = defineConfig([
       }
     }
   },
-  ...scopeConfigsToFiles(eslintPluginReact.configs.flat.recommended, appReactFiles),
-  ...scopeConfigsToFiles(eslintPluginReact.configs.flat['jsx-runtime'], appReactFiles),
+  ...scopeConfigsToFiles(
+    eslintPluginReact.configs.flat.recommended,
+    appReactFiles
+  ),
+  ...scopeConfigsToFiles(
+    eslintPluginReact.configs.flat['jsx-runtime'],
+    appReactFiles
+  ),
   ...scopeConfigsToFiles(
     eslintReact.configs['recommended-type-checked'],
     appReactFiles
   ),
   ...scopeConfigsToFiles(
-    eslintPluginReactHooks.configs['recommended-latest'],
+    reactHooksRecommendedLatest,
     appReactFiles
   ),
   {
@@ -143,10 +181,26 @@ const nextLintingConfig = defineConfig([
   }
 ])
 
+const importSortConfig = defineConfig([
+  {
+    files: srcAllFiles,
+    plugins: {
+      'simple-import-sort': eslintPluginImportSort
+    },
+    rules: {
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error'
+    }
+  }
+])
+
 export default defineConfig([
   ...ignoresLintingConfig,
+  ...srcParserConfig,
+  ...importSortConfig,
   ...languageLintingConfig,
   ...reactLintingConfig,
   ...reactA11yLintingConfig,
-  ...nextLintingConfig
+  ...nextLintingConfig,
+  eslintConfigPrettier
 ])

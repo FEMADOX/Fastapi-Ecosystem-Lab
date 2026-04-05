@@ -1,5 +1,6 @@
-import { type NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { type NextRequest, NextResponse } from 'next/server'
+
 import { API_BASE_URL as BACKEND_URL } from '@/common/const'
 import { TokenV2Schema } from '@/common/schemas/api/resources'
 import { PromisePathProps } from '@/types/api/types'

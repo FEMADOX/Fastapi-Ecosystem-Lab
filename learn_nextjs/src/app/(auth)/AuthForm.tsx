@@ -1,5 +1,8 @@
 'use client'
 
+import Link from 'next/link'
+import { FormEvent, startTransition, useActionState, useState } from 'react'
+
 import {
   Field,
   FieldError,
@@ -7,10 +10,8 @@ import {
   FieldLabel
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
-import Link from 'next/link'
-import { FormEvent, startTransition, useActionState, useState } from 'react'
 import { parseAuthForm } from '@/schemas/auth/forms'
+import { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
 
 export const AuthForm = ({
   title,
@@ -33,11 +34,10 @@ export const AuthForm = ({
 
     const formData = new FormData(event.currentTarget)
     const rawFormData = Object.fromEntries(formData.entries())
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+
     const parseResult = parseAuthForm(variant, rawFormData)
 
     if (!parseResult.success) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       setFieldErrors(parseResult.fieldErrors)
       return
     }
@@ -90,17 +90,13 @@ export const AuthForm = ({
           </FieldGroup>
 
           {state?.error && (
-            <p className="text-sm text-destructive">{state.error}</p>
+            <p className="text-destructive text-sm">{state.error}</p>
           )}
 
           <button
             type="submit"
             disabled={isPending}
-            className={`
-              w-full rounded-md border bg-primary px-4 py-2 text-primary-foreground font-semibold
-              disabled:opacity-60 transition-colors
-              hover:cursor-pointer hover:bg-transparent hover:text-primary hover:border hover:border-primary
-            `}
+            className={'bg-primary text-primary-foreground hover:text-primary hover:border-primary w-full rounded-md border px-4 py-2 font-semibold transition-colors hover:cursor-pointer hover:border hover:bg-transparent disabled:opacity-60'}
           >
             {isPending ? submittingLabel : submitLabel}
           </button>
@@ -111,7 +107,7 @@ export const AuthForm = ({
             Don&apos;t have an account?{' '}
             <Link
               href={signUpHref}
-              className="text-primary font-semibold animated-border-bottom"
+              className="text-primary animated-border-bottom font-semibold"
             >
               Sign up
             </Link>
@@ -122,7 +118,7 @@ export const AuthForm = ({
               Already have an account?{' '}
               <Link
                 href={redirectPath}
-                className="text-primary font-semibold animated-border-bottom"
+                className="text-primary animated-border-bottom font-semibold"
               >
                 Login
               </Link>

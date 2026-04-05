@@ -1,9 +1,11 @@
 'use client'
 
+import { createContext, useCallback, useEffect, useReducer } from 'react'
+
 import { UserSchema } from '@/common/schemas/api/resources'
 import { User } from '@/common/types/api/resources'
 import { Children } from '@/common/types/layout'
-import { createContext, useCallback, useEffect, useReducer } from 'react'
+
 import { getMe } from './api/endpoints'
 
 type AuthState =
