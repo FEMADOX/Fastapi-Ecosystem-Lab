@@ -22,11 +22,11 @@ export const metadata: Metadata = {
 const RootLayout = ({ children }: Children) => (
   <html lang="en" className={cn('font-sans', geist.variable)}>
     <body className="container m-auto grid min-h-screen min-w-full grid-rows-[auto_1fr_auto]">
-      <Suspense fallback={<nav className="bg-white px-1 md:px-4 border-b" />}>
+      <Suspense fallback={<nav className="border-b bg-white px-1 md:px-4" />}>
         <NavBar />
       </Suspense>
       <AuthProvider>
-        <main className="py-8 px-8">{children}</main>
+        <main className="px-8 py-8">{children}</main>
       </AuthProvider>
       <footer className="text-center leading-12 opacity-70">
         ©{' '}

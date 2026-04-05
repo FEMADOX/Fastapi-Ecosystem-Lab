@@ -24,20 +24,20 @@ const ItemPage = async ({ params }: PromiseIdProp) => {
     <div>
       {item && (
         <>
-          <h1 className="text-3xl mb-8 font-bold">Item: {item.name}</h1>
-          <p className="text-xl mb-5 font-bold">
+          <h1 className="mb-8 text-3xl font-bold">Item: {item.name}</h1>
+          <p className="mb-5 text-xl font-bold">
             ID: <span className="font-normal">{item.id}</span>
           </p>
-          <p className="text-xl mb-5 font-bold">
+          <p className="mb-5 text-xl font-bold">
             Name: <span className="font-normal">{item.name}</span>
           </p>
-          <p className="text-xl mb-5 font-bold">
+          <p className="mb-5 text-xl font-bold">
             Description: <span className="font-normal">{item.description}</span>
           </p>
-          <p className="text-xl mb-5 font-bold">
+          <p className="mb-5 text-xl font-bold">
             Price: <span className="font-normal">{item.price}</span>
           </p>
-          <p className="text-xl mb-5 font-bold">
+          <p className="mb-5 text-xl font-bold">
             Tax: <span className="font-normal">{item.tax}</span>
           </p>
         </>

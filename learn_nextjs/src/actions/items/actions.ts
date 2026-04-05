@@ -14,7 +14,8 @@ export const createItemAction = async (
   _prevState: ItemActionState,
   formData: FormData
 ): Promise<ItemActionState> => {
-  const { data: meData, error: meError } = await serverGet<User>('/latest/users/me')
+  const { data: meData, error: meError } =
+    await serverGet<User>('/latest/users/me')
   if (meError || !meData) {
     return { error: 'Authentication required. Please log in again.' }
   }
@@ -34,7 +35,13 @@ export const createItemAction = async (
     return { error: firstError ?? 'Invalid form data.' }
   }
 
-  const { name, description, price, tax, image_url: imageUrl } = parseResult.data
+  const {
+    name,
+    description,
+    price,
+    tax,
+    image_url: imageUrl
+  } = parseResult.data
 
   const { data: newItem, error } = await serverPost<Item>('/latest/items', {
     user_id: userId,
@@ -56,6 +63,8 @@ export const createItemAction = async (
     redirect(`/items/${itemResult.data.id}`)
   }
 
-  console.error(`Unexpectedly created item but failed to parse it: ${JSON.stringify(itemResult.error.message)}`)
+  console.error(
+    `Unexpectedly created item but failed to parse it: ${JSON.stringify(itemResult.error.message)}`
+  )
   redirect('/items')
 }

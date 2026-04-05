@@ -13,7 +13,7 @@ export const LogoutGroup = ({ isLoggedIn }: LogoutButtonProps) => {
     <form action={logoutAction}>
       <ButtonGroup className="px-1" hidden={!isLoggedIn}>
         <Button
-          className="text-md font-semibold cursor-pointer py-3.5 hover:opacity-80 transition-opacity"
+          className="text-md cursor-pointer py-3.5 font-semibold transition-opacity hover:opacity-80"
           variant="default"
           type="submit"
           size="sm"

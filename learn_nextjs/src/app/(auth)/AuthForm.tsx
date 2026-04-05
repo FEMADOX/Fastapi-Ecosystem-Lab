@@ -96,7 +96,9 @@ export const AuthForm = ({
           <button
             type="submit"
             disabled={isPending}
-            className={'bg-primary text-primary-foreground hover:text-primary hover:border-primary w-full rounded-md border px-4 py-2 font-semibold transition-colors hover:cursor-pointer hover:border hover:bg-transparent disabled:opacity-60'}
+            className={
+              'bg-primary text-primary-foreground hover:text-primary hover:border-primary w-full rounded-md border px-4 py-2 font-semibold transition-colors hover:cursor-pointer hover:border hover:bg-transparent disabled:opacity-60'
+            }
           >
             {isPending ? submittingLabel : submitLabel}
           </button>

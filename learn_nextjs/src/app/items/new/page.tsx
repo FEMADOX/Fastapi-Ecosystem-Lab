@@ -25,7 +25,7 @@ const ItemNewPage = async () => {
 
   return (
     <>
-      <h1 className="text-3xl mb-8 font-bold">New Item</h1>
+      <h1 className="mb-8 text-3xl font-bold">New Item</h1>
       <NewItemForm userId={userResult.data.id} />
     </>
   )

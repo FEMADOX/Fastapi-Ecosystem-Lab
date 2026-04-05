@@ -37,10 +37,10 @@ const ItemsPage = async () => {
 
   return (
     <>
-      <h1 className="text-3xl mb-8 font-bold">Items</h1>
+      <h1 className="mb-8 text-3xl font-bold">Items</h1>
       <Link
         href="/items/new"
-        className="inline-block mb-8 py-2 px-4 border border-primary text-primary hover:bg-primary hover:text-white transition-colors rounded-md"
+        className="border-primary text-primary hover:bg-primary mb-8 inline-block rounded-md border px-4 py-2 transition-colors hover:text-white"
       >
         Add New Item
       </Link>
@@ -48,7 +48,7 @@ const ItemsPage = async () => {
         {items &&
           items.map((item) => (
             <Link
-              className="block h-full w-full max-w-md opacity-animation"
+              className="opacity-animation block h-full w-full max-w-md"
               href={`/items/${item.id}`}
               key={item.id}
             >
@@ -78,7 +78,7 @@ const ItemsPage = async () => {
                   <CardTitle className="text-xl font-semibold">
                     {item.name}
                   </CardTitle>
-                  <CardDescription className="font-medium text-muted-foreground">
+                  <CardDescription className="text-muted-foreground font-medium">
                     {item.description}
                   </CardDescription>
                   <div className="mt-auto">

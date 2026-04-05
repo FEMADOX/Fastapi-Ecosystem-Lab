@@ -19,20 +19,35 @@ export const ItemSchema = z.object({
 
 export const UserSchema = z.object({
   id: z.string(),
-  email: z.email({ pattern: z.regexes.email, message: 'Invalid email address' }),
+  email: z.email({
+    pattern: z.regexes.email,
+    message: 'Invalid email address'
+  }),
   is_active: z.boolean().default(true),
   is_superuser: z.boolean().default(false)
 })
 
 export const UserUpdateSchema = z.object({
-  current_password: z.string().min(8, { message: 'Password must be at least 8 characters long' }),
-  email: z.email({ pattern: z.regexes.email, message: 'Invalid email address' }).optional(),
-  new_password: z.string().min(8, { message: 'Password must be at least 8 characters long' }).optional()
+  current_password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters long' }),
+  email: z
+    .email({ pattern: z.regexes.email, message: 'Invalid email address' })
+    .optional(),
+  new_password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    .optional()
 })
 
 export const UserCreateSchema = z.object({
-  email: z.email({ pattern: z.regexes.email, message: 'Invalid email address' }),
-  password: z.string().min(8, { message: 'Password must be at least 8 characters long' })
+  email: z.email({
+    pattern: z.regexes.email,
+    message: 'Invalid email address'
+  }),
+  password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters long' })
 })
 
 export const TokenSchema = z.object({

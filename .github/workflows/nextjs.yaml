@@ -44,7 +44,7 @@ jobs:
         run: pnpm lint
 
       - name: Check formatting with Prettier
-        run: pnpm format:check
+        run: pnpm format:check ./src
 
       - name: Run Vitest
         run: pnpm test

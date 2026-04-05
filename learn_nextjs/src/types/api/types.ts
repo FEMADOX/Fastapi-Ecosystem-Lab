@@ -6,7 +6,7 @@ export type ApiProxyLoginResponse = { loggedIn: boolean }
 
 export type ApiProxyLogoutResponse = { loggedOut: boolean }
 
-export type ApiVersion = typeof BACKEND_API_VERSIONS[number]
+export type ApiVersion = (typeof BACKEND_API_VERSIONS)[number]
 
 export type RequestFactoryOptions = {
   method?: HttpMethod

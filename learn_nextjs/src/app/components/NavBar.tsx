@@ -20,9 +20,9 @@ export const NavBar = async () => {
   const isLoggedIn = cookieStore.has('access_token')
 
   return (
-    <nav className="bg-white px-1 md:px-4 border-b">
+    <nav className="border-b bg-white px-1 md:px-4">
       <div className="flex items-center py-3 *:text-black">
-        <div className="md:hidden mr-2">
+        <div className="mr-2 md:hidden">
           <Sheet>
             <SheetTrigger
               render={
@@ -55,12 +55,15 @@ export const NavBar = async () => {
           </Sheet>
         </div>
 
-        <Link className="inline-block text-md sm:text-lg font-bold opacity-animation" href="/">
+        <Link
+          className="text-md opacity-animation inline-block font-bold sm:text-lg"
+          href="/"
+        >
           FastAPI Ecosystem Lab
         </Link>
 
-        <div className="hidden md:flex items-center justify-between gap-10 m-auto">
-          <ul className="flex items-center gap-5 [&>li:hover]:text-gray-800 [&>li]:transition-colors [&>li]:inline-block">
+        <div className="m-auto hidden items-center justify-between gap-10 md:flex">
+          <ul className="flex items-center gap-5 [&>li]:inline-block [&>li]:transition-colors [&>li:hover]:text-gray-800">
             <li>
               <Link className="text-lg font-semibold" href="/items">
                 Items
@@ -76,14 +79,17 @@ export const NavBar = async () => {
         <ButtonGroup className="ml-auto md:ml-0">
           <LogoutGroup isLoggedIn={isLoggedIn} />
           <ButtonGroup
-            className="flex gap-2 px-1 items-center ml-auto md:ml-0"
+            className="ml-auto flex items-center gap-2 px-1 md:ml-0"
             hidden={isLoggedIn}
           >
-            <Link className="text-md font-semibold opacity-animation" href="/login">
+            <Link
+              className="text-md opacity-animation font-semibold"
+              href="/login"
+            >
               Login
             </Link>
             <Link
-              className="text-md text-white font-semibold bg-primary rounded-lg px-2 py-0.5 opacity-animation"
+              className="text-md bg-primary opacity-animation rounded-lg px-2 py-0.5 font-semibold text-white"
               href="/signup"
             >
               Signup

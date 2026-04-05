@@ -89,10 +89,7 @@ const apiRequest = async <T>(
 }
 
 export const api = {
-  get: <T>(
-    options: APIBaseProps,
-    queryParams?: Record<string, string>
-  ) => {
+  get: <T>(options: APIBaseProps, queryParams?: Record<string, string>) => {
     const { endpoint, pathParam, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'GET',
@@ -102,10 +99,7 @@ export const api = {
       apiVersion
     })
   },
-  post: <T, B = unknown>(
-    options: APIBaseProps,
-    body?: B
-  ) => {
+  post: <T, B = unknown>(options: APIBaseProps, body?: B) => {
     const { endpoint, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'POST',
@@ -114,10 +108,7 @@ export const api = {
       apiVersion
     })
   },
-  put: <T, B = unknown>(
-    options: APIBaseProps,
-    body: B
-  ) => {
+  put: <T, B = unknown>(options: APIBaseProps, body: B) => {
     const { endpoint, pathParam, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'PUT',
@@ -127,10 +118,7 @@ export const api = {
       apiVersion
     })
   },
-  patch: <T, B = unknown>(
-    options: APIBaseProps,
-    body: B
-  ) => {
+  patch: <T, B = unknown>(options: APIBaseProps, body: B) => {
     const { endpoint, pathParam, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'PATCH',
@@ -140,9 +128,7 @@ export const api = {
       apiVersion
     })
   },
-  delete: <T>(
-    options: APIBaseProps
-  ) => {
+  delete: <T>(options: APIBaseProps) => {
     const { endpoint, pathParam, accessToken, apiVersion } = options
     return apiRequest<T>(endpoint, {
       method: 'DELETE',

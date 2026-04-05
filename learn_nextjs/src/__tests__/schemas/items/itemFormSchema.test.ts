@@ -10,7 +10,7 @@ const VALID_INPUT = {
   description: 'Lightweight and durable',
   price: '49.99',
   tax: '5',
-  imageUrl: '',
+  imageUrl: ''
 }
 
 describe('itemFormSchema', () => {
@@ -38,7 +38,10 @@ describe('itemFormSchema', () => {
     })
 
     it('accepts a valid image URL', () => {
-      const result = parse({ ...VALID_INPUT, imageUrl: 'https://example.com/shoe.png' })
+      const result = parse({
+        ...VALID_INPUT,
+        imageUrl: 'https://example.com/shoe.png'
+      })
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.image_url).toBe('https://example.com/shoe.png')
@@ -55,7 +58,11 @@ describe('itemFormSchema', () => {
     })
 
     it('trims whitespace from name and description', () => {
-      const result = parse({ ...VALID_INPUT, name: '  Shoes  ', description: '  Nice  ' })
+      const result = parse({
+        ...VALID_INPUT,
+        name: '  Shoes  ',
+        description: '  Nice  '
+      })
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.name).toBe('Shoes')

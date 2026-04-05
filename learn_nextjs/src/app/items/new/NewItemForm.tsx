@@ -49,10 +49,7 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
 
   return (
     <form
-      className={`
-        grid gap-y-5 max-w-xl grid-cols-1 md:mx-auto
-        [&>div>input]:bg-gray-300 [&>div>input]:rounded [&>div>input]:text-black [&>div>input]:px-2 [&>div>input]:w-full
-      `}
+      className={`grid max-w-xl grid-cols-1 gap-y-5 md:mx-auto [&>div>input]:w-full [&>div>input]:rounded [&>div>input]:bg-gray-300 [&>div>input]:px-2 [&>div>input]:text-black`}
       onSubmit={handleSubmit}
       method="POST"
       noValidate
@@ -129,16 +126,13 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
       </FieldGroup>
 
       {state?.error && (
-        <p className="text-red-600 col-span-2" role="alert">
+        <p className="col-span-2 text-red-600" role="alert">
           {state.error}
         </p>
       )}
 
       <button
-        className={`
-          bg-gray-700 col-span-2 mx-auto px-10 rounded-md py-1 text-white
-          [&:hover]:cursor-pointer [&:hover]:bg-gray-800 [&:hover]:text-gray-300 transition-colors
-        `}
+        className={`col-span-2 mx-auto rounded-md bg-gray-700 px-10 py-1 text-white transition-colors [&:hover]:cursor-pointer [&:hover]:bg-gray-800 [&:hover]:text-gray-300`}
         type="submit"
         disabled={isPending}
       >

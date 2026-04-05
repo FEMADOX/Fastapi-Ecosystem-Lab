@@ -138,13 +138,27 @@ export const deleteUser = async (id: string) => {
 const AUTH_PATH = '/auth'
 
 // ==================   (Versioned)   ==================
-export const register = async (email: string, password: string, apiVersion?: ApiVersion) => {
-  return api.post<User>({ endpoint: `${AUTH_PATH}/register`, apiVersion }, { email, password })
+export const register = async (
+  email: string,
+  password: string,
+  apiVersion?: ApiVersion
+) => {
+  return api.post<User>(
+    { endpoint: `${AUTH_PATH}/register`, apiVersion },
+    { email, password }
+  )
 }
 
-export const login = async (email: string, password: string, apiVersion?: ApiVersion) => {
+export const login = async (
+  email: string,
+  password: string,
+  apiVersion?: ApiVersion
+) => {
   const body = new URLSearchParams({ username: email, password })
-  return api.post<ApiProxyLoginResponse>({ endpoint: `${AUTH_PATH}/token`, apiVersion }, body)
+  return api.post<ApiProxyLoginResponse>(
+    { endpoint: `${AUTH_PATH}/token`, apiVersion },
+    body
+  )
 }
 
 export const refreshToken = async (apiVersion?: ApiVersion) => {
@@ -152,5 +166,8 @@ export const refreshToken = async (apiVersion?: ApiVersion) => {
 }
 
 export const logout = async (apiVersion?: ApiVersion) => {
-  return api.post<ApiProxyLogoutResponse>({ endpoint: `${AUTH_PATH}/logout`, apiVersion }, {})
+  return api.post<ApiProxyLogoutResponse>(
+    { endpoint: `${AUTH_PATH}/logout`, apiVersion },
+    {}
+  )
 }

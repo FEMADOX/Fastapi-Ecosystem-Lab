@@ -8,14 +8,17 @@ const registerFormSchema = UserCreateSchema
 
 export const authSchemas = {
   login: loginFormSchema,
-  signup: registerFormSchema,
+  signup: registerFormSchema
 }
 
 export type AuthParseResult =
   | { success: true }
   | { success: false; fieldErrors: Record<string, string> }
 
-export function parseAuthForm(variant: AuthFormVariant, data: unknown): AuthParseResult {
+export function parseAuthForm(
+  variant: AuthFormVariant,
+  data: unknown
+): AuthParseResult {
   const schema = variant === 'login' ? loginFormSchema : registerFormSchema
   const result = schema.safeParse(data)
   if (result.success) {

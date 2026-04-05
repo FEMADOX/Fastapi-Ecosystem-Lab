@@ -9,7 +9,8 @@ const JWT_SECRET = new TextEncoder().encode(SECRET_KEY)
 
 export const proxy = async (request: NextRequest) => {
   const { pathname } = request.nextUrl
-  const redirectTo = (redirectPath: string) => NextResponse.redirect(new URL(`${redirectPath}`, request.url))
+  const redirectTo = (redirectPath: string) =>
+    NextResponse.redirect(new URL(`${redirectPath}`, request.url))
 
   const token = request.cookies.get('access_token')?.value
 
@@ -19,7 +20,10 @@ export const proxy = async (request: NextRequest) => {
   if (isProtected) {
     if (!token) {
       const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+      loginUrl.searchParams.set(
+        'next',
+        request.nextUrl.pathname + request.nextUrl.search
+      )
       return NextResponse.redirect(loginUrl)
     }
 
@@ -31,9 +35,15 @@ export const proxy = async (request: NextRequest) => {
       // Only ignore expiration errors; block all other verification issues.
       const code = (error as { code?: string }).code
       if (code !== 'ERR_JWT_EXPIRED') {
-        console.error('JWT verification failed in proxy, blocking request', error)
+        console.error(
+          'JWT verification failed in proxy, blocking request',
+          error
+        )
         const loginUrl = new URL('/login', request.url)
-        loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+        loginUrl.searchParams.set(
+          'next',
+          request.nextUrl.pathname + request.nextUrl.search
+        )
         const response = NextResponse.redirect(loginUrl)
         response.cookies.delete('access_token')
         return response
@@ -48,4 +58,6 @@ export const proxy = async (request: NextRequest) => {
   return NextResponse.next()
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'] }
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)']
+}
