@@ -16,7 +16,7 @@ https://fastapi-ecosystem-lab-api.koyeb.app/api/docs#
 | Authentication + Authorization — JWT, OAuth2 | ✅ Completed  |
 | Testing — pytest, httpx                      | ✅ Completed  |
 | Docker & deployment                          | ✅ Completed  |
-| NextJS - Frontend implementation             | 🔁 Completed |
+| NextJS - Frontend implementation             | 🔁 In-Process |
 
 ## 🛠️ Tech Stack
 
