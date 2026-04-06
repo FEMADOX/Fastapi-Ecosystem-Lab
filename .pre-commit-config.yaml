@@ -12,6 +12,20 @@ repos:
         args: [ "--maxkb=500" ]
       - id: debug-statements
 
+  - repo: local
+    hooks:
+      - id: setup (python)
+        name: Setup project
+        entry: uv sync
+        language: python
+        pass_filenames: false
+      - id: setup (node)
+        name: Setup project
+        entry: pnpm
+        args: [--dir, learn_nextjs, install]
+        language: system
+        pass_filenames: false
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.2
     hooks:
@@ -32,3 +46,10 @@ repos:
         pass_filenames: false
         files: \.py$
         verbose: true
+
+      - id: lint-staged
+        name: lint-staged
+        entry: pnpm
+        args: [--dir, learn_nextjs, exec, lint-staged]
+        language: system
+        pass_filenames: false

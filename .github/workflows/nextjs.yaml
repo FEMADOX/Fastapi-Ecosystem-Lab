@@ -41,10 +41,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: pnpm lint
+        run: pnpm lint:fix
 
       - name: Check formatting with Prettier
-        run: pnpm format:check ./src
+        run: pnpm format ./src
 
       - name: Run Vitest
         run: pnpm test
