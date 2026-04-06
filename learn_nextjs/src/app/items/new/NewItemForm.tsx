@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useActionState, useState } from 'react'
+import { type FormEvent, useActionState, useState } from 'react'
 import { z } from 'zod'
 
 import { createItemAction } from '@/actions/items/actions'
@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { clientItemSchema } from '@/schemas/items/new/forms'
-import { NewItemFormProps } from '@/types/items/types'
+import type { NewItemFormProps } from '@/types/items/types'
 
 export const NewItemForm = ({ userId }: NewItemFormProps) => {
   const [state, formAction, isPending] = useActionState(createItemAction, null)

@@ -6,9 +6,9 @@ import { z } from 'zod'
 
 import { serverGet, serverPost } from '@/app/api/server-fetch'
 import { ItemSchema, UserSchema } from '@/common/schemas/api/resources'
-import { Item, User } from '@/common/types/api/resources'
+import type { Item, User } from '@/common/types/api/resources'
 import { itemFormSchema } from '@/schemas/items/forms'
-import { ItemActionState } from '@/types/items/types'
+import type { ItemActionState } from '@/types/items/types'
 
 export const createItemAction = async (
   _prevState: ItemActionState,

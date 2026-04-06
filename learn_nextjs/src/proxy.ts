@@ -1,5 +1,5 @@
 import { jwtVerify } from 'jose'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { SECRET_KEY } from './common/const'
 

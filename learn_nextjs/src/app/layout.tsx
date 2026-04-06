@@ -5,7 +5,7 @@ import { Geist } from 'next/font/google'
 import { Suspense } from 'react'
 
 import CurrentYear from '@/app/components/current-year'
-import { Children } from '@/common/types/layout'
+import type { Children } from '@/common/types/layout'
 import { cn } from '@/lib/utils'
 
 import { AuthProvider } from './auth-provider'

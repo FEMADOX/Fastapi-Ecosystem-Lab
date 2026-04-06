@@ -1,4 +1,4 @@
-import { BACKEND_API_VERSIONS } from '@/app/api/consts'
+import type { BACKEND_API_VERSIONS } from '@/app/api/consts'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 

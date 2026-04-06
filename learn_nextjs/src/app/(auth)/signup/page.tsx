@@ -1,5 +1,5 @@
 import { registerAction } from '@/actions/auth/actions'
-import { AuthPageProps } from '@/types/auth/types'
+import type { AuthPageProps } from '@/types/auth/types'
 
 import { AuthForm } from '../AuthForm'
 import { getSafeNextPath } from '../getSafeNextPath'

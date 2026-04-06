@@ -1,12 +1,12 @@
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
-import {
+import type {
   Item,
   Items,
   Token,
   User,
   UserUpdate
 } from '@/common/types/api/resources'
-import {
+import type {
   ApiProxyLoginResponse,
   ApiProxyLogoutResponse,
   ApiVersion

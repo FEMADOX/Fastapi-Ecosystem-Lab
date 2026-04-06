@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 
 import { API_BASE_URL as BACKEND_URL } from '@/common/const'
 import { TokenV2Schema } from '@/common/schemas/api/resources'
-import { PromisePathProps } from '@/types/api/types'
+import type { PromisePathProps } from '@/types/api/types'
 
 const handler = async (
   request: NextRequest,
@@ -114,7 +114,7 @@ const methodHandler = async (
   { params }: PromisePathProps
 ) => {
   const { path } = await params
-  const pathName = path.length > 1 ? path.join('/') : path[0] + '/'
+  const pathName = path.length > 1 ? path.join('/') : `${path[0]}/`
   return handler(request, pathName)
 }
 

@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import { getSafeNextPath } from '@/app/(auth)/getSafeNextPath'
 import { API_BASE_URL } from '@/common/const'
 import { TokenV2Schema, UserCreateSchema } from '@/common/schemas/api/resources'
-import { AuthActionState } from '@/types/auth/types'
+import type { AuthActionState } from '@/types/auth/types'
 
 export const loginAction = async (
   _prevState: AuthActionState,

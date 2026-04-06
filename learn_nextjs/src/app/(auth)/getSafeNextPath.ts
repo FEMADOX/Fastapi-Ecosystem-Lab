@@ -3,7 +3,7 @@ export const getSafeNextPath = (requestedNext?: string | string[]): string => {
     ? requestedNext[0]
     : requestedNext
 
-  if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+  if (nextPath?.startsWith('/') && !nextPath.startsWith('//')) {
     return nextPath
   }
 

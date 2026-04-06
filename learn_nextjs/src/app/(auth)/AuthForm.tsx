@@ -1,7 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, startTransition, useActionState, useState } from 'react'
+import {
+  type FormEvent,
+  startTransition,
+  useActionState,
+  useState
+} from 'react'
 
 import {
   Field,
@@ -11,7 +16,7 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { parseAuthForm } from '@/schemas/auth/forms'
-import { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
+import type { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
 
 export const AuthForm = ({
   title,

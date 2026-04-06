@@ -3,8 +3,8 @@
 import { createContext, useCallback, useEffect, useReducer } from 'react'
 
 import { UserSchema } from '@/common/schemas/api/resources'
-import { User } from '@/common/types/api/resources'
-import { Children } from '@/common/types/layout'
+import type { User } from '@/common/types/api/resources'
+import type { Children } from '@/common/types/layout'
 
 import { getMe } from './api/endpoints'
 

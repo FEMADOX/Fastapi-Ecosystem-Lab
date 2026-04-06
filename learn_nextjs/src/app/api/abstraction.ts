@@ -2,7 +2,7 @@
 // Provides a consistent interface for making API calls and handling responses/errors
 
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
-import {
+import type {
   APIBaseProps,
   ApiProxyResponse,
   RequestFactoryOptions

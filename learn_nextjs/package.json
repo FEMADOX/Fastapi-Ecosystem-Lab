@@ -7,10 +7,13 @@
     "dev:watch": "nodemon --watch ../.env --exec \"next dev --turbopack\"",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix",
-    "format": "prettier --write",
-    "format:check": "prettier --check",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format --write ./src",
+    "format:check": "biome format ./src",
+    "check": "biome check ./src",
+    "check:fix": "biome check --write ./src",
+    "ci": "biome ci",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
@@ -31,49 +34,25 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^2.13.0",
-    "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^9.39.4",
-    "@next/eslint-plugin-next": "^15.5.14",
-    "@stylistic/eslint-plugin": "^5.10.0",
+    "@biomejs/biome": "^2.4.10",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/http-proxy": "^1.17.17",
     "@types/node": "^22.19.15",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
-    "@typescript-eslint/parser": "^8.57.2",
     "babel-plugin-react-compiler": "0.0.0-experimental-592953e-20240517",
-    "eslint": "^9.39.4",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-config-standard": "^17.1.0",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-n": "^17.24.0",
-    "eslint-plugin-promise": "^7.2.1",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "6.0.0-rc.2",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "globals": "^15.15.0",
-    "jiti": "^2.6.1",
+    "biome-standard": "github:robinwalterfit/biome-standard#v0.5.0",
     "lint-staged": "^16.4.0",
     "nodemon": "^3.1.14",
     "postcss": "^8.5.8",
-    "prettier": "^3.8.1",
-    "prettier-plugin-tailwindcss": "^0.7.2",
     "shadcn": "^4.1.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.2",
     "vitest": "^4.1.2"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "pnpm lint:fix",
-      "pnpm format"
-    ],
-    "*.{json,md,yaml,yml,css,html}": [
-      "pnpm format"
+    "*.{ts,tsx,js,jsx,mts,cts,json,css}": [
+      "biome check --write --no-errors-on-unmatched"
     ]
   }
 }

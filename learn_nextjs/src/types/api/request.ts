@@ -1,4 +1,4 @@
-import { ApiVersion, HttpMethod } from '@/types/api/types'
+import type { ApiVersion, HttpMethod } from '@/types/api/types'
 
 export interface RequestFactoryOptions {
   method?: HttpMethod

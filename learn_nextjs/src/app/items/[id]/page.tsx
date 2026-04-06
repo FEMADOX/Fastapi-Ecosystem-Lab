@@ -2,8 +2,8 @@ import { cacheTag } from 'next/cache'
 import { cookies } from 'next/headers'
 
 import { serverGet } from '@/app/api/server-fetch'
-import { Item } from '@/common/types/api/resources'
-import { PromiseIdProp } from '@/common/types/routing'
+import type { Item } from '@/common/types/api/resources'
+import type { PromiseIdProp } from '@/common/types/routing'
 
 const fetchItem = async (id: string, accessToken?: string) => {
   'use cache'
