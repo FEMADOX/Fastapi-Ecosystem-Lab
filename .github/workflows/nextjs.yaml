@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Biome as CI
-        run: pnpm ci
+        run: pnpm check:ci
 
       - name: Run Vitest
         run: pnpm test
