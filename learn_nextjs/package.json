@@ -13,7 +13,6 @@
     "format:check": "biome format ./src",
     "check": "biome check ./src",
     "check:fix": "biome check --write ./src",
-    "check:ci": "biome ci ./src",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

@@ -46,7 +46,7 @@ jobs:
           version: latest
 
       - name: Run Biome
-        run: pnpm check:ci
+        run: biome ci ./src
 
       - name: Run Vitest
         run: pnpm test
