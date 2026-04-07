@@ -53,3 +53,10 @@ repos:
         args: [--dir, learn_nextjs, exec, lint-staged]
         language: system
         pass_filenames: false
+
+  - repo: https://github.com/biomejs/pre-commit
+    rev: "v2.4.10"
+    hooks:
+    -   id: biome-check
+        args: [ "--write" ]
+        additional_dependencies: ["@biomejs/biome@2.4.10"]
