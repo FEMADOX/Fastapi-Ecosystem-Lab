@@ -43,7 +43,8 @@ export const serverRequestBase = async <T>(
       'Content-Type': 'application/json',
       ...headers
     },
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(1 * 60 * 1000) // 1 minute timeout for all server requests
   })
 
   if (!response.ok) {
