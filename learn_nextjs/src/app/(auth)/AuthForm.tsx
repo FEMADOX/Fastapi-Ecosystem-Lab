@@ -54,7 +54,7 @@ export const AuthForm = ({
 
   return (
     <main className="mx-auto flex w-full max-w-md items-center justify-center p-6">
-      <section className="w-full rounded-xl border p-6 shadow-sm">
+      <section className="card">
         <h1 className="mb-6 text-2xl font-semibold">{title}</h1>
 
         <form method="post" onSubmit={handleSubmit} className="space-y-4">

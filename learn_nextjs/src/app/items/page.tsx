@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card'
+import { RetryCard } from './RetryCard'
 
 const fetchItems = async (accessToken?: string) => {
   'use cache'
@@ -31,12 +32,11 @@ const ItemsPage = async () => {
     color: 'red'
   }
 
-  if (error) {
-    throw new Error(`Failed to fetch items: ${error}`)
-  }
+  if (error)
+    return <RetryCard cardTitle="Items" error={error} tagToUpdate="items" />
 
   return (
-    <>
+    <div>
       <h1 className="mb-8 text-3xl font-bold">Items</h1>
       <Link
         href="/items/new"
@@ -51,7 +51,7 @@ const ItemsPage = async () => {
             href={`/items/${item.id}`}
             key={item.id}
           >
-            <Card className="h-full overflow-hidden p-0">
+            <Card className="h-full overflow-hidden p-0 shadow-sm">
               <CardHeader className="relative block p-0">
                 <AspectRatio ratio={1.268115942} className="overflow-hidden">
                   <Image
@@ -105,7 +105,7 @@ const ItemsPage = async () => {
           </Link>
         ))}
       </ul>
-    </>
+    </div>
   )
 }
 

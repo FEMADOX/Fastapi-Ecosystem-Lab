@@ -1,12 +1,15 @@
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi_versionizer.versionizer import Versionizer, api_version
+from sqlalchemy.exc import DBAPIError
 
 from learn_fastapi.src.auth.router import router as auth_router
 from learn_fastapi.src.config import lifespan, settings
 from learn_fastapi.src.items.router import router as items_router
 from learn_fastapi.src.middleware import CorsMiddlewareConfigurer
 from learn_fastapi.src.users.router import router as users_router
+from learn_fastapi.src.utils.alembic import app_logger
 
 app = FastAPI(
     lifespan=lifespan,
@@ -16,6 +19,14 @@ app = FastAPI(
 )
 # register_dev_reload(app)
 CorsMiddlewareConfigurer(settings.allowed_hosts).add_middleware(app)
+
+
+@app.exception_handler(DBAPIError)
+def dbapi_error_handler(request: Request, exc: DBAPIError) -> JSONResponse:
+    app_logger.error(f"Database error in {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=503, content={"detail": "Database temporarily unavailable"}
+    )
 
 
 @api_version(1)

@@ -7,6 +7,7 @@ import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
 import type { Item } from '@/common/types/api/resources'
 import type { PromiseIdProp } from '@/common/types/routing'
 import { Button } from '@/components/ui/button'
+import { RetryCard } from '../RetryCard'
 
 const fetchItem = async (id: string, accessToken?: string) => {
   'use cache'
@@ -19,9 +20,14 @@ const ItemPage = async ({ params }: PromiseIdProp) => {
   const accessToken = cookieStore.get('access_token')?.value
   const { data: item, error } = await fetchItem(id, accessToken)
 
-  if (error) {
-    throw new Error(`Failed to fetch item: ${error}`)
-  }
+  if (error)
+    return (
+      <RetryCard
+        cardTitle="Item Details"
+        error={error}
+        tagToUpdate={`item-${id}`}
+      />
+    )
 
   return (
     <div>

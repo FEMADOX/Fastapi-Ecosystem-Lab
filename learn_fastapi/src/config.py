@@ -6,6 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from learn_fastapi.src import database
+
 from .constants import (
     IMAGES_DIR,
     MEDIA_DIR,
@@ -31,8 +33,8 @@ def mount_static_files(app: FastAPI) -> None:
 
 
 def register_dev_reload(app: FastAPI) -> None:
-    app.add_middleware(SwaggerHotReloadMiddleware)  # ty:ignore[invalid-argument-type]
-    app.add_websocket_route("/hot-reload", hot_reload_ws, name="hot-reload")
+    app.add_middleware(SwaggerHotReloadMiddleware)
+    app.add_websocket_route("/hot-reload", hot_reload_ws, name="hot-reload")  # ty:ignore[unresolved-attribute]
 
 
 @asynccontextmanager
@@ -40,10 +42,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     mount_static_files(app)
     await check_pending_migrations()
     task = asyncio.create_task(watch_files())
-    yield
-    task.cancel()
-    with suppress(asyncio.CancelledError):
-        await task
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+        await database.engine.dispose()
 
 
 class Settings(BaseSettings):
