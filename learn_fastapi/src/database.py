@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 # Configuración específica para SQLite
-connect_args = {"timeout": 30}
+connect_args = {"timeout": 1500}
 if settings.database_url.startswith("sqlite"):
     # Para SQLite: permitir acceso desde múltiples threads
     # English:

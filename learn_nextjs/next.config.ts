@@ -1,4 +1,4 @@
-import { NextConfig } from 'next'
+import type { NextConfig } from 'next'
 import './envConfig'
 
 const nextConfig: NextConfig = {
@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     }
   },
   cacheComponents: true,
+  // experimental: {
+  //   turbopackFileSystemCacheForDev: false,
+  // },
   env: {
     SECRET_KEY: process.env.SECRET_KEY,
     LEARN_FASTAPI_API_URL: process.env.LEARN_FASTAPI_API_URL,

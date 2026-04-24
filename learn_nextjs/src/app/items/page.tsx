@@ -1,7 +1,7 @@
 import { cacheTag } from 'next/cache'
 import Link from 'next/dist/client/link'
 import { cookies } from 'next/dist/server/request/cookies'
-
+import Image from 'next/image'
 import { serverGet } from '@/app/api/server-fetch'
 import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
 import type { Items } from '@/common/types/api/resources'
@@ -19,7 +19,7 @@ import {
 const fetchItems = async (accessToken?: string) => {
   'use cache'
   cacheTag('items')
-  return serverGet<Items>('/latest/items', accessToken)
+  return serverGet<Items>('/latest/items/', accessToken)
 }
 
 const ItemsPage = async () => {
@@ -54,11 +54,14 @@ const ItemsPage = async () => {
             <Card className="h-full overflow-hidden p-0">
               <CardHeader className="relative block p-0">
                 <AspectRatio ratio={1.268115942} className="overflow-hidden">
-                  <img
+                  <Image
                     // TODO (FENYXZ): fetch real image URL for item, fallback to placeholder if not available
                     src={NO_IMAGE_AVAILABLE_URL}
                     alt={item.description}
                     className="block size-full object-cover object-center"
+                    width={500}
+                    height={500}
+                    loading="eager"
                   />
                 </AspectRatio>
                 {badge && (

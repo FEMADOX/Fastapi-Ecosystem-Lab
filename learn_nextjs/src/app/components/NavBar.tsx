@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -44,12 +45,23 @@ export const NavBar = async () => {
                 </SheetDescription>
               </SheetHeader>
               <div className="flex flex-col gap-5 px-4 pb-6">
-                <Link className="text-lg font-semibold" href="/items">
-                  Items
-                </Link>
-                <Link className="text-lg font-semibold" href="/about">
-                  About
-                </Link>
+                {/* If link is click, close the Sheet */}
+                <SheetClose
+                  render={
+                    <Link className="text-lg font-semibold" href="/items">
+                      Items
+                    </Link>
+                  }
+                  nativeButton={false}
+                />
+                <SheetClose
+                  render={
+                    <Link className="text-lg font-semibold" href="/about">
+                      About
+                    </Link>
+                  }
+                  nativeButton={false}
+                />
               </div>
             </SheetContent>
           </Sheet>
