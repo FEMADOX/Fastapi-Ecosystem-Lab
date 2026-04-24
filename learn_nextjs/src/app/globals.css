@@ -209,4 +209,7 @@
   .animated-border-bottom {
     @apply hover:border-primary border-b-2 border-transparent transition-[border-color];
   }
+  .card {
+    @apply w-full rounded-xl border p-6 shadow-sm;
+  }
 }

@@ -5,6 +5,20 @@ import { cookies } from 'next/headers'
 import { API_BASE_URL } from '@/common/const'
 import type { ApiProxyResponse } from '@/types/api/types'
 
+const RETRYABLE_STATUS_CODES = new Set([500, 502, 503, 504])
+const RETRY_DELAYS_MS = [700, 1400, 2200]
+
+const wait = async (ms: number): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+const isRetryableFetchError = (error: unknown): boolean => {
+  return (
+    error instanceof TypeError ||
+    (error instanceof Error && error.name === 'TimeoutError')
+  )
+}
+
 export const getAuthHeaders = async (): Promise<HeadersInit> => {
   const cookieStore = await cookies()
   const accessToken = cookieStore.get('access_token')?.value
@@ -37,23 +51,50 @@ export const serverRequestBase = async <T>(
     'Content-Type': 'application/json',
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
   }
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(1 * 60 * 1000) // 1 minute timeout for all server requests
-  })
 
-  if (!response.ok) {
-    return { data: undefined, error: await parseErrorMessage(response) }
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(1 * 60 * 1000) // 1 minute timeout for all server requests
+      })
+
+      if (!response.ok) {
+        const parsedError = await parseErrorMessage(response)
+        if (
+          RETRYABLE_STATUS_CODES.has(response.status) &&
+          attempt < RETRY_DELAYS_MS.length
+        ) {
+          await wait(RETRY_DELAYS_MS[attempt])
+          continue
+        }
+
+        return { data: undefined, error: parsedError }
+      }
+
+      if (response.status === 204) return { data: undefined }
+
+      return { data: (await response.json()) as T }
+    } catch (error: unknown) {
+      if (isRetryableFetchError(error) && attempt < RETRY_DELAYS_MS.length) {
+        await wait(RETRY_DELAYS_MS[attempt])
+        continue
+      }
+
+      return {
+        data: undefined,
+        error:
+          'Backend is temporarily unavailable. Please retry in a few seconds.'
+      }
+    }
   }
 
-  if (response.status === 204) return { data: undefined }
-
-  return { data: (await response.json()) as T }
+  return {
+    data: undefined,
+    error: 'Backend did not respond in time. Please retry shortly.'
+  }
 }
 
 export const serverGet = async <T>(
