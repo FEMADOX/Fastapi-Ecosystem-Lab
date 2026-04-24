@@ -61,7 +61,7 @@ const ItemsPage = async () => {
                     className="block size-full object-cover object-center"
                     width={500}
                     height={500}
-                    loading='eager'
+                    loading="eager"
                   />
                 </AspectRatio>
                 {badge && (

@@ -78,8 +78,12 @@ const HomePage = () => {
               <div className="mb-3 inline-flex rounded-lg bg-primary/10 p-2 text-primary">
                 <Icon className="size-4" />
               </div>
-              <h2 className="mb-1.5 text-sm font-semibold text-foreground sm:text-base">{title}</h2>
-              <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">{description}</p>
+              <h2 className="mb-1.5 text-sm font-semibold text-foreground sm:text-base">
+                {title}
+              </h2>
+              <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                {description}
+              </p>
             </article>
           ))}
         </div>
