@@ -22,7 +22,11 @@ const ItemPage = async ({ params }: PromiseIdProp) => {
 
   if (error)
     return (
-      <RetryCard cardTitle="Item Details" error={error} tagToUpdate={`item-${id}`} />
+      <RetryCard
+        cardTitle="Item Details"
+        error={error}
+        tagToUpdate={`item-${id}`}
+      />
     )
 
   return (
