@@ -3,7 +3,7 @@
 A personal repository documenting my learning journey through the FastAPI ecosystem and modern Python web development.
 
 🌐 API Deployed in the Koyeb platform:\
-https://fastapi-ecosystem-lab-api.koyeb.app/api/docs#
+<https://fastapi-ecosystem-lab-api.koyeb.app/api/docs#>
 
 ## 🗺️ What's covered
 
@@ -23,10 +23,12 @@ https://fastapi-ecosystem-lab-api.koyeb.app/api/docs#
 **Backend:**
 
 - **[FastAPI](https://fastapi.tiangolo.com/)** — modern Python web framework
-- **[SQLAlchemy](https://www.sqlalchemy.org/)** — ORM for Python
-- **[PostgreSQL](https://www.postgresql.org/)** — relational database
 - **[Pydantic v2](https://docs.pydantic.dev/)** — data validation
 - **[uv](https://docs.astral.sh/uv/)** — fast Python package manager
+- **[SQLAlchemy](https://www.sqlalchemy.org/)** — ORM for Python
+- **[Alembic](https://alembic.sqlalchemy.org/)** — database migrations
+- **[Redis](https://redis.io/)** — in-memory data store (caching, sessions)
+- **[PostgreSQL](https://www.postgresql.org/)** — relational database
 
 **Frontends:**
 
