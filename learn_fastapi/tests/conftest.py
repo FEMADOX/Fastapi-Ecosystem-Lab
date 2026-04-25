@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import URL, ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
@@ -56,7 +56,7 @@ class PrefixedAsyncClient(AsyncClient):
         return f"{self.api_prefix}/{url}"
 
     async def request(
-        self, method: str, url: str, *args: object, **kwargs: object
+        self, method: str, url: str | URL, *args: object, **kwargs: object
     ) -> Response:  # type: ignore[override]
         return await super().request(
             method,

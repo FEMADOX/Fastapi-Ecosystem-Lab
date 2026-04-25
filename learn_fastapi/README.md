@@ -104,7 +104,7 @@ The API base path is `/api` (configured in `src/main.py`), and the main topics c
 | HTTP status codes via `starlette.status`     | [`router.py`](src/items/router.py)                                               |
 | `HTTPException` for 404 responses            | [`router.py`](src/items/router.py)                                               |
 | Integration tests with `httpx.AsyncClient`   | [`tests/items/test_router.py`](tests/v1/items/test_router.py)                    |
-| Authorization and ownership tests            | [`tests/test_items_authorization.py`](tests/v1/test_items_authorization.py)      |
+| Authorization and ownership tests            | [`tests/test_items_authorization.py`](tests/v1/items/test_items_authorization.py)      |
 
 #### `items` Endpoints
 

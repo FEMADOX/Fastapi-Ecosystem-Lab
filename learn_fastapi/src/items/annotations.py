@@ -1,9 +1,12 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import File, Form, UploadFile
 from fastapi.params import Query
 from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import mapped_column
+
+AnnotatedOwnerId = Annotated[UUID | None, Query()]
 
 # ---------------------------------------------------------------------------
 # SQLAlchemy ORM column type annotations

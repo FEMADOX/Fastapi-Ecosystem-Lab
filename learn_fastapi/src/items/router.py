@@ -10,6 +10,7 @@ from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
 from .annotations import (
+    AnnotatedOwnerId,
     ImageCaption,
     ImageFile,
     ImageFilename,
@@ -42,6 +43,52 @@ async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
 
     """
     return await service.get_all_items()
+
+
+@api_version(1)
+@router.get("/owner")
+async def read_owner_items(
+    service: ItemServiceDep,
+    current_user: CurrentUserDep,
+    owner_id: AnnotatedOwnerId = None,
+) -> list[ItemSchema]:
+    """Return items for the authenticated user or an admin-selected owner.
+
+    Args:
+        service: Injected ItemService dependency.
+        current_user: Authenticated user making the request.
+        owner_id: Optional owner UUID. Only superusers can target another owner.
+
+    Returns:
+        A list of ItemSchema objects for the effective owner.
+
+    """
+    owner = await service.resolve_owner(current_user, owner_id)
+    return await service.get_user_items(owner)
+
+
+@api_version(1)
+@router.get("/owner/{id_param}")
+async def read_owner_item(
+    id_param: UUID,
+    service: ItemServiceDep,
+    current_user: CurrentUserDep,
+    owner_id: AnnotatedOwnerId = None,
+) -> ItemSchema:
+    """Return one item for the authenticated user or an admin-selected owner.
+
+    Args:
+        id_param: UUID of the item to retrieve.
+        service: Injected ItemService dependency.
+        current_user: Authenticated user making the request.
+        owner_id: Optional owner UUID. Only superusers can target another owner.
+
+    Returns:
+        The matching ItemSchema for the effective owner.
+
+    """
+    owner = await service.resolve_owner(current_user, owner_id)
+    return await service.get_user_item(id_param, owner)
 
 
 @api_version(1)
