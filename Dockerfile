@@ -14,4 +14,5 @@ RUN uv sync --frozen --no-dev --no-cache
 
 #EXPOSE 8000
 
-CMD ["uvicorn", "learn_fastapi.src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT [ ".venv/bin/uvicorn" ]
+CMD ["learn_fastapi.src.main:app", "--host", "0.0.0.0", "--port", "8000"]
