@@ -31,3 +31,19 @@ services:
     network_mode: host
     command: ["uv", "run", "run-api-server"]
     restart: unless-stopped
+
+  redis:
+    image: redis:8.6-alpine
+    container_name: learn_fastapi_redis
+    network_mode: host
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis_data:

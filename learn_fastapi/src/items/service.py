@@ -3,6 +3,18 @@ from uuid import UUID
 from fastapi import UploadFile
 
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.items.cache import (
+    cache_item,
+    cache_items,
+    cache_user_item,
+    cache_user_items,
+    get_cached_item,
+    get_cached_items,
+    # get_cached_user_items,
+    get_cached_user_item,
+    get_cached_user_items,
+    invalidate_items_namespace,
+)
 from learn_fastapi.src.items.exceptions import (
     item_not_found_exception,
     item_not_found_or_not_belong_to_user_exception,
@@ -10,7 +22,10 @@ from learn_fastapi.src.items.exceptions import (
 from learn_fastapi.src.items.repository import ItemRepository
 from learn_fastapi.src.items.schema import ItemSchema, ItemUpdateSchema
 from learn_fastapi.src.items.utils import save_image_file
+from learn_fastapi.src.users.exceptions import only_user_owner_is_authorized
 from learn_fastapi.src.users.models import User
+from learn_fastapi.src.users.repository import UsersRepository
+from learn_fastapi.src.utils.exceptions import user_doesnt_exist_exception
 
 
 class ItemService:
@@ -19,6 +34,40 @@ class ItemService:
     def __init__(self, session: AsyncSessionDep) -> None:
         """Initialize the service with an async database session."""
         self.repository: ItemRepository = ItemRepository(session)
+        self.users_repository: UsersRepository = UsersRepository(session)
+
+    async def _resolve_owner(self, current_user: User, owner_id: UUID | None) -> User:
+        """Resolve the owner for user-scoped item reads.
+
+        Non-admin users can only query their own items. Admin users can target
+        another account via ``owner_id``.
+
+        Args:
+            current_user: The authenticated user making the request.
+            owner_id: Optional owner UUID. Only superusers can target another owner.
+
+        Returns:
+            The effective owner User object for the query.
+
+        Raises:
+            only_user_owner_is_authorized:
+                When a non-superuser attempts to target another owner.
+            user_doesnt_exist_exception: When the specified owner does not exist.
+
+        """
+        if not owner_id or owner_id == current_user.id:
+            return current_user
+
+        if not current_user.is_superuser:
+            raise only_user_owner_is_authorized()
+
+        owner = await self.users_repository.get_user_by_id(owner_id)
+        if owner is None:
+            raise user_doesnt_exist_exception()
+        return owner
+
+    async def resolve_owner(self, current_user: User, owner_id: UUID | None) -> User:
+        return await self._resolve_owner(current_user, owner_id)
 
     async def get_all_items(self) -> list[ItemSchema]:
         """Return all items in the database as serialized schemas.
@@ -27,8 +76,19 @@ class ItemService:
             A list of every ItemSchema (maybe empty).
 
         """
+        # Cache
+        cached = await get_cached_items()
+        if cached:
+            return [ItemSchema(**item) for item in cached]
+
+        # Cache missed
         items = await self.repository.get_all_items()
-        return [ItemSchema(**item.__dict__) for item in items]
+        schemas = [ItemSchema(**item.__dict__) for item in items]
+
+        # Populate Cache
+        await cache_items([schema.model_dump() for schema in schemas])
+
+        return schemas
 
     async def get_item(self, id_param: UUID) -> ItemSchema:
         """Return a single item by its UUID.
@@ -43,10 +103,22 @@ class ItemService:
             item_not_found_exception: When no item with the given UUID exists.
 
         """
+        # Cache
+        cached = await get_cached_item(id_param)
+        if cached:
+            return ItemSchema(**cached)
+
+        # Cache missed
         item = await self.repository.get_item(id_param)
         if item is None:
             raise item_not_found_exception()
-        return ItemSchema(**item.__dict__)
+
+        schema = ItemSchema(**item.__dict__)
+
+        # Populate Cache
+        await cache_item(id_param, schema.model_dump())
+
+        return schema
 
     async def get_user_items(self, owner: User) -> list[ItemSchema]:
         """Return all items belonging to a specific user.
@@ -61,10 +133,22 @@ class ItemService:
             item_not_found_or_not_belong_to_user_exception: When the user owns no items.
 
         """
+        # Cache
+        cached = await get_cached_user_items(owner)
+        if cached:
+            return [ItemSchema(**item) for item in cached]
+
+        # Cache missed
         items = await self.repository.get_user_items(owner)
         if not items:
             raise item_not_found_or_not_belong_to_user_exception()
-        return [ItemSchema(**item.__dict__) for item in items]
+
+        schemas = [ItemSchema(**item.__dict__) for item in items]
+
+        # Populate Cache
+        await cache_user_items([schema.model_dump() for schema in schemas], owner)
+
+        return schemas
 
     async def get_user_item(self, item_id: UUID, owner: User) -> ItemSchema:
         """Return a specific item that belongs to a user.
@@ -81,10 +165,22 @@ class ItemService:
                 or is not owned by the user.
 
         """
+        # Cache
+        cached = await get_cached_user_item(item_id, owner)
+        if cached:
+            return ItemSchema(**cached)
+
+        # Cache missed
         item = await self.repository.get_user_item(item_id, owner)
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
-        return ItemSchema(**item.__dict__)
+
+        schema = ItemSchema(**item.__dict__)
+
+        # Populate Cache
+        await cache_user_item(item_id, schema.model_dump(), owner)
+
+        return schema
 
     async def create_item(self, item_data: ItemUpdateSchema, owner: User) -> ItemSchema:
         """Create a new item owned by a user.
@@ -98,6 +194,10 @@ class ItemService:
 
         """
         item = await self.repository.create_item(item_data, owner)
+
+        # Invalidate Items Cache
+        await invalidate_items_namespace()
+
         return ItemSchema(**item.__dict__)
 
     async def create_item_with_image(  # noqa: PLR0913, PLR0917
@@ -142,6 +242,9 @@ class ItemService:
         )
         item = await self.repository.create_item(item_data, owner)
 
+        # Invalidate Items Cache
+        await invalidate_items_namespace()
+
         if image_file:
             image = await save_image_file(image_file, caption)
             item = await self.repository.update_item_image(item.id, image.url)
@@ -174,6 +277,10 @@ class ItemService:
         item = await self.repository.update_item(item_id, item_data, owner_scope)
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
+
+        # Invalidate Items Cache
+        await invalidate_items_namespace()
+
         return ItemSchema(**item.__dict__)
 
     async def patch_item(
@@ -202,6 +309,10 @@ class ItemService:
         item = await self.repository.patch_item(item_id, item_data, owner_scope)
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
+
+        # Invalidate Items Cache
+        await invalidate_items_namespace()
+
         return ItemSchema(**item.__dict__)
 
     async def delete_item(self, item_id: UUID, owner: User) -> None:
@@ -223,7 +334,11 @@ class ItemService:
 
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
+
         await self.repository.delete_item(item)
+
+        # Invalidate Items Cache
+        await invalidate_items_namespace()
 
     async def update_item_image(
         self, item_id: UUID, image_file: UploadFile, caption: str
@@ -246,4 +361,8 @@ class ItemService:
         item = await self.repository.update_item_image(item_id, image.url)
         if item is None:
             raise item_not_found_exception()
+
+        # Invalidate Items Cache
+        await invalidate_items_namespace()
+
         return ItemSchema(**item.__dict__)

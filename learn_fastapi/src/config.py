@@ -34,7 +34,7 @@ def mount_static_files(app: FastAPI) -> None:
 
 def register_dev_reload(app: FastAPI) -> None:
     app.add_middleware(SwaggerHotReloadMiddleware)
-    app.add_websocket_route("/hot-reload", hot_reload_ws, name="hot-reload")  # ty:ignore[unresolved-attribute]
+    app.add_api_websocket_route("/hot-reload", hot_reload_ws, name="hot-reload")
 
 
 @asynccontextmanager
@@ -48,6 +48,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task
+        from learn_fastapi.src.cache.redis_client import close_redis
+
+        await close_redis()
+
         await database.engine.dispose()
 
 
@@ -57,6 +61,7 @@ class Settings(BaseSettings):
     allowed_hosts: list[str] = ["localhost", "127.0.0.1"]
     debug: bool = False
     environment: str = "development"
+    redis_url: str = "redis://127.0.0.1:6379/0"
     postgres_user: str = "postgres"
     postgres_password: str = "postgres"  # noqa: S105
     postgres_db: str = "learn_fastapi"

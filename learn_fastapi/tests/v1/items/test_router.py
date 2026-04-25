@@ -6,9 +6,11 @@ import pytest
 from starlette.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_422_UNPROCESSABLE_CONTENT,
-    HTTP_204_NO_CONTENT,
 )
 
 from learn_fastapi.src.constants import IMAGES_DIR
@@ -79,6 +81,114 @@ class TestReadItem:
         """A non-UUID value must fail validation."""
         response = await client.get("/items/not-an-id")
         assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
+
+
+# ---------------------------------------------------------------------------
+# GET /items/owner/
+# ---------------------------------------------------------------------------
+
+
+class TestOwnerItems:
+    async def test_owner_items_requires_authentication(
+        self, auth_client: AsyncClient
+    ) -> None:
+        response = await auth_client.get("/items/owner")
+        assert response.status_code == HTTP_401_UNAUTHORIZED
+
+    async def test_owner_items_returns_authenticated_owner_items(
+        self,
+        auth_client: AsyncClient,
+        owner_token: str,
+        owner_item_id: UUID,
+    ) -> None:
+        response = await auth_client.get(
+            "/items/owner",
+            headers={"Authorization": f"Bearer {owner_token}"},
+        )
+        assert response.status_code == HTTP_200_OK
+        ids = {item["id"] for item in response.json()}
+        assert str(owner_item_id) in ids
+
+    async def test_owner_items_forbids_non_admin_owner_override(
+        self,
+        auth_client: AsyncClient,
+        other_user_token: str,
+        owner_user_id: str,
+    ) -> None:
+        response = await auth_client.get(
+            f"/items/owner?owner_id={owner_user_id}",
+            headers={"Authorization": f"Bearer {other_user_token}"},
+        )
+        assert response.status_code == HTTP_403_FORBIDDEN
+
+    async def test_owner_items_allows_admin_owner_override(
+        self,
+        auth_client: AsyncClient,
+        admin_token: str,
+        owner_user_id: str,
+        owner_item_id: UUID,
+    ) -> None:
+        response = await auth_client.get(
+            f"/items/owner?owner_id={owner_user_id}",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == HTTP_200_OK
+        ids = {item["id"] for item in response.json()}
+        assert str(owner_item_id) in ids
+
+
+# ---------------------------------------------------------------------------
+# GET /items/owner/{id_param}
+# ---------------------------------------------------------------------------
+
+
+class TestOwnerItem:
+    async def test_owner_item_requires_authentication(
+        self,
+        auth_client: AsyncClient,
+        owner_item_id: UUID,
+    ) -> None:
+        response = await auth_client.get(f"/items/owner/{owner_item_id}")
+        assert response.status_code == HTTP_401_UNAUTHORIZED
+
+    async def test_owner_item_returns_authenticated_owner_item(
+        self,
+        auth_client: AsyncClient,
+        owner_token: str,
+        owner_item_id: UUID,
+    ) -> None:
+        response = await auth_client.get(
+            f"/items/owner/{owner_item_id}",
+            headers={"Authorization": f"Bearer {owner_token}"},
+        )
+        assert response.status_code == HTTP_200_OK
+        assert response.json()["id"] == str(owner_item_id)
+
+    async def test_owner_item_returns_404_for_non_owner_without_override(
+        self,
+        auth_client: AsyncClient,
+        other_user_token: str,
+        owner_item_id: UUID,
+    ) -> None:
+        response = await auth_client.get(
+            f"/items/owner/{owner_item_id}",
+            headers={"Authorization": f"Bearer {other_user_token}"},
+        )
+        assert response.status_code == HTTP_404_NOT_FOUND
+
+    async def test_owner_item_allows_admin_owner_override(
+        self,
+        auth_client: AsyncClient,
+        admin_token: str,
+        owner_item_id: UUID,
+        owner_user_id: str,
+    ) -> None:
+        response = await auth_client.get(
+            f"/items/owner/{owner_item_id}?owner_id={owner_user_id}",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == HTTP_200_OK
+        assert response.json()["id"] == str(owner_item_id)
 
 
 # ---------------------------------------------------------------------------

@@ -42,6 +42,7 @@ async def _login(
     """Authenticate a user and mint new access/refresh/csrf tokens.
 
     Args:
+        repository: The AuthRepository instance to use for database operations.
         form_data: OAuth2 login form data.
         response: Response object used to set auth cookies.
 
