@@ -12,15 +12,14 @@ import json
 import logging
 from collections.abc import Awaitable
 from functools import lru_cache
-from uuid import UUID
 
 from redis import RedisError
 from redis import asyncio as aioredis
 
 logger = logging.getLogger(__name__)
 
-type JSONPrimitive = UUID | str | int | float | bool | None
-type JSONValue = JSONPrimitive | list[JSONPrimitive] | dict[str, JSONPrimitive]
+type JSONPrimitive = str | int | float | bool | None
+type JSONValue = JSONPrimitive | list[JSONValue] | dict[str, JSONValue]
 
 
 @lru_cache(maxsize=1)
