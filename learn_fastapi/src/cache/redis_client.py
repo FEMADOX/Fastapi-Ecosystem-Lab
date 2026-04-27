@@ -12,7 +12,7 @@ import json
 import logging
 from collections.abc import Awaitable
 from functools import lru_cache
-from typing import UUID
+from uuid import UUID
 
 from redis import RedisError
 from redis import asyncio as aioredis
