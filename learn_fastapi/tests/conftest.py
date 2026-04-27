@@ -62,7 +62,7 @@ class PrefixedAsyncClient(AsyncClient):
             method,
             self._with_api_prefix(str(url)),
             *args,
-            **kwargs,  # ty: ignore[invalid-argument-type]
+            **kwargs,  # ty:ignore[invalid-argument-type]
         )
 
 

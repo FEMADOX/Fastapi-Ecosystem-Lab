@@ -10,12 +10,12 @@ from learn_fastapi.src.items.cache import (
     cache_user_items,
     get_cached_item,
     get_cached_items,
-    # get_cached_user_items,
     get_cached_user_item,
     get_cached_user_items,
     invalidate_items_namespace,
 )
 from learn_fastapi.src.items.exceptions import (
+    duplicate_item_name_exception,
     item_not_found_exception,
     item_not_found_or_not_belong_to_user_exception,
 )
@@ -79,14 +79,16 @@ class ItemService:
         # Cache
         cached = await get_cached_items()
         if cached:
-            return [ItemSchema(**item) for item in cached]
+            return [ItemSchema.model_validate(item) for item in cached]
 
         # Cache missed
         items = await self.repository.get_all_items()
-        schemas = [ItemSchema(**item.__dict__) for item in items]
+        schemas = [
+            ItemSchema.model_validate(item, from_attributes=True) for item in items
+        ]
 
         # Populate Cache
-        await cache_items([schema.model_dump() for schema in schemas])
+        await cache_items([schema.model_dump(mode="json") for schema in schemas])
 
         return schemas
 
@@ -106,17 +108,17 @@ class ItemService:
         # Cache
         cached = await get_cached_item(id_param)
         if cached:
-            return ItemSchema(**cached)
+            return ItemSchema.model_validate(cached)
 
         # Cache missed
         item = await self.repository.get_item(id_param)
         if item is None:
             raise item_not_found_exception()
 
-        schema = ItemSchema(**item.__dict__)
+        schema = ItemSchema.model_validate(item, from_attributes=True)
 
         # Populate Cache
-        await cache_item(id_param, schema.model_dump())
+        await cache_item(id_param, schema.model_dump(mode="json"))
 
         return schema
 
@@ -136,17 +138,21 @@ class ItemService:
         # Cache
         cached = await get_cached_user_items(owner)
         if cached:
-            return [ItemSchema(**item) for item in cached]
+            return [ItemSchema.model_validate(item) for item in cached]
 
         # Cache missed
         items = await self.repository.get_user_items(owner)
         if not items:
             raise item_not_found_or_not_belong_to_user_exception()
 
-        schemas = [ItemSchema(**item.__dict__) for item in items]
+        schemas = [
+            ItemSchema.model_validate(item, from_attributes=True) for item in items
+        ]
 
         # Populate Cache
-        await cache_user_items([schema.model_dump() for schema in schemas], owner)
+        await cache_user_items(
+            [schema.model_dump(mode="json") for schema in schemas], owner
+        )
 
         return schemas
 
@@ -168,17 +174,17 @@ class ItemService:
         # Cache
         cached = await get_cached_user_item(item_id, owner)
         if cached:
-            return ItemSchema(**cached)
+            return ItemSchema.model_validate(cached)
 
         # Cache missed
         item = await self.repository.get_user_item(item_id, owner)
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
 
-        schema = ItemSchema(**item.__dict__)
+        schema = ItemSchema.model_validate(item, from_attributes=True)
 
         # Populate Cache
-        await cache_user_item(item_id, schema.model_dump(), owner)
+        await cache_user_item(item_id, schema.model_dump(mode="json"), owner)
 
         return schema
 
@@ -198,7 +204,7 @@ class ItemService:
         # Invalidate Items Cache
         await invalidate_items_namespace()
 
-        return ItemSchema(**item.__dict__)
+        return ItemSchema.model_validate(item, from_attributes=True)
 
     async def create_item_with_image(  # noqa: PLR0913, PLR0917
         self,
@@ -230,12 +236,13 @@ class ItemService:
             image was provided.
 
         Raises:
-            item_not_found_exception: Item not found.
+            duplicate_item_name_exception: Item duplicated.
 
         """
         existing = await self.repository.get_item_by_name(name)
-        if existing is not None:
-            raise item_not_found_exception()
+        if existing:
+            # Raise a conflict exception — the item was found, not missing
+            raise duplicate_item_name_exception()
 
         item_data = ItemUpdateSchema(
             name=name, description=description, price=price, tax=tax
@@ -249,7 +256,7 @@ class ItemService:
             image = await save_image_file(image_file, caption)
             item = await self.repository.update_item_image(item.id, image.url)
 
-        return ItemSchema(**item.__dict__)
+        return ItemSchema.model_validate(item, from_attributes=True)
 
     async def update_item(
         self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
@@ -281,7 +288,7 @@ class ItemService:
         # Invalidate Items Cache
         await invalidate_items_namespace()
 
-        return ItemSchema(**item.__dict__)
+        return ItemSchema.model_validate(item, from_attributes=True)
 
     async def patch_item(
         self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
@@ -313,7 +320,7 @@ class ItemService:
         # Invalidate Items Cache
         await invalidate_items_namespace()
 
-        return ItemSchema(**item.__dict__)
+        return ItemSchema.model_validate(item, from_attributes=True)
 
     async def delete_item(self, item_id: UUID, owner: User) -> None:
         """Delete an item owned by the given user.
@@ -365,4 +372,4 @@ class ItemService:
         # Invalidate Items Cache
         await invalidate_items_namespace()
 
-        return ItemSchema(**item.__dict__)
+        return ItemSchema.model_validate(item, from_attributes=True)

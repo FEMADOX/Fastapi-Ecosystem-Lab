@@ -53,7 +53,7 @@ async def _is_there_any_model_change(
         True if there are changes without coverage, False otherwise.
 
     """
-    from learn_fastapi.src.database import Base
+    from learn_fastapi.src.database import Base  # noqa: PLC0415
 
     def _compare(sync_connection: Connection) -> list:
         # Build a MigrationContext that points at the live DB,
@@ -77,39 +77,43 @@ async def _is_there_any_model_change(
 
 async def check_pending_migrations() -> None:
     """Check if there are pending Alembic migrations."""
-    from learn_fastapi.src.database import engine
+    from learn_fastapi.src.database import engine  # noqa: PLC0415
 
     alembic_cfg = Config(str(PROJECT_DIR / "alembic.ini"))
     directory = script.ScriptDirectory.from_config(alembic_cfg)
 
-    app_logger.info("Checking pending migrations")
+    app_logger.info("[Alembic]: Checking pending migrations")
 
     try:
         async with engine.begin() as conn:
-            app_logger.info("Checking database revision against Alembic heads")
+            app_logger.info(
+                "[Alembic]: Checking database revision against Alembic heads"
+            )
             is_head = await _is_database_at_head(conn, directory)
             if not is_head:
                 app_logger.warning(
-                    "DB is not at head -- run `alembic upgrade head` to update"
+                    "[Alembic]: DB is not at head"
+                    " - run `alembic upgrade head` to update"
                 )
                 return
 
-            app_logger.info("Database revision is already at head")
+            app_logger.info("[Alembic]: Database revision is already at head")
 
             app_logger.info(
-                "Check if there are any changes in the models "
+                "[Alembic]: Check if there are any changes in the models "
                 "without been covered by a migration"
             )
             has_pending_changes = await _is_there_any_model_change(conn, directory)
             if has_pending_changes:
                 app_logger.warning(
-                    "Uncommitted model changes — run alembic revision --autogenerate"
+                    "[Alembic]: Uncommitted model changes"
+                    " — run `alembic revision --autogenerate`"
                 )
                 return
 
-            app_logger.info("Database and models are in sync")
+            app_logger.info("[Alembic]: Database and models are in sync")
     except Exception:
-        app_logger.exception("Error while checking pending migrations:")
+        app_logger.exception("[Alembic]: Error while checking pending migrations:")
     finally:
         await engine.dispose()
     return
