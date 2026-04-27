@@ -10,15 +10,20 @@ a missing or unreachable Redis instance never breaks the API.
 
 import json
 import logging
-from typing import Any
+from collections.abc import Awaitable
+from functools import lru_cache
+from typing import UUID
 
+from redis import RedisError
 from redis import asyncio as aioredis
 
 logger = logging.getLogger(__name__)
 
-_redis_client: aioredis.Redis | None = None
+type JSONPrimitive = UUID | str | int | float | bool | None
+type JSONValue = JSONPrimitive | list[JSONPrimitive] | dict[str, JSONPrimitive]
 
 
+@lru_cache(maxsize=1)
 def get_redis_client() -> aioredis.Redis:
     """Return (or create) the shared async Redis client.
 
@@ -30,16 +35,11 @@ def get_redis_client() -> aioredis.Redis:
         Configured ``redis.asyncio.Redis`` instance.
 
     """
-    global _redis_client
+    from learn_fastapi.src.config import settings  # noqa: PLC0415
 
-    if not _redis_client:
-        from learn_fastapi.src.config import settings
-
-        _redis_client = aioredis.from_url(
-            settings.redis_url, encoding="utf-8", decode_responses=False
-        )
-
-    return _redis_client
+    return aioredis.from_url(
+        settings.redis_url, encoding="utf-8", decode_responses=False
+    )
 
 
 async def close_redis() -> None:
@@ -47,13 +47,13 @@ async def close_redis() -> None:
 
     Called from the FastAPI ``lifespan`` context manager on shutdown.
     """
-    global _redis_client
-    if _redis_client:
-        await _redis_client.aclose()
-        _redis_client = None
+    if get_redis_client.cache_info().currsize:
+        client = get_redis_client()
+        await client.aclose()
+        get_redis_client.cache_clear()
 
 
-async def get_cache(key: str) -> Any | None:
+async def get_cache(key: str) -> JSONValue | None:
     """Fetch and deserialized a cached value.
 
     Args:
@@ -67,17 +67,17 @@ async def get_cache(key: str) -> Any | None:
         client = get_redis_client()
         raw = await client.get(key)
         return json.loads(raw) if raw else None
-    except Exception as exc:
-        logger.warning(f"Failed to get cache for key '{key}': {exc}")
+    except json.JSONDecodeError:
+        logger.exception(f"Failed to get cache for key '{key}'")
         return None
 
 
-async def set_cache(key: str, value: Any, ttl: int = 300) -> None:
+async def set_cache(key: str, value: JSONValue, ttl: int = 300) -> None:
     """Serialize *value* to JSON and store it under *key* with a TTL.
 
     Args:
         key: Cache key.
-        value: Any JSON-serializable object (UUIDs are coerced via ``default=str``).
+        value: JSON-serializable object.
         ttl: Expiry in seconds.  Defaults to 5 minutes.
 
     """
@@ -85,8 +85,8 @@ async def set_cache(key: str, value: Any, ttl: int = 300) -> None:
         client = get_redis_client()
         parsed_value = json.dumps(value, default=str)
         await client.setex(key, ttl, parsed_value)
-    except Exception as exc:
-        logger.warning(f"Failed to set cache for key '{key}': {exc}")
+    except TypeError, ValueError:
+        logger.exception(f"Failed to set cache for key '{key}'")
 
 
 async def delete_cache(*keys: str) -> None:
@@ -101,8 +101,8 @@ async def delete_cache(*keys: str) -> None:
     try:
         client = get_redis_client()
         await client.delete(*keys)
-    except Exception as exc:
-        logger.warning(f"Failed to delete cache for keys {keys}: {exc}")
+    except RedisError:
+        logger.exception(f"Failed to delete cache for keys {keys}")
 
 
 async def delete_cache_pattern(pattern: str) -> None:
@@ -119,8 +119,8 @@ async def delete_cache_pattern(pattern: str) -> None:
         client = get_redis_client()
         matched = await client.keys(pattern)
         await client.delete(*matched) if matched else None
-    except Exception as exc:
-        logger.warning(f"Failed to delete cache for pattern {pattern}: {exc}")
+    except RedisError:
+        logger.exception(f"Failed to delete cache for pattern {pattern}")
 
 
 def build_cache_key(namespace: str, *parts: str) -> str:
@@ -136,3 +136,24 @@ def build_cache_key(namespace: str, *parts: str) -> str:
     """
     segments = ":".join(parts)
     return f"{namespace}:{segments}" if segments else namespace
+
+
+async def check_redis_health() -> dict[str, str]:
+    try:
+        logger.info("Checking redis health...")
+        client = get_redis_client()
+
+        async def await_ping(value: Awaitable[bool] | bool) -> bool:
+            if isinstance(value, bool):
+                return value
+            return await value
+
+        pong = await await_ping(client.ping())
+        if not pong:
+            logger.warning("[Redis]: Connection failed")
+            return {"redis": "unhealthy"}
+        logger.info("[Redis]: Status healthy")
+        return {"redis": "healthy"}
+    except Exception:
+        logger.exception("[Redis]: Health check failed")
+        return {"redis": "unhealthy"}

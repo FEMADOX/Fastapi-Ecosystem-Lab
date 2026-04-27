@@ -31,7 +31,7 @@ async def fake_redis(monkeypatch: pytest.MonkeyPatch) -> AsyncGenerator:
     isolated fake Redis — no real Redis server is required.
     """
     fake = fakeredis.aioredis.FakeRedis(decode_responses=False)
-    monkeypatch.setattr(redis_client_module, "_redis_client", fake)
+    monkeypatch.setattr(redis_client_module, "get_redis_client", lambda: fake)
     yield
     await fake.aclose()
 
@@ -86,7 +86,12 @@ async def client(
 async def auth_client(
     client_context_factory: Callable[..., ClientContext],
 ) -> AsyncGenerator[AsyncClient]:
-    """Return a v1 client that uses the real authentication dependencies."""
+    """Return a v1 client that uses the real authentication dependencies.
+
+    Yields:
+        Configured AsyncClient instance.
+
+    """
     async with client_context_factory(api_prefix=TEST_API_PREFIX) as async_client:
         yield async_client
 
@@ -160,7 +165,7 @@ async def admin_token(auth_client: AsyncClient, test_session: AsyncSession) -> s
         password="admin_password_123",  # noqa: S106
     )
 
-    result = await test_session.execute(select(User).where(User.email == email))
+    result = await test_session.execute(select(User).where(User.email == email))  # ty:ignore[invalid-argument-type]
     admin_user = result.scalar_one()
     admin_user.is_superuser = True
     await test_session.commit()
@@ -190,5 +195,5 @@ async def owner_user_id(auth_client: AsyncClient, owner_token: str) -> UUID:
         "/users/me",
         headers={"Authorization": f"Bearer {owner_token}"},
     )
-    assert response.status_code in {HTTP_200_OK}
+    assert response.status_code == HTTP_200_OK
     return UUID(response.json()["id"])

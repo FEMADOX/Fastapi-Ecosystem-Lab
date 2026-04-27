@@ -152,7 +152,7 @@ class TestRefresh:
         assert rotated_refresh != initial_refresh
         assert rotated_csrf == body["csrf_token"]
 
-        result = await test_session.execute(select(RefreshToken))
+        result = await test_session.execute(select(RefreshToken))  # ty:ignore[invalid-argument-type]
         tokens = result.scalars().all()
         total_tokens = 2
         assert len(tokens) == total_tokens
@@ -319,7 +319,7 @@ class TestLogout:
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
-        result = await test_session.execute(select(RefreshToken))
+        result = await test_session.execute(select(RefreshToken))  # ty:ignore[invalid-argument-type]
         tokens = result.scalars().all()
         assert len(tokens) == 2  # noqa: PLR2004
         assert tokens[1].revoked_at is not None
@@ -341,7 +341,7 @@ class TestLogout:
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
-        statement = select(RefreshToken).where(
+        statement = select(RefreshToken).where(  # ty:ignore[invalid-argument-type]
             RefreshToken.user_id == UUID(self.user["id"])
         )
         result = await test_session.execute(statement)
@@ -364,7 +364,7 @@ class TestLogout:
 
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
-        result = await test_session.execute(select(RefreshToken))
+        result = await test_session.execute(select(RefreshToken))  # ty:ignore[invalid-argument-type]
         tokens = result.scalars().all()
         assert len(tokens) == 1
         assert tokens[0].revoked_at is None

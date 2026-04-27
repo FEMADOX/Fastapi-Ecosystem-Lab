@@ -7,7 +7,9 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from learn_fastapi.src import database
+from learn_fastapi.src.cache.redis_client import close_redis
 
+from .cache.redis_client import check_redis_health
 from .constants import (
     IMAGES_DIR,
     MEDIA_DIR,
@@ -41,6 +43,7 @@ def register_dev_reload(app: FastAPI) -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     mount_static_files(app)
     await check_pending_migrations()
+    await check_redis_health()
     task = asyncio.create_task(watch_files())
     try:
         yield
@@ -48,8 +51,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task
-        from learn_fastapi.src.cache.redis_client import close_redis
-
         await close_redis()
 
         await database.engine.dispose()

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from starlette.status import HTTP_404_NOT_FOUND
+from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
 from learn_fastapi.src.utils.exceptions import build_http_exception
 
@@ -33,4 +33,11 @@ def items_not_found_for_user_exception() -> HTTPException:
     return build_http_exception(
         status_code=HTTP_404_NOT_FOUND,
         detail="No items found for the user",
+    )
+
+
+def duplicate_item_name_exception() -> HTTPException:
+    return build_http_exception(
+        status_code=HTTP_409_CONFLICT,
+        detail="An item with this name already exists",
     )
