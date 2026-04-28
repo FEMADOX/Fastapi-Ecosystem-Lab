@@ -38,10 +38,9 @@ dev = [
   "types-sqlalchemy>=1.4.53.38",
 ]
 streamlit-deps = [
-    "httpx>=0.28.1",
-    "streamlit>=1.55.0",
+  "httpx>=0.28.1",
+  "streamlit>=1.55.0",
 ]
-
 
 [project.scripts]
 run-api-server = "learn_fastapi.src.main:main"
@@ -57,7 +56,10 @@ requires = ["hatchling"]
 packages = ["learn_fastapi", "learn_streamlit"]
 
 [tool.ruff.lint]
-exclude = [".venv", "versions"]
+exclude = [
+  "./.venv/**",
+  "**/alembic/versions/*",
+]
 extend-ignore = [
   "ARG001", # Ignore "Unused function argument".
   "CPY001", # Ignore "Missing copyright notice".
