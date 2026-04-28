@@ -73,7 +73,9 @@ extend-ignore = [
   "TC002", # Ignore "Move third-party library imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
   "TC003", # Ignore "Move standard library imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
 ]
-extend-select = ["I"] # Here you can add additional rules to be checked by Ruff, if desired.
+extend-select = [
+  "I", # Include isort "Import Sort".
+]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = [
