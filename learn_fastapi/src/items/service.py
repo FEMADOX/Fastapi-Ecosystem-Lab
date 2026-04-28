@@ -3,7 +3,13 @@ from uuid import UUID
 from fastapi import UploadFile
 
 from learn_fastapi.src.database import AsyncSessionDep
-from learn_fastapi.src.items.cache import (
+from learn_fastapi.src.sse.manager import sse_manager
+from learn_fastapi.src.users.exceptions import only_user_owner_is_authorized
+from learn_fastapi.src.users.models import User
+from learn_fastapi.src.users.repository import UsersRepository
+from learn_fastapi.src.utils.exceptions import user_doesnt_exist_exception
+
+from .cache import (
     cache_item,
     cache_items,
     cache_user_item,
@@ -12,20 +18,15 @@ from learn_fastapi.src.items.cache import (
     get_cached_items,
     get_cached_user_item,
     get_cached_user_items,
-    invalidate_items_namespace,
 )
-from learn_fastapi.src.items.exceptions import (
+from .exceptions import (
     duplicate_item_name_exception,
     item_not_found_exception,
     item_not_found_or_not_belong_to_user_exception,
 )
-from learn_fastapi.src.items.repository import ItemRepository
-from learn_fastapi.src.items.schema import ItemSchema, ItemUpdateSchema
-from learn_fastapi.src.items.utils import save_image_file
-from learn_fastapi.src.users.exceptions import only_user_owner_is_authorized
-from learn_fastapi.src.users.models import User
-from learn_fastapi.src.users.repository import UsersRepository
-from learn_fastapi.src.utils.exceptions import user_doesnt_exist_exception
+from .repository import ItemRepository
+from .schema import ItemSchema, ItemUpdateSchema
+from .utils import save_image_file
 
 
 class ItemService:
@@ -76,18 +77,15 @@ class ItemService:
             A list of every ItemSchema (maybe empty).
 
         """
-        # Cache
         cached = await get_cached_items()
         if cached:
             return [ItemSchema.model_validate(item) for item in cached]
 
-        # Cache missed
         items = await self.repository.get_all_items()
         schemas = [
             ItemSchema.model_validate(item, from_attributes=True) for item in items
         ]
 
-        # Populate Cache
         await cache_items([schema.model_dump(mode="json") for schema in schemas])
 
         return schemas
@@ -105,19 +103,16 @@ class ItemService:
             item_not_found_exception: When no item with the given UUID exists.
 
         """
-        # Cache
         cached = await get_cached_item(id_param)
         if cached:
             return ItemSchema.model_validate(cached)
 
-        # Cache missed
         item = await self.repository.get_item(id_param)
         if item is None:
             raise item_not_found_exception()
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        # Populate Cache
         await cache_item(id_param, schema.model_dump(mode="json"))
 
         return schema
@@ -135,12 +130,10 @@ class ItemService:
             item_not_found_or_not_belong_to_user_exception: When the user owns no items.
 
         """
-        # Cache
         cached = await get_cached_user_items(owner)
         if cached:
             return [ItemSchema.model_validate(item) for item in cached]
 
-        # Cache missed
         items = await self.repository.get_user_items(owner)
         if not items:
             raise item_not_found_or_not_belong_to_user_exception()
@@ -149,7 +142,6 @@ class ItemService:
             ItemSchema.model_validate(item, from_attributes=True) for item in items
         ]
 
-        # Populate Cache
         await cache_user_items(
             [schema.model_dump(mode="json") for schema in schemas], owner
         )
@@ -171,19 +163,16 @@ class ItemService:
                 or is not owned by the user.
 
         """
-        # Cache
         cached = await get_cached_user_item(item_id, owner)
         if cached:
             return ItemSchema.model_validate(cached)
 
-        # Cache missed
         item = await self.repository.get_user_item(item_id, owner)
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        # Populate Cache
         await cache_user_item(item_id, schema.model_dump(mode="json"), owner)
 
         return schema
@@ -200,11 +189,19 @@ class ItemService:
 
         """
         item = await self.repository.create_item(item_data, owner)
+        schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        # Invalidate Items Cache
-        await invalidate_items_namespace()
+        await sse_manager.broadcast_global(
+            "item.created",
+            schema.model_dump(mode="json"),
+        )
+        await sse_manager.broadcast_user(
+            owner.id,
+            "item.created",
+            schema.model_dump(mode="json"),
+        )
 
-        return ItemSchema.model_validate(item, from_attributes=True)
+        return schema
 
     async def create_item_with_image(  # noqa: PLR0913, PLR0917
         self,
@@ -241,7 +238,6 @@ class ItemService:
         """
         existing = await self.repository.get_item_by_name(name)
         if existing:
-            # Raise a conflict exception — the item was found, not missing
             raise duplicate_item_name_exception()
 
         item_data = ItemUpdateSchema(
@@ -249,14 +245,23 @@ class ItemService:
         )
         item = await self.repository.create_item(item_data, owner)
 
-        # Invalidate Items Cache
-        await invalidate_items_namespace()
-
         if image_file:
             image = await save_image_file(image_file, caption)
             item = await self.repository.update_item_image(item.id, image.url)
 
-        return ItemSchema.model_validate(item, from_attributes=True)
+        schema = ItemSchema.model_validate(item, from_attributes=True)
+
+        await sse_manager.broadcast_global(
+            "item.created",
+            schema.model_dump(mode="json"),
+        )
+        await sse_manager.broadcast_user(
+            owner.id,
+            "item.created",
+            schema.model_dump(mode="json"),
+        )
+
+        return schema
 
     async def update_item(
         self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
@@ -282,13 +287,17 @@ class ItemService:
         """
         owner_scope = None if owner and owner.is_superuser else owner
         item = await self.repository.update_item(item_id, item_data, owner_scope)
-        if item is None:
+        if not item:
             raise item_not_found_or_not_belong_to_user_exception()
 
-        # Invalidate Items Cache
-        await invalidate_items_namespace()
+        schema = ItemSchema.model_validate(item, from_attributes=True)
+        await sse_manager.broadcast_user(
+            item.user_id,  # ty:ignore[invalid-argument-type]
+            "item.updated",
+            schema.model_dump(mode="json"),
+        )
 
-        return ItemSchema.model_validate(item, from_attributes=True)
+        return schema
 
     async def patch_item(
         self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
@@ -317,10 +326,15 @@ class ItemService:
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
 
-        # Invalidate Items Cache
-        await invalidate_items_namespace()
+        schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        return ItemSchema.model_validate(item, from_attributes=True)
+        await sse_manager.broadcast_user(
+            item.user_id,  # ty:ignore[invalid-argument-type]
+            "item.updated",
+            schema.model_dump(mode="json"),
+        )
+
+        return schema
 
     async def delete_item(self, item_id: UUID, owner: User) -> None:
         """Delete an item owned by the given user.
@@ -344,8 +358,12 @@ class ItemService:
 
         await self.repository.delete_item(item)
 
-        # Invalidate Items Cache
-        await invalidate_items_namespace()
+        schema = ItemSchema.model_validate(item, from_attributes=True)
+        await sse_manager.broadcast_user(
+            owner.id,
+            "item.deleted",
+            schema.model_dump(mode="json"),
+        )
 
     async def update_item_image(
         self, item_id: UUID, image_file: UploadFile, caption: str
@@ -369,7 +387,12 @@ class ItemService:
         if item is None:
             raise item_not_found_exception()
 
-        # Invalidate Items Cache
-        await invalidate_items_namespace()
+        schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        return ItemSchema.model_validate(item, from_attributes=True)
+        await sse_manager.broadcast_user(
+            item.user_id,  # ty:ignore[invalid-argument-type]
+            "item.image_updated",
+            schema.model_dump(mode="json"),
+        )
+
+        return schema

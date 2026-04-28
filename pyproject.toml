@@ -38,10 +38,9 @@ dev = [
   "types-sqlalchemy>=1.4.53.38",
 ]
 streamlit-deps = [
-    "httpx>=0.28.1",
-    "streamlit>=1.55.0",
+  "httpx>=0.28.1",
+  "streamlit>=1.55.0",
 ]
-
 
 [project.scripts]
 run-api-server = "learn_fastapi.src.main:main"
@@ -57,7 +56,10 @@ requires = ["hatchling"]
 packages = ["learn_fastapi", "learn_streamlit"]
 
 [tool.ruff.lint]
-exclude = [".venv", "versions"]
+exclude = [
+  "./.venv/**",
+  "**/alembic/versions/*",
+]
 extend-ignore = [
   "ARG001", # Ignore "Unused function argument".
   "CPY001", # Ignore "Missing copyright notice".
@@ -71,7 +73,7 @@ extend-ignore = [
   "TC002", # Ignore "Move third-party library imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
   "TC003", # Ignore "Move standard library imports ... into a type-checking block" learn_fastapi types are not compatible with this rule, and it is not critical for Pydantic.
 ]
-extend-select = [] # Here you can add additional rules to be checked by Ruff, if desired.
+extend-select = ["I"] # Here you can add additional rules to be checked by Ruff, if desired.
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = [

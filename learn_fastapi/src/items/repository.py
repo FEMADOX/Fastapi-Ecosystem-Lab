@@ -4,9 +4,10 @@ from uuid import UUID
 from sqlalchemy import and_, select, update
 
 from learn_fastapi.src.database import AsyncSessionDep
-from learn_fastapi.src.items.models import Item
-from learn_fastapi.src.items.schema import ItemUpdateSchema
 from learn_fastapi.src.users.models import User
+
+from .models import Item
+from .schema import ItemUpdateSchema
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio.session import AsyncSession
