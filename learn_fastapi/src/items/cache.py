@@ -19,8 +19,9 @@ from learn_fastapi.src.cache.redis_client import (
     get_cache,
     set_cache,
 )
-from learn_fastapi.src.items.schema import ItemSchema
 from learn_fastapi.src.users.models import User
+
+from .schema import ItemSchema
 
 _NS = "items"
 _TTL = 600

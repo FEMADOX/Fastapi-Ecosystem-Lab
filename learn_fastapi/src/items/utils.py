@@ -2,8 +2,9 @@ import aiofiles
 from fastapi import UploadFile
 
 from learn_fastapi.src.constants import IMAGES_DIR
-from learn_fastapi.src.items.schema import ImageSchema
 from learn_fastapi.src.utils.exceptions import image_filename_required_exception
+
+from .schema import ImageSchema
 
 
 async def save_image_file(

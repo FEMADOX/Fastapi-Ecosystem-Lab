@@ -8,7 +8,6 @@ from learn_fastapi.src.auth.utils import (
     verify_password,
 )
 from learn_fastapi.src.database import AsyncSessionDep
-from learn_fastapi.src.users.schema import DeleteAccount, UserUpdate
 from learn_fastapi.src.utils.exceptions import (
     email_already_registered_exception,
     user_doesnt_exist_exception,
@@ -17,6 +16,7 @@ from learn_fastapi.src.utils.exceptions import (
 from .exceptions import incorrect_password_exception, only_user_owner_is_authorized
 from .models import User
 from .repository import UsersRepository
+from .schema import DeleteAccount, UserUpdate
 
 
 class UsersService:

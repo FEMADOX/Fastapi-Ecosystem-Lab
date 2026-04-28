@@ -6,8 +6,8 @@ from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerifyMismatchError
 from starlette.responses import Response
 
-from learn_fastapi.src.auth.config import auth_config
-from learn_fastapi.src.auth.schema import TokenData
+from .config import auth_config
+from .schema import TokenData
 
 # Configuration
 SECRET_KEY = auth_config.secret_key
