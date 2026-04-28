@@ -1,12 +1,13 @@
 import asyncio
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi_versionizer.versionizer import api_version
 from starlette.status import HTTP_204_NO_CONTENT
 
 from learn_fastapi.src.constants import IMAGES_DIR
+from learn_fastapi.src.items.cache import invalidate_items_namespace
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
 from .annotations import (
@@ -110,7 +111,10 @@ async def read_item(id_param: UUID, service: ItemServiceDep) -> ItemSchema:
 @api_version(1)
 @router.post("/")
 async def create_item(
-    item: ItemUpdateSchema, service: ItemServiceDep, current_user: CurrentUserDep
+    item: ItemUpdateSchema,
+    service: ItemServiceDep,
+    current_user: CurrentUserDep,
+    background_tasks: BackgroundTasks,
 ) -> ItemSchema:
     """Create a new item owned by the authenticated user.
 
@@ -118,12 +122,15 @@ async def create_item(
         item: Validated item payload.
         service: Injected ItemService dependency.
         current_user: The authenticated user who will own the item.
+        background_tasks: Background tasks manager.
 
     Returns:
         The newly created ItemSchema.
 
     """
-    return await service.create_item(item, current_user)
+    result = await service.create_item(item, current_user)
+    background_tasks.add_task(invalidate_items_namespace)
+    return result
 
 
 @api_version(1)
@@ -133,6 +140,7 @@ async def update_item(
     item_param: ItemUpdateSchema,
     service: ItemServiceDep,
     current_user: CurrentUserDep,
+    background_tasks: BackgroundTasks,
 ) -> ItemSchema:
     """Replace all fields of an item owned by the authenticated user.
 
@@ -144,12 +152,15 @@ async def update_item(
         item_param: Complete field values for the item.
         service: Injected ItemService dependency.
         current_user: Must be the owner of the item.
+        background_tasks: Background tasks manager.
 
     Returns:
         The updated ItemSchema.
 
     """
-    return await service.update_item(id_param, item_param, current_user)
+    result = await service.update_item(id_param, item_param, current_user)
+    background_tasks.add_task(invalidate_items_namespace)
+    return result
 
 
 @api_version(1)
@@ -159,6 +170,7 @@ async def patch_item(
     item_param: ItemUpdateSchema,
     service: ItemServiceDep,
     current_user: CurrentUserDep,
+    background_tasks: BackgroundTasks,
 ) -> ItemSchema:
     """Apply a partial update to an item owned by the authenticated user.
 
@@ -170,18 +182,24 @@ async def patch_item(
         item_param: Partial field values to apply.
         service: Injected ItemService dependency.
         current_user: Must be the owner of the item.
+        background_tasks: Background tasks manager.
 
     Returns:
         The updated ItemSchema.
 
     """
-    return await service.patch_item(id_param, item_param, current_user)
+    result = await service.patch_item(id_param, item_param, current_user)
+    background_tasks.add_task(invalidate_items_namespace)
+    return result
 
 
 @api_version(1)
 @router.delete("/{id_param}")
 async def delete_item(
-    id_param: UUID, service: ItemServiceDep, current_user: CurrentUserDep
+    id_param: UUID,
+    service: ItemServiceDep,
+    current_user: CurrentUserDep,
+    background_tasks: BackgroundTasks,
 ) -> dict[str, str | int]:
     """Delete an item owned by the authenticated user.
 
@@ -189,12 +207,14 @@ async def delete_item(
         id_param: UUID of the item to delete.
         service: Injected ItemService dependency.
         current_user: Must be the owner of the item.
+        background_tasks: Background tasks manager.
 
     Returns:
         Confirmation message with HTTP 200 status code.
 
     """
     await service.delete_item(id_param, current_user)
+    background_tasks.add_task(invalidate_items_namespace)
     return {"detail": "Item deleted successfully", "status_code": HTTP_204_NO_CONTENT}
 
 
@@ -204,6 +224,7 @@ async def submit_an_item_image(
     id_param: UUID,
     service: ItemServiceDep,
     image_file: ImageFile,
+    background_tasks: BackgroundTasks,
     caption: ImageCaption = "No description provided",
 ) -> ItemSchema:
     """Upload an image and attach it to an existing item.
@@ -213,12 +234,15 @@ async def submit_an_item_image(
         service: Injected ItemService dependency.
         image_file: Image file to upload (multipart/form-data).
         caption: Optional alt-text or description for the image.
+        background_tasks: Background tasks manager.
 
     Returns:
         The updated item with its new ``image_url``.
 
     """
-    return await service.update_item_image(id_param, image_file, caption)
+    result = await service.update_item_image(id_param, image_file, caption)
+    background_tasks.add_task(invalidate_items_namespace)
+    return result
 
 
 @api_version(1)
@@ -256,6 +280,7 @@ async def get_image(filename: ImageFilename) -> FileResponse:
 async def create_item_with_image(  # noqa: PLR0913, PLR0917
     service: ItemServiceDep,
     current_user: CurrentUserDep,
+    background_tasks: BackgroundTasks,
     name: ItemName,
     description: ItemDescription = "No description provided",
     price: ItemPrice = 0.00,
@@ -272,6 +297,7 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
     Args:
         service: Injected ItemService dependency.
         current_user: The authenticated user who will own the item.
+        background_tasks: Background tasks manager.
         name: Display name for the item (must be unique).
         description: Human-readable description.
         price: Base price.
@@ -284,7 +310,7 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
         was provided.
 
     """
-    return await service.create_item_with_image(
+    result = await service.create_item_with_image(
         name=name,
         description=description,
         price=price,
@@ -293,3 +319,5 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
         image_file=image_file,
         caption=caption,
     )
+    background_tasks.add_task(invalidate_items_namespace)
+    return result

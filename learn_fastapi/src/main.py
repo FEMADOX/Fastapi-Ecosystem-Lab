@@ -4,12 +4,11 @@ from fastapi.responses import JSONResponse
 from fastapi_versionizer.versionizer import Versionizer, api_version
 from sqlalchemy.exc import DBAPIError
 
-from learn_fastapi.src.auth.router import router as auth_router
 from learn_fastapi.src.config import lifespan, settings
-from learn_fastapi.src.items.router import router as items_router
 from learn_fastapi.src.middleware import CorsMiddlewareConfigurer
-from learn_fastapi.src.users.router import router as users_router
 from learn_fastapi.src.utils.alembic import app_logger
+
+from .index import routers
 
 app = FastAPI(
     lifespan=lifespan,
@@ -36,9 +35,7 @@ async def root() -> dict[str, str]:
 
 
 router = APIRouter()
-router.include_router(items_router)
-router.include_router(auth_router)
-router.include_router(users_router)
+[router.include_router(r) for r in routers]
 
 app.include_router(router)
 
@@ -54,7 +51,7 @@ versions = Versionizer(
 def main() -> None:
     uvicorn.run(
         "learn_fastapi.src.main:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # noqa: S104
         port=8000,
         reload=settings.debug,
     )
