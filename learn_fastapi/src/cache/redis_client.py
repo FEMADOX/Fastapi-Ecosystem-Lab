@@ -9,14 +9,15 @@ a missing or unreachable Redis instance never breaks the API.
 """
 
 import json
-import logging
 from collections.abc import Awaitable
 from functools import lru_cache
 
 from redis import RedisError
 from redis import asyncio as aioredis
 
-logger = logging.getLogger(__name__)
+from learn_fastapi.src.utils.alembic import app_logger
+
+logger = app_logger
 
 type JSONPrimitive = str | int | float | bool | None
 type JSONValue = JSONPrimitive | list[JSONValue] | dict[str, JSONValue]
@@ -139,7 +140,7 @@ def build_cache_key(namespace: str, *parts: str) -> str:
 
 async def check_redis_health() -> dict[str, str]:
     try:
-        logger.info("Checking redis health...")
+        logger.info("[Redis]: Checking redis health...")
         client = get_redis_client()
 
         async def await_ping(value: Awaitable[bool] | bool) -> bool:
