@@ -31,7 +31,7 @@ class AuthRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.id == user_id))  # ty:ignore[invalid-argument-type]
+        result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: str) -> User | None:
@@ -44,7 +44,7 @@ class AuthRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.email == email))  # ty:ignore[invalid-argument-type]
+        result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def create_user(self, email: str, password_hash: str) -> User:
@@ -77,12 +77,13 @@ class AuthRepository:
             The active refresh token, or None if none exists.
 
         """
+        refresh_tokens = RefreshToken.__table__.c
         statement = (
-            select(RefreshToken)  # ty:ignore[invalid-argument-type]
-            .where(RefreshToken.user_id == user_id)
-            .where(RefreshToken.revoked_at.is_(None))  # ty:ignore[unresolved-attribute]
-            .where(RefreshToken.expires_at > datetime.now(tz=UTC))
-            .order_by(RefreshToken.created_at.desc())
+            select(RefreshToken)
+            .where(refresh_tokens.user_id == user_id)
+            .where(refresh_tokens.revoked_at.is_(None))
+            .where(refresh_tokens.expires_at > datetime.now(tz=UTC))
+            .order_by(refresh_tokens.created_at.desc())
         )
         result = await self.session.execute(statement)
         tokens = result.scalars().all()
@@ -138,7 +139,7 @@ class AuthRepository:
         """
         refresh_tokens = RefreshToken.__table__.c
         await self.session.execute(
-            update(RefreshToken)  # ty:ignore[invalid-argument-type]
+            update(RefreshToken)
             .where(refresh_tokens.user_id == user_id)
             .where(refresh_tokens.revoked_at.is_(None))
             .values(revoked_at=datetime.now(tz=UTC))

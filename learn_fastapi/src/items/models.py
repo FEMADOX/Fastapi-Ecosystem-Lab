@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from sqlalchemy.orm import Mapped, relationship
 
@@ -37,3 +38,6 @@ class Item(Base):
     user_id: Mapped[user_id_fk]
 
     user: Mapped[User] = relationship("User", back_populates="items")
+
+    if TYPE_CHECKING:
+        id: UUID

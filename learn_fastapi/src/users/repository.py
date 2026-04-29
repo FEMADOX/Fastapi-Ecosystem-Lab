@@ -29,7 +29,7 @@ class UsersRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.id == user_id))  # ty:ignore[invalid-argument-type]
+        result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: str) -> User | None:
@@ -42,7 +42,7 @@ class UsersRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.email == email))  # ty:ignore[invalid-argument-type]
+        result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def update_user(self, user: User) -> User:
