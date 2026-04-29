@@ -48,3 +48,21 @@ class ItemUpdateSchema(BaseModel):
         " (Only admins users can update this attribute)",
         default=None,
     )
+
+
+class ItemPatchSchema(BaseModel):
+    name: str | None = Field(
+        description="The name of the item", min_length=3, default=None
+    )
+    description: str | None = Field(
+        description="The description of the item",
+        default=None,
+        min_length=10,
+    )
+    price: float | None = Field(ge=0, description="The price of the item", default=None)
+    tax: float | None = Field(ge=0, description="The tax of the item", default=None)
+    user_id: UUID | None = Field(
+        description="The id of the owner user"
+        " (Only admins users can update this attribute)",
+        default=None,
+    )
