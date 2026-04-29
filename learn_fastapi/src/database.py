@@ -10,7 +10,6 @@ from learn_fastapi.src.config import settings
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
-
 # Configuración específica para SQLite
 connect_args = {}
 if settings.database_url.startswith("sqlite"):

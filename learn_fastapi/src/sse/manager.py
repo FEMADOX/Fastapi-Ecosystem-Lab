@@ -8,11 +8,6 @@ from uuid import UUID
 logger = logging.getLogger(__name__)
 
 
-# class SSEvent(TypedDict):
-#     event: str
-#     payload: dict
-
-
 class SSEManager:
     """Manager for Server-Sent Events (SSE) connections.
 
@@ -109,6 +104,39 @@ class SSEManager:
                 f"[SSE] User subscription removed for {user_id}. "
                 f"Total for user: {len(self._users.get(user_id, []))}"
             )
+
+    def global_subscribers_count(self) -> int:
+        """Return the number of active global subscribers.
+
+        Returns:
+            The count of global subscriber queues.
+
+        """
+        return len(self._global)
+
+    def user_subscribers_count(self, user_id: UUID) -> int:
+        """Return the number of active subscribers for ``user_id``.
+
+        Args:
+            user_id: The UUID of the user.
+
+        Returns:
+            The count of subscriber queues for the user, or 0 if none.
+
+        """
+        return len(self._users.get(user_id, []))
+
+    def has_user_subscribers(self, user_id: UUID) -> bool:
+        """Return whether ``user_id`` has any active subscriber queues.
+
+        Args:
+            user_id: The UUID of the user.
+
+        Returns:
+            True if the user has active subscriber queues, False otherwise.
+
+        """
+        return user_id in self._users
 
     async def broadcast_global(self, event: str, payload: dict) -> None:
         """Broadcast an event to all globally connected clients.

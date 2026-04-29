@@ -7,7 +7,7 @@ from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.users.models import User
 
 from .models import Item
-from .schema import ItemUpdateSchema
+from .schema import ItemPatchSchema, ItemUpdateSchema
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -31,7 +31,7 @@ class ItemRepository:
             A list of all Item ORM instances.
 
         """
-        result = await self.session.execute(select(Item))
+        result = await self.session.execute(select(Item))  # ty:ignore[invalid-argument-type]
         return list(result.scalars().all())
 
     async def get_item(self, id_param: UUID) -> Item | None:
@@ -44,7 +44,7 @@ class ItemRepository:
             The matching Item, or None if not found.
 
         """
-        result = await self.session.execute(select(Item).where(Item.id == id_param))
+        result = await self.session.execute(select(Item).where(Item.id == id_param))  # ty:ignore[invalid-argument-type]
         return result.scalar_one_or_none()
 
     async def get_item_by_name(self, name: str) -> Item | None:
@@ -57,7 +57,7 @@ class ItemRepository:
             The matching Item, or None if no item has that name.
 
         """
-        result = await self.session.execute(select(Item).where(Item.name == name))
+        result = await self.session.execute(select(Item).where(Item.name == name))  # ty:ignore[invalid-argument-type]
         return result.scalar_one_or_none()
 
     async def get_user_items(self, owner: User) -> list[Item]:
@@ -71,7 +71,7 @@ class ItemRepository:
 
         """
         result = await self.session.execute(
-            select(Item).where(Item.user_id == owner.id)
+            select(Item).where(Item.user_id == owner.id)  # ty:ignore[invalid-argument-type]
         )
         return list(result.scalars().all())
 
@@ -87,7 +87,7 @@ class ItemRepository:
 
         """
         condition = and_(Item.id == item_id, Item.user_id == owner.id)
-        result = await self.session.execute(select(Item).where(condition))
+        result = await self.session.execute(select(Item).where(condition))  # ty:ignore[invalid-argument-type]
         return result.scalar_one_or_none()
 
     async def create_item(self, item_data: ItemUpdateSchema, owner: User) -> Item:
@@ -111,7 +111,7 @@ class ItemRepository:
 
     def _superuser_management(
         self, item_id: UUID, owner: User | None
-    ) -> tuple[and_, set[str] | None]:
+    ) -> tuple[and_, set[str] | None]:  # ty:ignore[invalid-type-form]
         """Check if the user has permission to modify the item.
 
         Args:
@@ -152,13 +152,13 @@ class ItemRepository:
         """
         condition, exclude_args = self._superuser_management(item_id, owner)
 
-        result = await self.session.execute(select(Item).where(condition))
+        result = await self.session.execute(select(Item).where(condition))  # ty:ignore[invalid-argument-type]
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item)
+            update(Item)  # ty:ignore[invalid-argument-type]
             .where(condition)
             .values(**item_data.model_dump(exclude=exclude_args))
         )
@@ -167,7 +167,7 @@ class ItemRepository:
         return item
 
     async def patch_item(
-        self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
+        self, item_id: UUID, item_data: ItemPatchSchema, owner: User | None = None
     ) -> Item | None:
         """Apply a partial update to an item (PATCH semantics).
 
@@ -187,13 +187,13 @@ class ItemRepository:
         """
         condition, exclude_args = self._superuser_management(item_id, owner)
 
-        result = await self.session.execute(select(Item).where(condition))
+        result = await self.session.execute(select(Item).where(condition))  # ty:ignore[invalid-argument-type]
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item)
+            update(Item)  # ty:ignore[invalid-argument-type]
             .where(condition)
             .values(**item_data.model_dump(exclude=exclude_args, exclude_unset=True))
         )
@@ -212,13 +212,13 @@ class ItemRepository:
             The updated Item.
 
         """
-        result = await self.session.execute(select(Item).where(Item.id == item_id))
+        result = await self.session.execute(select(Item).where(Item.id == item_id))  # ty:ignore[invalid-argument-type]
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item).where(Item.id == item_id).values(image_url=image_url)
+            update(Item).where(Item.id == item_id).values(image_url=image_url)  # ty:ignore[invalid-argument-type]
         )
         await self.commit()
         await self.session.refresh(item)

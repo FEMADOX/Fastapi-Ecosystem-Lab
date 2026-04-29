@@ -83,7 +83,7 @@ class TestAccount:
         new_user_data = response.json()
         assert new_user_data["email"] == "newemailtest@example.com"
 
-        statement = select(User).where(User.email == "newemailtest@example.com")
+        statement = select(User).where(User.email == "newemailtest@example.com")  # ty:ignore[invalid-argument-type]
         result = await test_session.execute(statement)
         updated_user = result.scalar_one()
         assert verify_password("new_secure_password123", updated_user.password_hash)
@@ -107,7 +107,7 @@ class TestAccount:
         )
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        statement = select(User).where(User.email == user_data["email"])
+        statement = select(User).where(User.email == user_data["email"])  # ty:ignore[invalid-argument-type]
         result = await test_session.execute(statement)
         deleted_user = result.scalar_one_or_none()
         assert deleted_user is None

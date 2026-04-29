@@ -35,6 +35,9 @@ async def event_generator(
 
     """
     try:
+        # why: emit a first frame immediately so clients/tests do not block
+        # while waiting for the first timeout cycle.
+        yield ": connected\n\n"
         while True:
             try:
                 yield await asyncio.wait_for(queue.get(), timeout=30.0)

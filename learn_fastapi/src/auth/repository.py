@@ -31,7 +31,7 @@ class AuthRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.id == user_id))
+        result = await self.session.execute(select(User).where(User.id == user_id))  # ty:ignore[invalid-argument-type]
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: str) -> User | None:
@@ -44,7 +44,7 @@ class AuthRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.email == email))
+        result = await self.session.execute(select(User).where(User.email == email))  # ty:ignore[invalid-argument-type]
         return result.scalar_one_or_none()
 
     async def create_user(self, email: str, password_hash: str) -> User:
@@ -65,24 +65,42 @@ class AuthRepository:
         return user
 
     async def get_refresh_token(self, user_id: UUID) -> RefreshToken | None:
-        """Fetch a refresh token.
+        """Get the active refresh token for a user, handling duplicates.
+
+        If multiple active tokens exist for the same user, keeps only the
+        most recently created one and revokes the others.
 
         Args:
-            user_id: The UUID of the user whose refresh token to retrieve.
+            user_id: The user ID to search for.
 
         Returns:
-            The matching refresh token or ``None`` if no valid token exists.
+            The active refresh token, or None if none exists.
 
         """
-        refresh_token = RefreshToken.__table__.c
         statement = (
-            select(RefreshToken)
-            .where(refresh_token.user_id == user_id)
-            .where(refresh_token.revoked_at.is_(None))
-            .where(refresh_token.expires_at > datetime.now(tz=UTC))
+            select(RefreshToken)  # ty:ignore[invalid-argument-type]
+            .where(RefreshToken.user_id == user_id)
+            .where(RefreshToken.revoked_at.is_(None))  # ty:ignore[unresolved-attribute]
+            .where(RefreshToken.expires_at > datetime.now(tz=UTC))
+            .order_by(RefreshToken.created_at.desc())
         )
         result = await self.session.execute(statement)
-        return result.scalar_one_or_none()
+        tokens = result.scalars().all()
+
+        if not tokens:
+            return None
+
+        # If there are multiple tokens, keep only the newest and revoke the rest
+        if len(tokens) > 1:
+            newest_token = tokens[0]
+            # Revoke all tokens except the newest
+            for old_token in tokens[1:]:
+                old_token.revoked_at = datetime.now(tz=UTC)
+                self.session.add(old_token)
+            await self.session.commit()
+            return newest_token
+
+        return tokens[0]
 
     async def create_refresh_token(
         self,
@@ -120,7 +138,7 @@ class AuthRepository:
         """
         refresh_tokens = RefreshToken.__table__.c
         await self.session.execute(
-            update(RefreshToken)
+            update(RefreshToken)  # ty:ignore[invalid-argument-type]
             .where(refresh_tokens.user_id == user_id)
             .where(refresh_tokens.revoked_at.is_(None))
             .values(revoked_at=datetime.now(tz=UTC))
