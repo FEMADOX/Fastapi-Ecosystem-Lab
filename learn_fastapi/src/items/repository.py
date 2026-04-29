@@ -7,7 +7,7 @@ from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.users.models import User
 
 from .models import Item
-from .schema import ItemUpdateSchema
+from .schema import ItemPatchSchema, ItemUpdateSchema
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -167,7 +167,7 @@ class ItemRepository:
         return item
 
     async def patch_item(
-        self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
+        self, item_id: UUID, item_data: ItemPatchSchema, owner: User | None = None
     ) -> Item | None:
         """Apply a partial update to an item (PATCH semantics).
 

@@ -7,6 +7,7 @@ from learn_fastapi.src.sse.manager import sse_manager
 from learn_fastapi.src.users.exceptions import only_user_owner_is_authorized
 from learn_fastapi.src.users.models import User
 from learn_fastapi.src.users.repository import UsersRepository
+from learn_fastapi.src.utils.alembic import app_logger
 from learn_fastapi.src.utils.exceptions import user_doesnt_exist_exception
 
 from .cache import (
@@ -25,7 +26,7 @@ from .exceptions import (
     item_not_found_or_not_belong_to_user_exception,
 )
 from .repository import ItemRepository
-from .schema import ItemSchema, ItemUpdateSchema
+from .schema import ItemPatchSchema, ItemSchema, ItemUpdateSchema
 from .utils import save_image_file
 
 
@@ -69,6 +70,33 @@ class ItemService:
 
     async def resolve_owner(self, current_user: User, owner_id: UUID | None) -> User:
         return await self._resolve_owner(current_user, owner_id)
+
+    @staticmethod
+    async def _broadcast_sse_event(
+        event: str, payload: dict, user_id: UUID | None = None
+    ) -> None:
+        """Safely broadcast an SSE event, logging failures without raising.
+
+        Wraps SSE broadcast calls to ensure failures don't interrupt business logic.
+        This is a best-effort approach: if SSE is unavailable or fails, the API
+        continues normally.
+
+        Args:
+            event: Event type (e.g., "item.created").
+            payload: Event payload (dict).
+            user_id: Optional user ID for user-scoped events. If None, broadcasts\
+                globally.
+
+        """
+        try:
+            if user_id:
+                await sse_manager.broadcast_user(user_id, event, payload)
+            else:
+                await sse_manager.broadcast_global(event, payload)
+        except Exception:  # noqa: BLE001
+            app_logger.exception(
+                f"Failed to broadcast SSE event '{event}' (user_id={user_id})"
+            )
 
     async def get_all_items(self) -> list[ItemSchema]:
         """Return all items in the database as serialized schemas.
@@ -191,14 +219,14 @@ class ItemService:
         item = await self.repository.create_item(item_data, owner)
         schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        await sse_manager.broadcast_global(
+        await self._broadcast_sse_event(
             "item.created",
             schema.model_dump(mode="json"),
         )
-        await sse_manager.broadcast_user(
-            owner.id,
+        await self._broadcast_sse_event(
             "item.created",
             schema.model_dump(mode="json"),
+            item.user_id,
         )
 
         return schema
@@ -247,18 +275,18 @@ class ItemService:
 
         if image_file:
             image = await save_image_file(image_file, caption)
-            item = await self.repository.update_item_image(item.id, image.url)
+            await self.repository.update_item_image(item.id, image.url)
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        await sse_manager.broadcast_global(
+        await self._broadcast_sse_event(
             "item.created",
             schema.model_dump(mode="json"),
         )
-        await sse_manager.broadcast_user(
-            owner.id,
+        await self._broadcast_sse_event(
             "item.created",
             schema.model_dump(mode="json"),
+            item.user_id,
         )
 
         return schema
@@ -291,16 +319,16 @@ class ItemService:
             raise item_not_found_or_not_belong_to_user_exception()
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
-        await sse_manager.broadcast_user(
-            item.user_id,  # ty:ignore[invalid-argument-type]
+        await self._broadcast_sse_event(
             "item.updated",
             schema.model_dump(mode="json"),
+            user_id=item.user_id,
         )
 
         return schema
 
     async def patch_item(
-        self, item_id: UUID, item_data: ItemUpdateSchema, owner: User | None = None
+        self, item_id: UUID, item_data: ItemPatchSchema, owner: User | None = None
     ) -> ItemSchema:
         """Apply a partial update to an item (PATCH semantics).
 
@@ -328,10 +356,10 @@ class ItemService:
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        await sse_manager.broadcast_user(
-            item.user_id,  # ty:ignore[invalid-argument-type]
+        await self._broadcast_sse_event(
             "item.updated",
             schema.model_dump(mode="json"),
+            user_id=item.user_id,
         )
 
         return schema
@@ -359,10 +387,10 @@ class ItemService:
         await self.repository.delete_item(item)
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
-        await sse_manager.broadcast_user(
-            owner.id,
+        await self._broadcast_sse_event(
             "item.deleted",
             schema.model_dump(mode="json"),
+            user_id=item.user_id,
         )
 
     async def update_item_image(
@@ -389,10 +417,10 @@ class ItemService:
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
 
-        await sse_manager.broadcast_user(
-            item.user_id,  # ty:ignore[invalid-argument-type]
+        await self._broadcast_sse_event(
             "item.image_updated",
             schema.model_dump(mode="json"),
+            user_id=item.user_id,
         )
 
         return schema

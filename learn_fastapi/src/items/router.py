@@ -24,6 +24,7 @@ from .annotations import (
 from .dependencies import ItemServiceDep
 from .exceptions import image_not_found_exception
 from .schema import (
+    ItemPatchSchema,
     ItemSchema,
     ItemUpdateSchema,
 )
@@ -167,7 +168,7 @@ async def update_item(
 @router.patch("/{id_param}")
 async def patch_item(
     id_param: UUID,
-    item_param: ItemUpdateSchema,
+    item_param: ItemPatchSchema,
     service: ItemServiceDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from sqlalchemy.orm import Mapped, relationship
 
@@ -20,8 +21,6 @@ from .annotations import (
 )
 
 if TYPE_CHECKING:
-    from uuid import UUID
-
     from learn_fastapi.src.users.models import User
 
 

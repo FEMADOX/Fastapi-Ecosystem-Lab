@@ -65,24 +65,43 @@ class AuthRepository:
         return user
 
     async def get_refresh_token(self, user_id: UUID) -> RefreshToken | None:
-        """Fetch a refresh token.
+        """Get the active refresh token for a user, handling duplicates.
+
+        If multiple active tokens exist for the same user, keeps only the
+        most recently created one and revokes the others.
 
         Args:
-            user_id: The UUID of the user whose refresh token to retrieve.
+            user_id: The user ID to search for.
 
         Returns:
-            The matching refresh token or ``None`` if no valid token exists.
+            The active refresh token, or None if none exists.
 
         """
-        refresh_token = RefreshToken.__table__.c
+        refresh_tokens = RefreshToken.__table__.c
         statement = (
             select(RefreshToken)
-            .where(refresh_token.user_id == user_id)
-            .where(refresh_token.revoked_at.is_(None))
-            .where(refresh_token.expires_at > datetime.now(tz=UTC))
+            .where(refresh_tokens.user_id == user_id)
+            .where(refresh_tokens.revoked_at.is_(None))
+            .where(refresh_tokens.expires_at > datetime.now(tz=UTC))
+            .order_by(refresh_tokens.created_at.desc())
         )
         result = await self.session.execute(statement)
-        return result.scalar_one_or_none()
+        tokens = result.scalars().all()
+
+        if not tokens:
+            return None
+
+        # If there are multiple tokens, keep only the newest and revoke the rest
+        if len(tokens) > 1:
+            newest_token = tokens[0]
+            # Revoke all tokens except the newest
+            for old_token in tokens[1:]:
+                old_token.revoked_at = datetime.now(tz=UTC)
+                self.session.add(old_token)
+            await self.session.commit()
+            return newest_token
+
+        return tokens[0]
 
     async def create_refresh_token(
         self,

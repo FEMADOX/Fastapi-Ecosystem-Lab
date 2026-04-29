@@ -36,7 +36,7 @@ jobs:
           enable-cache: true
 
       - name: Install the project dependencies
-        run: uv sync --no-dev --locked
+        run: uv sync --dev --group types-stubs --locked
 
       - name: Run tests
         run: uv run pytest --config-file=../pyproject.toml

@@ -4,11 +4,16 @@ from fastapi.responses import JSONResponse
 from fastapi_versionizer.versionizer import Versionizer, api_version
 from sqlalchemy.exc import DBAPIError
 
-from learn_fastapi.src.config import lifespan, settings
+from learn_fastapi.src.config import settings
+from learn_fastapi.src.index import (
+    auth_router,
+    items_router,
+    sse_router,
+    users_router,
+)
+from learn_fastapi.src.lifespan import lifespan
 from learn_fastapi.src.middleware import CorsMiddlewareConfigurer
 from learn_fastapi.src.utils.alembic import app_logger
-
-from .index import routers
 
 app = FastAPI(
     lifespan=lifespan,
@@ -35,7 +40,10 @@ async def root() -> dict[str, str]:
 
 
 router = APIRouter()
-[router.include_router(r) for r in routers]
+router.include_router(auth_router)
+router.include_router(items_router)
+router.include_router(sse_router)
+router.include_router(users_router)
 
 app.include_router(router)
 

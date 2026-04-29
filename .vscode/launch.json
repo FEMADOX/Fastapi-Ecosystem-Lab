@@ -2,6 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "FastAPI Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/learn_fastapi/src/main.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/learn_fastapi",
+      "justMyCode": true,
+    },
+    {
       "name": "Next.js: debug server-side",
       "type": "node-terminal",
       "request": "launch",
