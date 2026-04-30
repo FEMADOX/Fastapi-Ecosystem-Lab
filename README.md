@@ -5,6 +5,28 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 🌐 API Deployed in the Koyeb platform:\
 <https://fastapi-ecosystem-lab-api.koyeb.app/api/docs#>
 
+## Table of Contents
+
+- [FastAPI Ecosystem Lab 🚀](#fastapi-ecosystem-lab-)
+  - [Table of Contents](#table-of-contents)
+  - [🗺️ What's covered](#️-whats-covered)
+  - [🛠️ Tech Stack](#️-tech-stack)
+  - [📁 Structure](#-structure)
+    - [Environment Configuration](#environment-configuration)
+  - [🐳 Local Database](#-local-database)
+  - [▶️ Run Apps](#️-run-apps)
+    - [FastAPI Backend](#fastapi-backend)
+    - [Streamlit Frontend (Data Dashboard)](#streamlit-frontend-data-dashboard)
+    - [Next.js Frontend (Production Web App)](#nextjs-frontend-production-web-app)
+    - [Running All Components](#running-all-components)
+  - [📚 Modules \& Documentation](#-modules--documentation)
+    - [Backend](#backend)
+    - [Frontends](#frontends)
+    - [Learning Guides (Spanish)](#learning-guides-spanish)
+    - [Reference \& Community](#reference--community)
+  - [📝 Notes](#-notes)
+    - [Frontend Comparison](#frontend-comparison)
+
 ## 🗺️ What's covered
 
 | Topic                                        | Status       |
@@ -167,16 +189,16 @@ Best practice: use 3 terminals
 uv run run-api-server
 ```
 
-**Terminal 2 — Streamlit Dashboard:**
-
-```bash
-streamlit run learn_streamlit/src/app.py
-```
-
-**Terminal 3 — Next.js Web App:**
+**Terminal 2 — Next.js Web App:**
 
 ```bash
 cd learn_nextjs && pnpm dev
+```
+
+**Terminal 3 — Streamlit Dashboard (Optional):**
+
+```bash
+streamlit run learn_streamlit/src/app.py
 ```
 
 Then visit:
