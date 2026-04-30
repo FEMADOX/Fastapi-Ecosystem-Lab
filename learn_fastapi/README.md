@@ -26,9 +26,12 @@ learn_fastapi/
 │   │   ├── schema.py       # Auth Pydantic models (Token, UserCreate, etc.)
 │   │   ├── service.py      # Auth business logic layer
 │   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
+│   ├── cache/          # Cache module (e.g. Redis integration)
+│   │   └── redis_client.py        # Redis client integration
 │   ├── users/          # User account management module
 │   │   ├── annotations.py  # Annotated type aliases for users models
 │   │   ├── dependencies.py # User service dependency wiring
+│   │   ├── exceptions.py   # User-specific exceptions
 │   │   ├── models.py       # SQLAlchemy models (User)
 │   │   ├── repository.py   # User account data access layer
 │   │   ├── router.py       # User endpoints (profile, update, delete)
@@ -36,16 +39,20 @@ learn_fastapi/
 │   │   └── service.py      # User account business logic layer
 │   ├── items/          # Items module (example domain)
 │   │   ├── annotations.py  # Annotated type aliases
+│   │   ├── cache.py        # Item-specific caching logic (e.g. Redis caching for item retrieval)
 │   │   ├── dependencies.py # Item service dependency wiring
 │   │   ├── exceptions.py   # Item-specific exceptions
 │   │   ├── models.py       # SQLAlchemy models
 │   │   ├── repository.py   # Data access layer
-│   │   ├── schema.py       # Item Pydantic model
 │   │   ├── router.py       # CRUD endpoints for /items
+│   │   ├── schema.py       # Item Pydantic model
 │   │   ├── service.py      # Business logic layer
 │   │   ├── utils.py        # Item helpers (image save, etc.)
 │   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
 |   ├── media/images/   # Media storage (e.g. uploaded images)
+|   ├── sse/
+│   │   ├── manager.py      # Server-Sent Events manager for handling connections and broadcasting
+│   │   └── router.py       # SSE endpoints for clients to subscribe to events 
 |   ├── static/js/      # Static files (e.g. CSS, JS)
 │   ├── utils/          # Shared utilities
 │   │   ├── alembic.py      # Alembic integration helpers
