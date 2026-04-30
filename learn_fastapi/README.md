@@ -2,6 +2,41 @@
 
 A personal learning module for exploring FastAPI concepts, patterns, and best practices.
 
+## Table of Contents
+
+- [learn\_fastapi](#learn_fastapi)
+  - [Table of Contents](#table-of-contents)
+  - [Structure](#structure)
+  - [Topics Covered](#topics-covered)
+  - [API Version 1: Core Concepts and Patterns](#api-version-1-core-concepts-and-patterns)
+    - [`items` App](#items-app)
+      - [`items` Endpoints](#items-endpoints)
+      - [`items` cacheing with Redis](#items-cacheing-with-redis)
+      - [`items` SSE (Server-Sent Events)](#items-sse-server-sent-events)
+    - [`auth` App](#auth-app)
+      - [`auth` Endpoints (Authentication flows only)](#auth-endpoints-authentication-flows-only)
+    - [`users` App](#users-app)
+      - [`users` Endpoints (Account management only)](#users-endpoints-account-management-only)
+  - [API Version 2:  Core Concepts and Patterns](#api-version-2--core-concepts-and-patterns)
+    - [`auth` App (V2)](#auth-app-v2)
+  - [Running](#running)
+  - [Local PostgreSQL with Docker Compose](#local-postgresql-with-docker-compose)
+  - [Database Migrations with Alembic](#database-migrations-with-alembic)
+    - [How It Works](#how-it-works)
+    - [Common Migration Commands](#common-migration-commands)
+      - [Generate a new migration after updating models](#generate-a-new-migration-after-updating-models)
+      - [Apply all pending migrations](#apply-all-pending-migrations)
+      - [Check the current migration version](#check-the-current-migration-version)
+      - [View all migration revisions](#view-all-migration-revisions)
+      - [Downgrade to the previous migration](#downgrade-to-the-previous-migration)
+      - [Downgrade all the way to the start](#downgrade-all-the-way-to-the-start)
+    - [How Migrations Run at Startup](#how-migrations-run-at-startup)
+    - [Best Practices](#best-practices)
+    - [Alembic Configuration Details](#alembic-configuration-details)
+  - [Testing](#testing)
+  - [Docs](#docs)
+    - [Reference Materials](#reference-materials)
+
 ## Structure
 
 ```text
@@ -129,6 +164,135 @@ Base prefix: `/items`
 | `GET`    | `/image/`           | Get image file by filename             |                                                                 |
 | `POST`   | `/with-image/`      | Create item with optional image upload | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
 
+#### `items` cacheing with Redis
+
+The items module implements a Redis-backed caching layer to improve read performance and reduce database load. The cache follows a cache-aside pattern where the service first attempts to read from Redis, falling back to the database on a cache miss, and then populates the cache with the fresh data.
+
+**Key Architecture:**
+
+- **Namespace**: All item-related keys use the `items:` prefix
+- **TTL**: 600 seconds (10 minutes) for all cached entries
+- **Key Patterns**:
+  - `items:all` → Serialized list of all items (`list[ItemSchema]`)
+  - `items:<uuid>` → Serialized single item (`ItemSchema`) by UUID
+  - `items:<user_id>` → All items belonging to a specific user
+  - `items:<item_id>:<user_id>` → User-scoped single item (for ownership verification)
+
+**Cache Flow:**
+
+1. **Read Operations** (`get_all_items`, `get_item`, `get_user_items`, `get_user_item`):
+   - Attempt to retrieve data from Redis using the appropriate key
+   - If found (cache hit): deserialize and return immediately
+   - If not found (cache miss): query database, serialize result, store in Redis, then return
+
+2. **Write Operations** (`create_item`, `update_item`, `delete_item`, etc.):
+   - Perform the database operation
+   - Invalidate the entire `items:*` namespace using `delete_cache_pattern("items:*")`
+   - This ensures cache consistency by forcing fresh reads on subsequent requests
+
+**Implementation Details:**
+
+- The cache layer lives in `src/items/cache.py` and uses the generic Redis client from `src/cache/redis_client.py`
+- The Redis client is fault-tolerant: all operations catch exceptions and log warnings instead of propagating errors, ensuring a missing/unreachable Redis never breaks the API
+- Data is serialized/deserialized using JSON (with `default=str` to handle UUID/datetime objects)
+- Cache invalidation uses Redis `KEYS` pattern matching (suitable for development/low-traffic; production high-traffic scenarios should consider migrating to `SCAN`-based iteration)
+
+**Performance Benefits:**
+
+- Eliminates repeated database queries for frequently accessed item lists
+- Reduces latency for item retrieval operations
+- Scales read traffic across Redis instances (in clustered setups)
+
+#### `items` SSE (Server-Sent Events)
+
+The items module includes a Server-Sent Events (SSE) implementation to provide real-time updates to clients when items are created, updated, or deleted. This allows clients to subscribe to a stream of events and receive immediate notifications without polling.
+
+**SSE Architecture:**
+
+- **Global Events**: Broadcast to all connected clients (e.g., when any item is created)
+- **User-Scoped Events**: Sent only to clients connected for a specific user (e.g., when that user's item is updated/deleted)
+- **Fault Tolerant**: SSE failures are logged but never interrupt the main API flow
+- **Authenticated**: All SSE endpoints require valid JWT authentication
+
+**Implementation Details:**
+
+1. **SSE Manager** (`src/sse/manager.py`):
+   - Singleton `SSEManager` class managing two types of channels:
+     - `_global`: List of `asyncio.Queue` for global event subscribers
+     - `_users`: Dictionary mapping `user_id` → list of `asyncio.Queue` for user-scoped subscribers
+   - Each client connection gets its own `asyncio.Queue` to receive events
+   - Methods for subscription/unsubscription and broadcasting events
+   - SSE message format: `"data: {json}\n\n"` (per SSE spec)
+
+2. **SSE Endpoints** (`src/sse/router.py`):
+   - `GET /api/v1/events/global` - Stream global events
+   - `GET /api/v1/events/me` - Stream events for the authenticated user
+   - Both endpoints:
+     - Require authentication via `CurrentUserDep` (valid JWT)
+     - Return `StreamingResponse` with `media_type="text/event-stream"`
+     - Include proper headers: `Cache-Control: no-cache`, `X-Accel-Buffering: no`
+     - Use keep-alive comments (`: keep-alive\n\n`) to detect disconnections
+     - Clean up subscriptions automatically when clients disconnect
+
+3. **Service Integration** (`src/items/service.py`):
+   - Static `_broadcast_sse_event()` method wraps SSE calls with exception handling
+   - Events broadcasted on item operations:
+     - `item.created`: Global broadcast + to item owner
+     - `item.updated`: To item owner only
+     - `item.deleted`: To item owner only
+     - `item.image_updated`: To item owner only
+   - Payload: Serialized `ItemSchema` using `model_dump(mode="json")` (handles UUID/datetime)
+
+**How to Use SSE from Clients:**
+
+1. **Connect to Global Events** (all item creations):
+
+   ```javascript
+   const eventSource = new EventSource('/api/v1/events/global', {
+     headers: {
+       'Authorization': 'Bearer <your-jwt-token>'
+     }
+   });
+   
+   eventSource.onmessage = (event) => {
+     const data = JSON.parse(event.data);
+     console.log('Global event:', data.event, data.payload);
+     // Handle item.created events from any user
+   };
+   ```
+
+2. **Connect to User-Specific Events** (your own item updates/deletes):
+
+   ```javascript
+   const eventSource = new EventSource('/api/v1/events/me', {
+     headers: {
+       'Authorization': 'Bearer <your-jwt-token>'
+     }
+   });
+   
+   eventSource.onmessage = (event) => {
+     const data = JSON.parse(event.data);
+     console.log('User event:', data.event, data.payload);
+     // Handle item.updated/deleted events for your items
+   };
+   ```
+
+3. **Event Types** you'll receive:
+   - `{"event": "item.created", "payload": {item data}}`
+   - `{"event": "item.updated", "payload": {item data}}`
+   - `{"event": "item.deleted", "payload": {item data}}`
+   - `{"event": "item.image_updated", "payload": {item data}}`
+
+**Benefits:**
+
+- Eliminates need for polling to get real-time updates
+- Low-latency push notifications from server to client
+- Efficient: only sends data when events occur
+- Scalable: each connection is lightweight (HTTP-based)
+- Secure: same JWT authentication as REST API
+
+**Note:** The SSE implementation uses HTTP/1.1 chunked encoding and works through most proxies and firewalls since it's standard HTTP GET requests.
+
 ### `auth` App
 
 | Concept                                      | Where                                                                          |
@@ -187,6 +351,17 @@ Base prefix: `/users`
 | `GET`    | `/{user_id}` | Get specific user account (if owner/admin) | —               | `Authorization: Bearer <token>` |
 | `PATCH`  | `/{user_id}` | Update user email and/or password          | `UserUpdate`    | `Authorization: Bearer <token>` |
 | `DELETE` | `/{user_id}` | Delete user account permanently            | `DeleteAccount` | `Authorization: Bearer <token>` |
+
+## API Version 2:  Core Concepts and Patterns
+
+### `auth` App (V2)
+
+Base prefix: `/auth`
+
+| Method | Path        | Description                                        | Body Params                                            |
+|:-------|:------------|:---------------------------------------------------|:-------------------------------------------------------|
+| `POST` | `/token`    | Login and receive: access token, refresh token,    | `OAuth2PasswordRequestForm` (username/email, password) |
+|        |             | (access & refresh tokens)_expires_in and CSRFtoken |                                                        |
 
 ## Running
 

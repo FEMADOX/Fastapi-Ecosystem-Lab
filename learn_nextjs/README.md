@@ -2,6 +2,35 @@
 
 A modern Next.js frontend implementation demonstrating best practices for building production-grade web applications.
 
+## Table of Contents
+
+- [learn\_nextjs](#learn_nextjs)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Project Structure](#project-structure)
+  - [Key Features](#key-features)
+    - [Authentication](#authentication)
+    - [Server Actions](#server-actions)
+    - [Caching with `use cache`](#caching-with-use-cache)
+    - [Server-only Fetch Layer](#server-only-fetch-layer)
+    - [Pages \& Routing](#pages--routing)
+    - [Styling](#styling)
+    - [Code Quality](#code-quality)
+  - [Setup](#setup)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+  - [Development](#development)
+    - [Build for Production](#build-for-production)
+    - [Start Production Server](#start-production-server)
+    - [Linting](#linting)
+  - [Testing](#testing)
+    - [What is tested](#what-is-tested)
+  - [Environment Variables](#environment-variables)
+  - [Architecture Notes](#architecture-notes)
+  - [Running Alongside FastAPI](#running-alongside-fastapi)
+  - [Comparison: Streamlit vs Next.js](#comparison-streamlit-vs-nextjs)
+  - [Resources](#resources)
+
 ## Overview
 
 This module showcases a complete Next.js 16 (canary) setup with:
