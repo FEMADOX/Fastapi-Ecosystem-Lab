@@ -1,7 +1,6 @@
 'use client'
 
-import { type FormEvent, useActionState, useState } from 'react'
-import { z } from 'zod'
+import { useActionState, useState } from 'react'
 
 import { createItemAction } from '@/actions/items/actions'
 import {
@@ -13,23 +12,22 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { clientItemSchema } from '@/schemas/items/new/forms'
 import type { NewItemFormProps } from '@/types/items/types'
+import type { FormSubmitEvent } from './types'
+import { validateItemForm } from './utils'
 
 export const NewItemForm = ({ userId }: NewItemFormProps) => {
   const [state, formAction, isPending] = useActionState(createItemAction, null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setFieldErrors({})
+  const handleSubmit = (event: FormSubmitEvent) => {
+    const { success, flattenedErrors } = validateItemForm(
+      event.currentTarget,
+      setFieldErrors
+    )
 
-    const formData = new FormData(event.currentTarget)
-    const rawFormData = Object.fromEntries(formData.entries())
-    const parseResult = clientItemSchema.safeParse(rawFormData)
-
-    if (!parseResult.success) {
-      const flattenedErrors = z.flattenError(parseResult.error).fieldErrors
+    if (!success) {
+      event.preventDefault()
       const nextFieldErrors = Object.fromEntries(
         Object.entries(flattenedErrors)
           .filter(
@@ -41,17 +39,17 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
           ])
       )
       setFieldErrors(nextFieldErrors)
-      return
     }
-
-    formAction(formData)
   }
 
   return (
     <form
-      className={`grid max-w-xl grid-cols-1 gap-y-5 md:mx-auto [&>div>input]:w-full [&>div>input]:rounded [&>div>input]:bg-gray-300 [&>div>input]:px-2 [&>div>input]:text-black`}
+      className={`
+        grid max-w-xl grid-cols-1 gap-y-5 md:mx-auto
+        [&>div>input]:w-full [&>div>input]:rounded [&>div>input]:bg-gray-300 [&>div>input]:px-2 [&>div>input]:text-black
+      `}
+      action={formAction}
       onSubmit={handleSubmit}
-      method="POST"
       noValidate
     >
       <FieldGroup className="grid grid-cols-1">
@@ -78,7 +76,11 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
             Description
           </FieldLabel>
           <FieldDescription>A brief description of the item.</FieldDescription>
-          <Textarea id="description" name="description" />
+          <Textarea
+            id="description"
+            name="description"
+            defaultValue="No description provided"
+          ></Textarea>
           <FieldError>{fieldErrors.description}</FieldError>
         </Field>
 
@@ -93,7 +95,6 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
               type="number"
               defaultValue={0.0}
               step="0.01"
-              required
             />
             <FieldError>{fieldErrors.price}</FieldError>
           </Field>
@@ -107,7 +108,6 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
               type="number"
               defaultValue={0.0}
               step="0.01"
-              required
             />
             <FieldError>{fieldErrors.tax}</FieldError>
           </Field>

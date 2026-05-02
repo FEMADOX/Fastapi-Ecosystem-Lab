@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidateTag } from 'next/cache'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
@@ -14,8 +15,13 @@ export const createItemAction = async (
   _prevState: ItemActionState,
   formData: FormData
 ): Promise<ItemActionState> => {
-  const { data: meData, error: meError } =
-    await serverGet<User>('/latest/users/me')
+  const cookieStore = await cookies()
+  const accessToken = cookieStore.get('access_token')?.value
+
+  const { data: meData, error: meError } = await serverGet<User>(
+    '/latest/users/me',
+    accessToken
+  )
   if (meError || !meData) {
     return { error: 'Authentication required. Please log in again.' }
   }
@@ -43,14 +49,18 @@ export const createItemAction = async (
     image_url: imageUrl
   } = parseResult.data
 
-  const { data: newItem, error } = await serverPost<Item>('/latest/items', {
-    user_id: userId,
-    name,
-    description,
-    price,
-    tax,
-    image_url: imageUrl ?? undefined
-  })
+  const { data: newItem, error } = await serverPost<Item>(
+    '/latest/items/',
+    {
+      user_id: userId,
+      name,
+      description,
+      price,
+      tax,
+      image_url: imageUrl ?? undefined
+    },
+    accessToken
+  )
 
   if (error || !newItem) {
     return { error: error ?? 'Failed to create item. Please try again.' }
