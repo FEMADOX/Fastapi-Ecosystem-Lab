@@ -18,8 +18,10 @@ export const createItemAction = async (
   const cookieStore = await cookies()
   const accessToken = cookieStore.get('access_token')?.value
 
-  const { data: meData, error: meError } =
-    await serverGet<User>('/latest/users/me', accessToken)
+  const { data: meData, error: meError } = await serverGet<User>(
+    '/latest/users/me',
+    accessToken
+  )
   if (meError || !meData) {
     return { error: 'Authentication required. Please log in again.' }
   }
@@ -47,14 +49,18 @@ export const createItemAction = async (
     image_url: imageUrl
   } = parseResult.data
 
-  const { data: newItem, error } = await serverPost<Item>('/latest/items/', {
-    user_id: userId,
-    name,
-    description,
-    price,
-    tax,
-    image_url: imageUrl ?? undefined
-  }, accessToken)
+  const { data: newItem, error } = await serverPost<Item>(
+    '/latest/items/',
+    {
+      user_id: userId,
+      name,
+      description,
+      price,
+      tax,
+      image_url: imageUrl ?? undefined
+    },
+    accessToken
+  )
 
   if (error || !newItem) {
     return { error: error ?? 'Failed to create item. Please try again.' }
