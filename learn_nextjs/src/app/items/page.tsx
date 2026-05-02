@@ -1,6 +1,6 @@
 import { cacheTag } from 'next/cache'
-import Link from 'next/dist/client/link'
-import { cookies } from 'next/dist/server/request/cookies'
+import Link from 'next/link'
+import { cookies } from 'next/headers'
 import Image from 'next/image'
 import { serverGet } from '@/app/api/server-fetch'
 import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'

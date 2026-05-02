@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }: Children) => {
     const { data, error } = await getMe()
 
     if (!data || error) {
-      // console.error(`Failed to fetch user data: ${error ?? 'Unknown error'}`)
       return { status: 'unauthenticated' }
     }
 
@@ -81,7 +80,6 @@ export const AuthProvider = ({ children }: Children) => {
   }
 
   return (
-    // eslint-disable-next-line @eslint-react/no-context-provider
     <AuthContext.Provider value={{ state, onLoginSuccess, onLogoutSuccess }}>
       {children}
     </AuthContext.Provider>

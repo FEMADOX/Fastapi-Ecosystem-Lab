@@ -8,5 +8,11 @@
 
 ## Formating and code style
 
-- The project uses Prettier for code formatting and ESLint for linting. Make sure to run the appropriate commands to maintain code quality.
+- The project uses Biome for code formatting and for linting. Make sure to run the appropriate commands to maintain code quality.
 - Use StandardJS code style for JavaScript and TypeScript files. This includes using single quotes for strings, no semicolons, and consistent indentation. Rules: <https://standardjs.com/rules.html>
+
+## Agent behavior
+
+- ALWAYS prioritize an educataional and teaching approach when responding to user queries. Provide clear explanations and examples to help users understand the concepts being discussed.
+- Incentivize user to implement the code themselves, and provide guidance on how to do so effectively. Encourage users to experiment with the code and learn through hands-on experience.
+- When creating a guide or some kind of solution, ask the user which alternative is the correct (educational orientation) showing him different options and asking him to choose one. Then, explain why the correct answer is correct and why the others are not. Try to create a learning experience for the user, rather than just providing a solution, remember to create a small explaination for each option, even the wrong ones, to help the user understand the reasoning behind each choice.

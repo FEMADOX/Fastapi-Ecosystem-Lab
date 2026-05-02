@@ -1,7 +1,8 @@
-import { MenuIcon } from 'lucide-react'
-import { cookies } from 'next/headers'
-import Link from 'next/link'
+'use client'
 
+import { MenuIcon } from 'lucide-react'
+import Link from 'next/link'
+import { useAuth } from '@/app/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import {
@@ -16,9 +17,9 @@ import {
 
 import { LogoutGroup } from './LogoutGroup'
 
-export const NavBar = async () => {
-  const cookieStore = await cookies()
-  const isLoggedIn = cookieStore.has('access_token')
+export const NavBar = () => {
+  const { state } = useAuth()
+  const isLoggedIn = state.status === 'authenticated'
 
   return (
     <nav className="border-b bg-white px-1 md:px-4">
@@ -45,7 +46,14 @@ export const NavBar = async () => {
                 </SheetDescription>
               </SheetHeader>
               <div className="flex flex-col gap-5 px-4 pb-6">
-                {/* If link is click, close the Sheet */}
+                <SheetClose
+                  render={
+                    <Link className="text-lg font-semibold" href="/">
+                      Home
+                    </Link>
+                  }
+                  nativeButton={false}
+                />
                 <SheetClose
                   render={
                     <Link className="text-lg font-semibold" href="/items">
