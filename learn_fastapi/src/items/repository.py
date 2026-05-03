@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import and_, select, update
+from sqlalchemy import and_, desc, select, update
 
 from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.users.models import User
@@ -31,7 +31,6 @@ class ItemRepository:
             A list of all Item ORM instances.
 
         """
-        # TODO (FENYXZ): Show items in order of creation (newest first)
         result = await self.session.execute(select(Item))
         return list(result.scalars().all())
 
@@ -71,9 +70,8 @@ class ItemRepository:
             A list of Item instances belonging to the user (may be empty).
 
         """
-        # TODO (FENYXZ): Show items in order of creation (newest first)
         result = await self.session.execute(
-            select(Item).where(Item.user_id == owner.id)
+            select(Item).where(Item.user_id == owner.id).order_by(desc(Item.created_at))
         )
         return list(result.scalars().all())
 

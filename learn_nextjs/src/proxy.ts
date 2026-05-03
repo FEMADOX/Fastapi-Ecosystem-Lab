@@ -1,6 +1,6 @@
 import { jwtVerify } from 'jose'
 import { type NextRequest, NextResponse } from 'next/server'
-
+import { refreshToken } from './app/api/server-endpoints'
 import { SECRET_KEY } from './common/const'
 
 const PROTECTED = ['/items/new']
@@ -19,13 +19,43 @@ export const proxy = async (request: NextRequest) => {
 
   if (isProtected) {
     if (!token) {
-      // TODO (FENYXZ): Refresh the access token using refresh token before redirecting to login, if refresh token exists.
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set(
         'next',
         request.nextUrl.pathname + request.nextUrl.search
       )
-      return NextResponse.redirect(loginUrl)
+
+      if (!request.cookies.has('refresh_token'))
+        return NextResponse.redirect(loginUrl)
+
+      const refreshResponse = await refreshToken()
+      if (refreshResponse.error || !refreshResponse.data) {
+        console.error(
+          `Failed to refresh token in proxy: ${refreshResponse.error}`
+        )
+        return NextResponse.redirect(loginUrl)
+      }
+
+      const {
+        access_token: accessToken,
+        csrf_token: csrfToken,
+        expires_in: expiresIn
+      } = refreshResponse.data
+      const response = NextResponse.next()
+      response.cookies.set('access_token', accessToken, {
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        expires: new Date(Date.now() + expiresIn * 1000),
+        secure: process.env.ENVIRONMENT === 'production'
+      })
+      response.cookies.set('csrf_token', csrfToken, {
+        httpOnly: false,
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.ENVIRONMENT === 'production'
+      })
+      return response
     }
 
     try {
@@ -52,9 +82,7 @@ export const proxy = async (request: NextRequest) => {
     }
   }
 
-  if (isAuthOnly && token) {
-    return redirectTo('/')
-  }
+  if (isAuthOnly && token) return redirectTo('/')
 
   return NextResponse.next()
 }

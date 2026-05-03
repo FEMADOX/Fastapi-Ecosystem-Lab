@@ -16,6 +16,7 @@ export type RequestFactoryOptions = {
   headers?: HeadersInit
   queryParams?: Record<string, string>
   apiVersion?: ApiVersion
+  credentials?: RequestCredentials
 }
 
 export type ApiProxyResponse<T> = {

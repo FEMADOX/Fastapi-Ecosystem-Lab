@@ -1,10 +1,7 @@
 import { cacheTag } from 'next/cache'
-import { cookies } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
-import { serverGet } from '@/app/api/server-fetch'
 import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
-import type { Items } from '@/common/types/api/resources'
 import { Price, PriceValue } from '@/components/price'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
@@ -15,18 +12,13 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card'
+import { getItems } from '../api/endpoints'
 import { RetryCard } from './RetryCard'
 
-const fetchItems = async (accessToken?: string) => {
+const ItemsPage = async () => {
   'use cache'
   cacheTag('items')
-  return serverGet<Items>('/latest/items/', accessToken)
-}
-
-const ItemsPage = async () => {
-  const cookiesStore = await cookies()
-  const accessToken = cookiesStore.get('access_token')?.value
-  const { data: items, error } = await fetchItems(accessToken)
+  const { data: items, error } = await getItems()
   const badge = {
     text: 'Badge',
     color: 'red'

@@ -1,24 +1,17 @@
 import { CreditCardIcon, ShoppingCartIcon, Star, StarHalf } from 'lucide-react'
 import { cacheTag } from 'next/cache'
-import { cookies } from 'next/headers'
 import Image from 'next/image'
-import { serverGet } from '@/app/api/server-fetch'
 import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
-import type { Item } from '@/common/types/api/resources'
 import type { PromiseIdProp } from '@/common/types/routing'
 import { Button } from '@/components/ui/button'
+import { getItem } from '../../api/server-endpoints'
 import { RetryCard } from '../RetryCard'
 
-const fetchItem = async (id: string, accessToken?: string) => {
-  'use cache'
-  cacheTag(`item-${id}`)
-  return serverGet<Item>(`/latest/items/${id}`, accessToken)
-}
-
 const ItemPage = async ({ params }: PromiseIdProp) => {
-  const [{ id }, cookieStore] = await Promise.all([params, cookies()])
-  const accessToken = cookieStore.get('access_token')?.value
-  const { data: item, error } = await fetchItem(id, accessToken)
+  'use cache'
+  const { id } = await params
+  cacheTag(`item-${id}`)
+  const { data: item, error } = await getItem(id)
 
   if (error)
     return (

@@ -40,7 +40,8 @@ const apiRequest = async <T>(
     accessToken = null,
     headers = {},
     queryParams,
-    apiVersion = '/latest'
+    apiVersion = '/latest',
+    credentials = 'include'
   } = options
 
   const hasBody = body !== undefined
@@ -61,7 +62,8 @@ const apiRequest = async <T>(
       headers: requestHeaders,
       ...(hasBody
         ? { body: isSerializedBody ? (body as BodyInit) : JSON.stringify(body) }
-        : {})
+        : {}),
+      credentials
     }
   )
 
@@ -99,13 +101,17 @@ export const api = {
       apiVersion
     })
   },
-  post: <T, B = unknown>(options: APIBaseProps, body?: B) => {
-    const { endpoint, accessToken, apiVersion } = options
+  post: <T, B = unknown>(
+    options: APIBaseProps & { credentials?: RequestCredentials },
+    body?: B
+  ) => {
+    const { endpoint, accessToken, apiVersion, credentials } = options
     return apiRequest<T>(endpoint, {
       method: 'POST',
       body,
       accessToken,
-      apiVersion
+      apiVersion,
+      credentials
     })
   },
   put: <T, B = unknown>(options: APIBaseProps, body: B) => {

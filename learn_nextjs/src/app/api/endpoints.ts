@@ -13,6 +13,7 @@ import type {
 } from '@/types/api/types'
 
 import { api } from './abstraction'
+import type { CreateItemRequest } from './types'
 
 // ==================  ITEMS  ==================
 const ITEMS_PATH = '/items'
@@ -23,15 +24,15 @@ export const getItem = async (id: string) => {
   return api.get<Item>({ endpoint: ITEMS_PATH, pathParam: id })
 }
 
-export const createItem = async (item: Omit<Item, 'id'>) => {
+export const createItem = async (item: CreateItemRequest) => {
   return api.post<Item>({ endpoint: ITEMS_PATH }, item)
 }
 
-export const updateItem = async (id: string, item: Omit<Item, 'id'>) => {
+export const updateItem = async (id: string, item: CreateItemRequest) => {
   return api.put<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item)
 }
 
-export const patchItem = async (id: string, item: Omit<Item, 'id'>) => {
+export const patchItem = async (id: string, item: CreateItemRequest) => {
   return api.patch<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item)
 }
 
@@ -162,7 +163,10 @@ export const login = async (
 }
 
 export const refreshToken = async (apiVersion?: ApiVersion) => {
-  return api.post<Token>({ endpoint: `${AUTH_PATH}/refresh`, apiVersion }, {})
+  return api.post<Token>(
+    { endpoint: `${AUTH_PATH}/refresh`, apiVersion, credentials: 'include' },
+    {}
+  )
 }
 
 export const logout = async (apiVersion?: ApiVersion) => {
