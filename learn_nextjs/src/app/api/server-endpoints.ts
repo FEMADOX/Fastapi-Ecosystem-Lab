@@ -10,7 +10,7 @@ import { serverGet, serverPost } from './server-fetch'
 import type { AuthProps, CreateItemRequest } from './types'
 
 // ==================  ITEMS  ==================
-export const getItems = async () => await serverGet<Items>('/latest/items')
+export const getItems = async () => await serverGet<Items>('/latest/items/')
 export const getItem = async (id: string) =>
   await serverGet<Item>(`/latest/items/${id}`)
 export const createItem = async (
@@ -33,11 +33,13 @@ export const createItem = async (
 // }
 
 // ==================  AUTH  ==================
-export const login = async ({ email, password }: AuthProps) => {
-  return await serverPost<TokenV2>('/latest/auth/login', { email, password })
+export const login = async (body: URLSearchParams) => {
+  return await serverPost<TokenV2>('/latest/auth/token', body, undefined, {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  })
 }
 export const signup = async ({ email, password }: AuthProps) => {
-  return await serverPost<User>('/latest/auth/signup', { email, password })
+  return await serverPost<User>('/latest/auth/register', { email, password })
 }
 export const logout = async (accessToken: string) => {
   return await serverPost<null>('/latest/auth/logout', {}, accessToken)

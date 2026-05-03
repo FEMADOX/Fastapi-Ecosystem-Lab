@@ -58,17 +58,6 @@ export const AuthProvider = ({ children }: Children) => {
 
   useEffect(() => {
     tryCheckAuth()
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        tryCheckAuth()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
   }, [tryCheckAuth])
 
   const onLoginSuccess = (user: User) => {

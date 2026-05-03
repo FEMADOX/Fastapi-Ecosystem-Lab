@@ -29,9 +29,11 @@ export const loginAction = async (
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
   }
 
-  const paredData = { email: parsed.data.email, password: parsed.data.password }
+  const body = new URLSearchParams()
+  body.set('username', parsed.data.email)
+  body.set('password', parsed.data.password)
 
-  const response = await login(paredData)
+  const response = await login(body)
   if (!response.data || response.error) {
     return { error: response.error ?? 'Login failed. Please try again.' }
   }
