@@ -1,11 +1,13 @@
 """Server-Sent Events (SSE) manager for real-time notifications."""
 
 import asyncio
+import contextlib
 import json
-import logging
 from uuid import UUID
 
-logger = logging.getLogger(__name__)
+from learn_fastapi.src.utils.alembic import app_logger
+
+logger = app_logger
 
 
 class SSEManager:
@@ -180,6 +182,26 @@ class SSEManager:
             logger.exception(
                 f"[SSE] Error broadcasting user event: {event} to {user_id}"
             )
+
+    async def shutdown(self) -> None:
+        """Clean up all subscriber queues on application shutdown."""
+        need_to_clear = len(self._global) > 0 or any(self._users.values())
+        if not need_to_clear:
+            logger.debug("[SSE] Shutdown: No subscribers to notify")
+            return
+
+        for queue in self._global:
+            if not queue.empty():
+                with contextlib.suppress(asyncio.QueueFull):
+                    queue.put_nowait("data: [SSE] Server shutting down\n\n")
+        for queues in self._users.values():
+            for queue in queues:
+                if not queue.empty():
+                    with contextlib.suppress(asyncio.QueueFull):
+                        queue.put_nowait("data: [SSE] Server shutting down\n\n")
+        self._global.clear()
+        self._users.clear()
+        logger.debug("[SSE] Shutdown: Notified all subscribers")
 
 
 # Global singleton instance

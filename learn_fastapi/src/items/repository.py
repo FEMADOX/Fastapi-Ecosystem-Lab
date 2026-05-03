@@ -31,6 +31,7 @@ class ItemRepository:
             A list of all Item ORM instances.
 
         """
+        # TODO (FENYXZ): Show items in order of creation (newest first)
         result = await self.session.execute(select(Item))
         return list(result.scalars().all())
 
@@ -70,6 +71,7 @@ class ItemRepository:
             A list of Item instances belonging to the user (may be empty).
 
         """
+        # TODO (FENYXZ): Show items in order of creation (newest first)
         result = await self.session.execute(
             select(Item).where(Item.user_id == owner.id)
         )

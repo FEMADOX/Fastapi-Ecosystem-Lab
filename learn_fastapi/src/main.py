@@ -62,6 +62,7 @@ def main() -> None:
         host="0.0.0.0",  # noqa: S104
         port=8000,
         reload=settings.debug,
+        log_level="debug" if settings.debug else "info",
     )
 
 

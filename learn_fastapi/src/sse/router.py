@@ -1,18 +1,16 @@
 """SSE (Server-Sent Events) endpoints for real-time notifications."""
 
 import asyncio
-import logging
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from fastapi_versionizer.versionizer import api_version
 
+from learn_fastapi.src.utils.alembic import app_logger as logger
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
 from .manager import sse_manager
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
 
