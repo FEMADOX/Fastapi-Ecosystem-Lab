@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from learn_fastapi.src import database
 from learn_fastapi.src.cache.redis_client import close_redis
+from learn_fastapi.src.sse.manager import sse_manager
 
 from .cache.redis_client import check_redis_health
 from .constants import (
@@ -47,6 +48,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     try:
         yield
     finally:
+        await sse_manager.shutdown()
+
         for startup_task in startup_tasks:
             if not startup_task.done():
                 startup_task.cancel()

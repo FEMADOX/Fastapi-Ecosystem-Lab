@@ -19,6 +19,7 @@ export const proxy = async (request: NextRequest) => {
 
   if (isProtected) {
     if (!token) {
+      // TODO (FENYXZ): Refresh the access token using refresh token before redirecting to login, if refresh token exists.
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set(
         'next',
