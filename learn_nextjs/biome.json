@@ -35,14 +35,24 @@
         "noUnusedVariables": "warn",
         "noUnusedImports": "error",
         "useExhaustiveDependencies": "warn",
-        "useHookAtTopLevel": "error"
+        "useHookAtTopLevel": "error",
+        "noNonoctalDecimalEscape": "error",
+        "useIsNan": "error",
+        "useValidTypeof": "error"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "error",
+        "noAsyncPromiseExecutor": "error",
+        "noDoubleEquals": "error",
+        "noRedundantUseStrict": "error",
+        "noSelfCompare": "error"
       },
       "style": {
         "useConst": "error",
-        "useImportType": "error"
+        "useImportType": "error",
+        "useTemplate": "error",
+        "noNonNullAssertion": "warn"
       },
       "a11y": {
         "useKeyWithClickEvents": "off"

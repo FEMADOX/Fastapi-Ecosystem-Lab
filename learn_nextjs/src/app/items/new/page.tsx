@@ -1,10 +1,9 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { serverGet } from '@/app/api/server-fetch'
 import { UserSchema } from '@/common/schemas/api/resources'
-import type { User } from '@/common/types/api/resources'
 
+import { getMe } from '../../api/server-endpoints'
 import { NewItemForm } from './NewItemForm'
 
 const ItemNewPage = async () => {
@@ -14,10 +13,11 @@ const ItemNewPage = async () => {
   }
 
   const accessToken = cookieStore.get('access_token')?.value
-  const { data: meData, error } = await serverGet<User>(
-    '/latest/users/me',
-    accessToken
-  )
+  if (!accessToken) {
+    redirect('/login?next=/items/new')
+  }
+
+  const { data: meData, error } = await getMe(accessToken)
   if (error || !meData) {
     redirect('/login?next=/items/new')
   }

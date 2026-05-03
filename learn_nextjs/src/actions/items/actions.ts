@@ -5,9 +5,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
-import { serverGet, serverPost } from '@/app/api/server-fetch'
+import { createItem, getMe } from '@/app/api/server-endpoints'
 import { ItemSchema, UserSchema } from '@/common/schemas/api/resources'
-import type { Item, User } from '@/common/types/api/resources'
 import { itemFormSchema } from '@/schemas/items/forms'
 import type { ItemActionState } from '@/types/items/types'
 
@@ -17,13 +16,15 @@ export const createItemAction = async (
 ): Promise<ItemActionState> => {
   const cookieStore = await cookies()
   const accessToken = cookieStore.get('access_token')?.value
+  if (!accessToken) {
+    return { error: 'Authentication required. Please log in.' }
+  }
 
-  const { data: meData, error: meError } = await serverGet<User>(
-    '/latest/users/me',
-    accessToken
-  )
+  const { data: meData, error: meError } = await getMe(accessToken)
   if (meError || !meData) {
-    return { error: 'Authentication required. Please log in again.' }
+    return {
+      error: `Failed to verify authentication: ${meError ?? 'Unknown error'}.`
+    }
   }
 
   const userResult = UserSchema.safeParse(meData)
@@ -41,29 +42,13 @@ export const createItemAction = async (
     return { error: firstError ?? 'Invalid form data.' }
   }
 
-  const {
-    name,
-    description,
-    price,
-    tax,
-    image_url: imageUrl
-  } = parseResult.data
+  const itemData = { user_id: userId, ...parseResult.data }
 
-  const { data: newItem, error } = await serverPost<Item>(
-    '/latest/items/',
-    {
-      user_id: userId,
-      name,
-      description,
-      price,
-      tax,
-      image_url: imageUrl ?? undefined
-    },
-    accessToken
-  )
-
+  const { data: newItem, error } = await createItem(itemData, accessToken)
   if (error || !newItem) {
-    return { error: error ?? 'Failed to create item. Please try again.' }
+    return {
+      error: `Failed to create item: ${error ?? 'Unknown error'}.`
+    }
   }
 
   const itemResult = ItemSchema.safeParse(newItem)

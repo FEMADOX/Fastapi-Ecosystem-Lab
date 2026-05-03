@@ -45,10 +45,20 @@ export const serverRequestBase = async <T>(
   path: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   body?: unknown,
-  accessToken?: string
+  accessToken?: string,
+  headersProp?: HeadersInit
 ): Promise<ApiProxyResponse<T>> => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+  const isUrlEncodedBody = body instanceof URLSearchParams
+  const isFormDataBody = body instanceof FormData
+
+  const headers: HeadersInit = headersProp ?? {
+    ...(isFormDataBody
+      ? {}
+      : {
+          'Content-Type': isUrlEncodedBody
+            ? 'application/x-www-form-urlencoded'
+            : 'application/json'
+        }),
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
   }
 
@@ -57,7 +67,14 @@ export const serverRequestBase = async <T>(
       const response = await fetch(`${API_BASE_URL}${path}`, {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
+        body:
+          body === undefined
+            ? undefined
+            : isFormDataBody
+              ? body
+              : isUrlEncodedBody
+                ? body.toString()
+                : JSON.stringify(body),
         signal: AbortSignal.timeout(1 * 60 * 1000) // 1 minute timeout for all server requests
       })
 
@@ -107,9 +124,10 @@ export const serverGet = async <T>(
 export const serverPost = async <T>(
   path: string,
   body: unknown,
-  accessToken?: string
+  accessToken?: string,
+  headers?: HeadersInit
 ): Promise<ApiProxyResponse<T>> => {
-  return serverRequestBase<T>(path, 'POST', body, accessToken)
+  return serverRequestBase<T>(path, 'POST', body, accessToken, headers)
 }
 
 export const serverPut = async <T>(
