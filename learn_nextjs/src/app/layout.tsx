@@ -33,7 +33,12 @@ const RootLayout = ({ children }: Children) => (
         <SSEUserNotifications />
         <main className="px-8 py-8">{children}</main>
       </AuthProvider>
-      <Toaster closeButton={true} position="bottom-center" />
+      <Toaster
+        closeButton={true}
+        position="bottom-left"
+        swipeDirections={['right']}
+        duration={99999999999999}
+      />
       <footer className="text-center leading-12 opacity-70">
         ©{' '}
         <Suspense fallback="2026">

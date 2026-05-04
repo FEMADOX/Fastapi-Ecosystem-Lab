@@ -114,7 +114,10 @@ const methodHandler = async (
   { params }: PromisePathProps
 ) => {
   const { path } = await params
-  const pathName = path.length > 1 ? path.join('/') : `${path[0]}/`
+  const joinedPath = path.join('/')
+  const hasTrailingSlash = request.nextUrl.pathname.endsWith('/')
+  const shouldAppendSlash = hasTrailingSlash || path.length === 2
+  const pathName = shouldAppendSlash ? `${joinedPath}/` : joinedPath
   return handler(request, pathName)
 }
 
