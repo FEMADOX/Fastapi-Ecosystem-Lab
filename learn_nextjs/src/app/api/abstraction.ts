@@ -55,17 +55,15 @@ const apiRequest = async <T>(
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...headers
   }
-  const response = await fetch(
-    buildUrl({ endpoint, pathParam, apiVersion }, queryParams),
-    {
-      method,
-      headers: requestHeaders,
-      ...(hasBody
-        ? { body: isSerializedBody ? (body as BodyInit) : JSON.stringify(body) }
-        : {}),
-      credentials
-    }
-  )
+  const baseUrl = buildUrl({ endpoint, pathParam, apiVersion }, queryParams)
+  const response = await fetch(baseUrl, {
+    method,
+    headers: requestHeaders,
+    ...(hasBody
+      ? { body: isSerializedBody ? (body as BodyInit) : JSON.stringify(body) }
+      : {}),
+    credentials
+  })
 
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`

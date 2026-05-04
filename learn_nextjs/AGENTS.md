@@ -3,7 +3,11 @@
 ## Dev environment tips
 
 - Use `pnpm dev` to start the development server and `pnpm build` to create a production build.
-- Use `pnpm lint` to check for linting errors, `pnpm lint:fix` to automatically fix linting issues, and `pnpm format` to format the code.
+- After adding code verify errors and warnings using the `@problems` tool, if errors or warnings are found, use the `@problems` tool to navigate to the specific lines of code that are causing issues and address them accordingly. Scripts to solve problems:
+  - Use `pnpm lint` to check for linting errors, `pnpm lint:fix` to automatically fix linting issues
+  - Use `pnpm format` to format the code.
+  - Use `pnpm check` to run biome checks.
+  - Use `pnpm tsc` to check for TypeScript errors. This is especially important since this project is full TypeScript, and it will help catch type-related issues early in the development process.
 - This project is full TypeScript.
 
 ## Formating and code style

@@ -14,7 +14,6 @@ import {
   SheetTitle,
   SheetTrigger
 } from '@/components/ui/sheet'
-
 import { LogoutGroup } from './LogoutGroup'
 
 export const NavBar = () => {

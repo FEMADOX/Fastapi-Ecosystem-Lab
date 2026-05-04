@@ -6,11 +6,11 @@
       "type": "node-terminal",
       "request": "launch",
       "command": "pnpm dev:watch",
-      "serverReadyAction": {
-        "pattern": "- Local:.+(https?://.+)",
-        "uriFormat": "%s",
-        "action": "debugWithChrome"
-      }
+      // "serverReadyAction": {
+      //   "action": "",
+      //   "pattern": "- Local:.+(https?://.+)",
+      //   "uriFormat": "%s"
+      // }
     },
     {
       "name": "Next.js — Server only (attach)",
@@ -20,10 +20,7 @@
       "cwd": "${workspaceFolder}",
       "sourceMaps": true,
       "restart": true,
-      "skipFiles": [
-        "<node_internals>/**",
-        "${workspaceFolder}/node_modules/**"
-      ]
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
     },
     {
       "name": "Next.js — Client only (Chrome)",
@@ -32,9 +29,7 @@
       "url": "http://localhost:3000",
       "webRoot": "${workspaceFolder}/src",
       "sourceMaps": true,
-      "skipFiles": [
-        "${workspaceFolder}/node_modules/**"
-      ]
+      "skipFiles": ["${workspaceFolder}/node_modules/**"]
     }
   ],
   "compounds": [
