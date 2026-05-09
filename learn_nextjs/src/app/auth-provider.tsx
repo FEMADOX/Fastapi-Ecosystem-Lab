@@ -29,12 +29,15 @@ export const AuthProvider = ({ children }: Children) => {
     const { data, error } = await getMe()
 
     if (!data || error) {
-      const csrfToken = document.cookie.split('; ').find((cookie) => cookie.startsWith('csrf_token='))
+      const csrfToken = document.cookie
+        .split('; ')
+        .find((cookie) => cookie.startsWith('csrf_token='))
       if (!csrfToken) return { status: 'unauthenticated' }
-      
+
       const refreshResult = await refreshAccessToken(csrfToken)
 
-      if (refreshResult.error || !refreshResult.data) return { status: 'unauthenticated' }
+      if (refreshResult.error || !refreshResult.data)
+        return { status: 'unauthenticated' }
 
       return checkAuth()
     }

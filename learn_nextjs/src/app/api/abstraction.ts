@@ -135,7 +135,11 @@ export const api = {
       queryParams
     })
   },
-  put: <T, B = unknown>(options: APIBaseProps, body?: B, init?: ApiCallInit) => {
+  put: <T, B = unknown>(
+    options: APIBaseProps,
+    body?: B,
+    init?: ApiCallInit
+  ) => {
     const { endpoint, apiVersion } = options
     const { auth, credentials, headers, queryParams } = init ?? {}
     return apiRequest<T>(endpoint, {
