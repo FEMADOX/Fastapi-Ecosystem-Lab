@@ -8,12 +8,24 @@ export type ApiProxyLogoutResponse = { loggedOut: boolean }
 
 export type ApiVersion = (typeof BACKEND_API_VERSIONS)[number]
 
+type AuthContext = {
+  accessToken?: string
+  csrfToken?: string
+}
+
+export interface BuildHeadersOptions {
+  auth?: AuthContext
+  headers?: HeadersInit
+  hasBody?: boolean
+  isSerializedBody?: boolean
+}
+
 export type RequestFactoryOptions = {
   method?: HttpMethod
   pathParam?: string | null
   body?: unknown
-  accessToken?: string | null
   headers?: HeadersInit
+  auth?: AuthContext
   queryParams?: Record<string, string>
   apiVersion?: ApiVersion
   credentials?: RequestCredentials
@@ -31,6 +43,12 @@ export type PromisePathProps = {
 export type APIBaseProps = {
   endpoint: string
   pathParam?: string | null
-  accessToken?: string | null
   apiVersion?: ApiVersion
+}
+
+export type ApiCallInit = {
+  auth?: AuthContext
+  headers?: HeadersInit
+  queryParams?: Record<string, string>
+  credentials?: RequestCredentials
 }

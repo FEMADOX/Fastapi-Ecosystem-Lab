@@ -1,12 +1,10 @@
 'use client'
 
 import { createContext, useCallback, useEffect, useReducer } from 'react'
-
 import { UserSchema } from '@/common/schemas/api/resources'
 import type { User } from '@/common/types/api/resources'
 import type { Children } from '@/common/types/layout'
-
-import { getMe } from './api/endpoints'
+import { getMe, refreshAccessToken } from './api/endpoints'
 
 type AuthState =
   | { status: 'loading' }
@@ -31,7 +29,17 @@ export const AuthProvider = ({ children }: Children) => {
     const { data, error } = await getMe()
 
     if (!data || error) {
-      return { status: 'unauthenticated' }
+      const csrfToken = document.cookie
+        .split('; ')
+        .find((cookie) => cookie.startsWith('csrf_token='))
+      if (!csrfToken) return { status: 'unauthenticated' }
+
+      const refreshResult = await refreshAccessToken(csrfToken)
+
+      if (refreshResult.error || !refreshResult.data)
+        return { status: 'unauthenticated' }
+
+      return checkAuth()
     }
 
     const user = UserSchema.safeParse(data)

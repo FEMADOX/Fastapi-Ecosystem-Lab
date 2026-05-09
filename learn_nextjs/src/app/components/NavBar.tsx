@@ -61,6 +61,16 @@ export const NavBar = () => {
                   }
                   nativeButton={false}
                 />
+                {isLoggedIn && (
+                  <SheetClose
+                    render={
+                      <Link className="text-lg font-semibold" href="/me">
+                        My Account
+                      </Link>
+                    }
+                    nativeButton={false}
+                  />
+                )}
                 <SheetClose
                   render={
                     <Link className="text-lg font-semibold" href="/about">
@@ -88,6 +98,13 @@ export const NavBar = () => {
                 Items
               </Link>
             </li>
+            {isLoggedIn && (
+              <li>
+                <Link className="text-lg font-semibold" href="/me">
+                  My Account
+                </Link>
+              </li>
+            )}
             <li>
               <Link className="text-lg font-semibold" href="/about">
                 About
