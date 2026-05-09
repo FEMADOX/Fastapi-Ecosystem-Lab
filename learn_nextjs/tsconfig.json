@@ -16,10 +16,14 @@
     "plugins": [
       {
         "name": "next"
+      },
+      {
+        "name": "@effect/language-service"
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/api/*": ["./src/app/api/*"]
     },
     "types": ["node", "vitest/globals"]
   },
@@ -32,5 +36,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next/dev/types/validator.ts"]
+  "exclude": ["node_modules", ".next/dev/types/validator.ts"],
+  "$schema": "https://raw.githubusercontent.com/Effect-TS/tsgo/refs/heads/main/schema.json"
 }

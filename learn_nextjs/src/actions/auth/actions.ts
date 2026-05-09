@@ -8,30 +8,41 @@ import { login, logout, signup } from '@/app/api/server-endpoints'
 import { TokenV2Schema, UserCreateSchema } from '@/common/schemas/api/resources'
 import type { AuthActionState } from '@/types/auth/types'
 
-const processAuthFormData = (formData: FormData) => {
+const baseAuthAction = async (formData: FormData) => {
   const email = formData.get('email')
   const password = formData.get('password')
   const rawRedirect = formData.get('redirectPath')
   const redirectPath = getSafeNextPath(
     typeof rawRedirect === 'string' ? rawRedirect : undefined
   )
-  return { data: { email, password }, redirectPath }
+  const data = { email, password }
+
+  const parsed = UserCreateSchema.safeParse(data)
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? 'Invalid input'
+    }
+  }
+
+  return { success: true, parsed: parsed.data, redirectPath }
 }
 
 export const loginAction = async (
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> => {
-  const { data, redirectPath } = processAuthFormData(formData)
+  const baseResult = await baseAuthAction(formData)
 
-  const parsed = UserCreateSchema.safeParse(data)
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+  if (!baseResult.success || !baseResult.parsed || !baseResult.redirectPath) {
+    return { error: baseResult.error ?? `Failed to process auth data` }
   }
 
   const body = new URLSearchParams()
-  body.set('username', parsed.data.email)
-  body.set('password', parsed.data.password)
+
+  const { email, password } = baseResult.parsed
+  body.set('username', email)
+  body.set('password', password)
 
   const response = await login(body)
   if (!response.data || response.error) {
@@ -68,25 +79,20 @@ export const loginAction = async (
     secure: isProduction
   })
 
-  redirect(redirectPath)
+  redirect(baseResult.redirectPath)
 }
 
 export const registerAction = async (
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> => {
-  const { data, redirectPath } = processAuthFormData(formData)
+  const baseResult = await baseAuthAction(formData)
 
-  const parsed = UserCreateSchema.safeParse(data)
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+  if (!baseResult.success || !baseResult.parsed || !baseResult.redirectPath) {
+    return { error: baseResult.error ?? `Failed to process auth data` }
   }
 
-  const parsedData = {
-    email: parsed.data.email,
-    password: parsed.data.password
-  }
-  const response = await signup(parsedData)
+  const response = await signup(baseResult.parsed)
 
   if (!response.data || response.error) {
     return {
@@ -94,7 +100,7 @@ export const registerAction = async (
     }
   }
 
-  redirect(redirectPath)
+  redirect(baseResult.redirectPath)
 }
 
 export const logoutAction = async () => {

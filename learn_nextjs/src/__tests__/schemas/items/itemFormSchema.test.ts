@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { itemFormSchema } from '@/schemas/items/forms'
+import { itemCreateFormSchema } from '@/schemas/items/forms'
 
 // Helper — simulates FormData entries converted to a plain object
-const parse = (data: Record<string, unknown>) => itemFormSchema.safeParse(data)
+const parse = (data: Record<string, unknown>) =>
+  itemCreateFormSchema.safeParse(data)
 
 const VALID_INPUT = {
   name: 'Running Shoes',

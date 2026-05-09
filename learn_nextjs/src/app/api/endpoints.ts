@@ -24,20 +24,40 @@ export const getItem = async (id: string) => {
   return api.get<Item>({ endpoint: ITEMS_PATH, pathParam: id })
 }
 
-export const createItem = async (item: CreateItemRequest) => {
-  return api.post<Item>({ endpoint: ITEMS_PATH }, item)
+export const createItem = async (
+  item: CreateItemRequest,
+  accessToken: string
+) => {
+  return api.post<Item>({ endpoint: ITEMS_PATH }, item, {
+    auth: { accessToken }
+  })
 }
 
-export const updateItem = async (id: string, item: CreateItemRequest) => {
-  return api.put<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item)
+export const updateItem = async (
+  id: string,
+  item: CreateItemRequest,
+  accessToken: string
+) => {
+  return api.put<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item, {
+    auth: { accessToken }
+  })
 }
 
-export const patchItem = async (id: string, item: CreateItemRequest) => {
-  return api.patch<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item)
+export const patchItem = async (
+  id: string,
+  item: CreateItemRequest,
+  accessToken: string
+) => {
+  return api.patch<Item>({ endpoint: ITEMS_PATH, pathParam: id }, item, {
+    auth: { accessToken }
+  })
 }
 
-export const deleteItem = async (id: string) => {
-  return api.delete({ endpoint: ITEMS_PATH, pathParam: id })
+export const deleteItem = async (id: string, accessToken: string) => {
+  return api.delete(
+    { endpoint: ITEMS_PATH, pathParam: id },
+    { auth: { accessToken } }
+  )
 }
 
 export const getItemImage = async (filename: string) => {
@@ -137,41 +157,39 @@ export const deleteUser = async (id: string) => {
 
 // ==================  AUTH  ==================
 const AUTH_PATH = '/auth'
-
-// ==================   (Versioned)   ==================
-export const register = async (
-  email: string,
-  password: string,
-  apiVersion?: ApiVersion
-) => {
+export const register = async (email: string, password: string) => {
   return api.post<User>(
-    { endpoint: `${AUTH_PATH}/register`, apiVersion },
+    { endpoint: `${AUTH_PATH}/register` },
     { email, password }
   )
 }
 
-export const login = async (
-  email: string,
-  password: string,
-  apiVersion?: ApiVersion
-) => {
-  const body = new URLSearchParams({ username: email, password })
-  return api.post<ApiProxyLoginResponse>(
-    { endpoint: `${AUTH_PATH}/token`, apiVersion },
-    body
+export const refreshAccessToken = async (csrfToken: string) => {
+  return api.post<Token>(
+    { endpoint: `${AUTH_PATH}/refresh`, credentials: 'include' },
+    {},
+    { auth: { csrfToken } }
   )
 }
 
-export const refreshToken = async (apiVersion?: ApiVersion) => {
-  return api.post<Token>(
-    { endpoint: `${AUTH_PATH}/refresh`, apiVersion, credentials: 'include' },
+export const logout = async () => {
+  return api.post<ApiProxyLogoutResponse>(
+    { endpoint: `${AUTH_PATH}/logout` },
     {}
   )
 }
 
-export const logout = async (apiVersion?: ApiVersion) => {
-  return api.post<ApiProxyLogoutResponse>(
-    { endpoint: `${AUTH_PATH}/logout`, apiVersion },
+// ==================   (Versioned)   ==================
+
+export const login = async (
+  email: string,
+  password: string,
+  apiVersion: ApiVersion
+) => {
+  const body = new URLSearchParams({ username: email, password })
+  return api.post<ApiProxyLoginResponse>(
+    { endpoint: `${AUTH_PATH}/token`, apiVersion },
+    body,
     {}
   )
 }

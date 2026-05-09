@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import {
-  type FormEvent,
+  type SubmitEvent,
   startTransition,
   useActionState,
   useState
@@ -33,7 +33,7 @@ export const AuthForm = ({
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFieldErrors({})
 
