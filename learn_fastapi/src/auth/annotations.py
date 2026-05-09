@@ -16,5 +16,4 @@ revoked = Annotated[
 ]
 
 # Annotations for routes
-
 X_CSRF_TOKEN = Annotated[str, Header(alias="X-CSRF-Token")]

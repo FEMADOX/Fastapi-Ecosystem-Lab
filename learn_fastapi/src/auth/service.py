@@ -142,30 +142,25 @@ class AuthService:
 
     async def refresh_token(
         self,
-        user: User,
         request: Request,
-        response: Response,
         x_csrf_token: str,
     ) -> Token:
-        """Rotate refresh token and issue a new access token.
+        """Rotate refresh a new access token.
 
         Args:
-            user: The current authenticated user.
             request: Request used to read cookies.
-            response: Response used to write rotated cookies.
             x_csrf_token: CSRF token provided in the request header.
 
         Returns:
             A new token response.
 
         Raises:
+            invalid_refresh_token_exception: If the refresh token is invalid.
             invalid_refresh_or_csrf_token_exception: If CSRF/cookie validation fails.
-            invalid_refresh_token_exception: If the refresh token is invalid or expired.
 
         """
         refresh_token_raw = request.cookies.get("refresh_token")
         csrf_token = request.cookies.get("csrf_token")
-        user_id = user.id
 
         if (
             not refresh_token_raw
@@ -175,32 +170,16 @@ class AuthService:
         ):
             raise invalid_refresh_or_csrf_token_exception()
 
-        user_refresh_token = await self.repository.get_refresh_token(user_id)
-
-        if not user_refresh_token or not verify_refresh_token(
-            refresh_token_raw, user_refresh_token.token_hash
-        ):
+        user = await self.repository.get_user_from_refresh_token(refresh_token_raw)
+        if not user:
             raise invalid_refresh_token_exception()
 
-        await self.repository.revoke_refresh_token(user_id)
-
-        access_token = create_access_token(TokenData(sub=str(user_id)))
-        new_refresh_token_raw = generate_refresh_token()
-        new_refresh_token_hashed = hash_refresh_token(new_refresh_token_raw)
-        new_csrf_token = secrets.token_urlsafe(24)
-
-        await self.repository.create_refresh_token(
-            user_id=user_id,
-            token_hash=new_refresh_token_hashed,
-            expires_at=get_refresh_token_expiration(),
-        )
-
-        set_auth_cookies(response, new_refresh_token_raw, new_csrf_token)
+        access_token = create_access_token(TokenData(sub=str(user.id)))
 
         return Token(
             access_token=access_token,
             expires_in=int(auth_config.access_token_expire.total_seconds()),
-            csrf_token=new_csrf_token,
+            csrf_token=csrf_token,
         )
 
     async def logout(

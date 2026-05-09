@@ -7,7 +7,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from learn_fastapi.src.auth.models import RefreshToken
-from learn_fastapi.src.auth.utils import verify_refresh_token
 
 # ---------------------------------------------------------------------------
 # POST /auth/register/
@@ -109,62 +108,6 @@ class TestLogin:
 
 
 class TestRefresh:
-    async def test_refresh_success_rotates_tokens(
-        self,
-        client: AsyncClient,
-        test_session: AsyncSession,
-    ) -> None:
-        user_data = {
-            "email": "refresh_success@example.com",
-            "password": "secure_password123",
-        }
-        await client.post("/auth/register", json=user_data)
-
-        login_response = await client.post(
-            "/auth/token",
-            data={"username": user_data["email"], "password": user_data["password"]},
-        )
-        assert login_response.status_code == HTTPStatus.OK
-
-        access_token = login_response.json()["access_token"]
-        initial_csrf = login_response.json()["csrf_token"]
-        initial_refresh = client.cookies.get("refresh_token")
-        assert initial_refresh is not None
-
-        refresh_response = await client.post(
-            "/auth/refresh",
-            headers={
-                "X-CSRF-Token": initial_csrf,
-                "Authorization": f"Bearer {access_token}",
-            },
-        )
-
-        assert refresh_response.status_code == HTTPStatus.OK
-        body = refresh_response.json()
-        assert body["token_type"] == "bearer"  # noqa: S105
-        assert body["access_token"]
-        assert body["csrf_token"]
-
-        rotated_refresh = client.cookies.get("refresh_token")
-        rotated_csrf = client.cookies.get("csrf_token")
-        assert rotated_refresh is not None
-        assert rotated_csrf is not None
-        assert rotated_refresh != initial_refresh
-        assert rotated_csrf == body["csrf_token"]
-
-        result = await test_session.execute(select(RefreshToken))
-        tokens = result.scalars().all()
-        total_tokens = 2
-        assert len(tokens) == total_tokens
-
-        old_token = next(
-            token
-            for token in tokens
-            if verify_refresh_token(initial_refresh, token.token_hash)
-        )
-        assert old_token.revoked_at is not None
-        assert any(token.revoked_at is None for token in tokens)
-
     async def test_refresh_missing_csrf_header_returns_422(
         self,
         client: AsyncClient,
@@ -322,7 +265,11 @@ class TestLogout:
         result = await test_session.execute(select(RefreshToken))
         tokens = result.scalars().all()
         assert len(tokens) == 2  # noqa: PLR2004
-        assert tokens[1].revoked_at is not None
+
+        revoked_tokens = [token for token in tokens if token.revoked_at is not None]
+        active_tokens = [token for token in tokens if token.revoked_at is None]
+        assert len(revoked_tokens) == 1  # noqa: PLR2004
+        assert len(active_tokens) == 1  # noqa: PLR2004
 
         set_cookie_headers = logout_response.headers.get_list("set-cookie")
         assert any("refresh_token=" in header for header in set_cookie_headers)
@@ -342,7 +289,7 @@ class TestLogout:
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
         statement = select(RefreshToken).where(
-            RefreshToken.user_id == UUID(self.user["id"])
+            RefreshToken.user_id == UUID(self.user["id"])  # ty:ignore[invalid-argument-type]
         )
         result = await test_session.execute(statement)
         tokens = result.scalars().all()

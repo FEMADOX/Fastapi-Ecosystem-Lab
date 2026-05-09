@@ -165,7 +165,7 @@ async def admin_token(auth_client: AsyncClient, test_session: AsyncSession) -> s
         password="admin_password_123",  # noqa: S106
     )
 
-    result = await test_session.execute(select(User).where(User.email == email))
+    result = await test_session.execute(select(User).where(User.email == email))  # ty:ignore[invalid-argument-type]
     admin_user = result.scalar_one()
     admin_user.is_superuser = True
     await test_session.commit()
