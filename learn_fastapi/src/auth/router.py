@@ -86,25 +86,21 @@ async def login(  # noqa: F811
 @router.post("/refresh")
 async def refresh_token(
     service: AuthServiceDep,
-    current_user: CurrentUserDep,
     request: Request,
-    response: Response,
     x_csrf_token: X_CSRF_TOKEN,
 ) -> Token:
     """Refresh the JWT access token using a valid refresh token.
 
     Args:
         service: Injected AuthService dependency.
-        current_user: The current authenticated user.
         request: The FastAPI Request object to read cookies from.
-        response: The FastAPI Response object to set new cookies on.
         x_csrf_token: The CSRF token from the X-CSRF-Token header.
 
     Returns:
         Token: A new access token and CSRF token if the refresh is successful.
 
     """
-    return await service.refresh_token(current_user, request, response, x_csrf_token)
+    return await service.refresh_token(request, x_csrf_token)
 
 
 @api_version(1)

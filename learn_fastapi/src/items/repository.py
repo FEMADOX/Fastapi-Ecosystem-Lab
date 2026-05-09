@@ -1,28 +1,17 @@
-from typing import TYPE_CHECKING
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, desc, select, update
 
-from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.users.models import User
+from learn_fastapi.src.utils.repository import BaseRepository, bool_to_column
 
 from .models import Item
 from .schema import ItemPatchSchema, ItemUpdateSchema
 
-if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio.session import AsyncSession
 
-
-class ItemRepository:
+class ItemRepository(BaseRepository):
     """Repository class for Item ORM operations."""
-
-    def __init__(self, session: AsyncSessionDep) -> None:
-        """Initialize the repository with an async database session."""
-        self.session: AsyncSession = session
-
-    async def commit(self) -> None:
-        """Commit the current unit of work."""
-        await self.session.commit()
 
     async def get_all_items(self) -> list[Item]:
         """Fetch every Item row from the database.
@@ -44,7 +33,9 @@ class ItemRepository:
             The matching Item, or None if not found.
 
         """
-        result = await self.session.execute(select(Item).where(Item.id == id_param))
+        result = await self.session.execute(
+            select(Item).where(bool_to_column(Item.id == id_param))
+        )
         return result.scalar_one_or_none()
 
     async def get_item_by_name(self, name: str) -> Item | None:
@@ -86,7 +77,7 @@ class ItemRepository:
             The matching Item, or None if not found or not owned by the user.
 
         """
-        condition = and_(Item.id == item_id, Item.user_id == owner.id)
+        condition = and_(bool_to_column(Item.id == item_id), Item.user_id == owner.id)
         result = await self.session.execute(select(Item).where(condition))
         return result.scalar_one_or_none()
 
@@ -111,7 +102,7 @@ class ItemRepository:
 
     def _superuser_management(
         self, item_id: UUID, owner: User | None
-    ) -> tuple[and_, set[str] | None]:
+    ) -> tuple[Any, set[str] | None]:
         """Check if the user has permission to modify the item.
 
         Args:
@@ -119,12 +110,16 @@ class ItemRepository:
             owner: The user attempting the operation, or None if unauthenticated.
 
         Returns:
-            True if the user has permission to modify the item, False otherwise.
+            A tuple of (where_condition, exclude_args) where where_condition is a
+            SQLAlchemy clause expression and exclude_args is a set of column names
+            to exclude from updates, or None if no exclusions.
 
         """
         exclude_args = None
         if owner:
-            condition = and_(Item.id == item_id, Item.user_id == owner.id)
+            condition = and_(
+                bool_to_column(Item.id == item_id), Item.user_id == owner.id
+            )
             exclude_args = {"user_id"}
         else:
             condition = Item.id == item_id
@@ -153,6 +148,7 @@ class ItemRepository:
         condition, exclude_args = self._superuser_management(item_id, owner)
 
         result = await self.session.execute(select(Item).where(condition))
+
         item = result.scalar_one_or_none()
         if item is None:
             return None
@@ -188,6 +184,7 @@ class ItemRepository:
         condition, exclude_args = self._superuser_management(item_id, owner)
 
         result = await self.session.execute(select(Item).where(condition))
+
         item = result.scalar_one_or_none()
         if item is None:
             return None
@@ -212,13 +209,18 @@ class ItemRepository:
             The updated Item.
 
         """
-        result = await self.session.execute(select(Item).where(Item.id == item_id))
+        result = await self.session.execute(
+            select(Item).where(bool_to_column(Item.id == item_id))
+        )
+
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item).where(Item.id == item_id).values(image_url=image_url)
+            update(Item)
+            .where(bool_to_column(Item.id == item_id))
+            .values(image_url=image_url)
         )
         await self.commit()
         await self.session.refresh(item)

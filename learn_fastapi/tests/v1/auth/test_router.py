@@ -342,7 +342,7 @@ class TestLogout:
         assert logout_response.status_code == HTTPStatus.NO_CONTENT
 
         statement = select(RefreshToken).where(
-            RefreshToken.user_id == UUID(self.user["id"])
+            RefreshToken.user_id == UUID(self.user["id"])  # ty:ignore[invalid-argument-type]
         )
         result = await test_session.execute(statement)
         tokens = result.scalars().all()

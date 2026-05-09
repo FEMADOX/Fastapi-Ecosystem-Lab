@@ -1,23 +1,14 @@
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.utils.repository import BaseRepository, bool_to_column
 
 from .models import User
 
 
-class UsersRepository:
+class UsersRepository(BaseRepository):
     """Repository class for user account ORM operations."""
-
-    def __init__(self, session: AsyncSessionDep) -> None:
-        """Initialize the repository with an async database session."""
-        self.session: AsyncSession = session
-
-    async def commit(self) -> None:
-        """Commit the current unit of work."""
-        await self.session.commit()
 
     async def get_user_by_id(self, user_id: UUID) -> User | None:
         """Fetch a user by primary key.
@@ -29,7 +20,9 @@ class UsersRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.id == user_id))
+        result = await self.session.execute(
+            select(User).where(bool_to_column(User.id == user_id))
+        )
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: str) -> User | None:
@@ -42,7 +35,9 @@ class UsersRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.email == email))
+        result = await self.session.execute(
+            select(User).where(bool_to_column(User.email == email))
+        )
         return result.scalar_one_or_none()
 
     async def update_user(self, user: User) -> User:

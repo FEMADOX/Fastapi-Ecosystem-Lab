@@ -16,7 +16,7 @@ ACCESS_TOKEN_EXPIRE = auth_config.access_token_expire
 
 # Password hasher instance
 ph = PasswordHasher()
-AUTH_COOKIE_PATH = "/v1/auth"
+AUTH_COOKIE_PATH = "/latest/auth"
 
 
 def hash_password(password: str) -> str:

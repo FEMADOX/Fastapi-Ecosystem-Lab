@@ -1,25 +1,17 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import Select, select, update
 
-from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.auth.utils import verify_refresh_token
 from learn_fastapi.src.users.models import User
+from learn_fastapi.src.utils.repository import BaseRepository, bool_to_column
 
 from .models import RefreshToken
 
 
-class AuthRepository:
+class AuthRepository(BaseRepository):
     """Repository class for auth-related ORM operations."""
-
-    def __init__(self, session: AsyncSessionDep) -> None:
-        """Initialize the repository with an async database session."""
-        self.session: AsyncSession = session
-
-    async def commit(self) -> None:
-        """Commit the current unit of work."""
-        await self.session.commit()
 
     async def get_user_by_id(self, user_id: UUID) -> User | None:
         """Fetch a user by primary key.
@@ -31,7 +23,9 @@ class AuthRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.id == user_id))
+        result = await self.session.execute(
+            select(User).where(bool_to_column(User.id == user_id))
+        )
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: str) -> User | None:
@@ -44,8 +38,10 @@ class AuthRepository:
             The matching user or ``None`` if no user exists.
 
         """
-        result = await self.session.execute(select(User).where(User.email == email))
-        return result.scalar_one_or_none()
+        result = await self.session.scalars(
+            select(User).where(bool_to_column(User.email == email))
+        )
+        return result.one_or_none()
 
     async def create_user(self, email: str, password_hash: str) -> User:
         """Persist a new user.
@@ -78,15 +74,15 @@ class AuthRepository:
 
         """
         refresh_tokens = RefreshToken.__table__.c
-        statement = (
+        statement: Select[tuple[RefreshToken]] = (
             select(RefreshToken)
             .where(refresh_tokens.user_id == user_id)
             .where(refresh_tokens.revoked_at.is_(None))
             .where(refresh_tokens.expires_at > datetime.now(tz=UTC))
             .order_by(refresh_tokens.created_at.desc())
         )
-        result = await self.session.execute(statement)
-        tokens = result.scalars().all()
+        result = await self.session.scalars(statement)
+        tokens = result.all()
 
         if not tokens:
             return None
@@ -145,3 +141,28 @@ class AuthRepository:
             .values(revoked_at=datetime.now(tz=UTC))
         )
         await self.commit()
+
+    async def get_user_from_refresh_token(self, refresh_token: str) -> User | None:
+        """Get the user associated with a valid refresh token.
+
+        Args:
+            refresh_token: The raw refresh token string to validate and search for.
+
+        Returns:
+            The associated user if the token is valid, or None if invalid.
+
+        """
+        # Argon2 hashes are salted, so hashing again and comparing with SQL equality
+        # cannot match the stored value; fetch active tokens and verify per row.
+        statement: Select[tuple[RefreshToken, User]] = (
+            select(RefreshToken, User)
+            .join(User, bool_to_column(RefreshToken.user_id == User.id))
+            .where(RefreshToken.__table__.c.revoked_at.is_(None))
+            .where(bool_to_column(RefreshToken.expires_at > datetime.now(tz=UTC)))
+        )
+        result = await self.session.execute(statement)
+        for token_record, user in result.all():
+            if verify_refresh_token(refresh_token, token_record.token_hash):
+                return user
+
+        return None
