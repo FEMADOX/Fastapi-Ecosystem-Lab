@@ -17,6 +17,15 @@ export const ItemSchema = z.object({
   image_url: z.string().optional()
 })
 
+export const ItemPatchSchema = z.object({
+  user_id: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  price: z.number().nonnegative().gte(0).optional(),
+  tax: z.number().nonnegative().gte(0).optional(),
+  image_url: z.string().optional()
+})
+
 export const UserSchema = z.object({
   id: z.string(),
   email: z.email({

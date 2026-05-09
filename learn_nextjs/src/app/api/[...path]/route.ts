@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers'
 import { type NextRequest, NextResponse } from 'next/server'
-
 import { API_BASE_URL as BACKEND_URL } from '@/common/const'
-import { TokenV2Schema } from '@/common/schemas/api/resources'
+import { TokenSchema } from '@/common/schemas/api/resources'
 import type { PromisePathProps } from '@/types/api/types'
+import { refreshAccessToken } from '../server-endpoints'
 
 const handler = async (
   request: NextRequest,
@@ -14,6 +14,52 @@ const handler = async (
 
   const cookieStore = await cookies()
   const accessToken = cookieStore.get('access_token')?.value
+
+  const isRefresh = apiPath === 'auth/refresh'
+
+  if (isRefresh) {
+    const csrfToken = cookieStore.get('csrf_token')?.value
+    const refreshToken = cookieStore.get('refresh_token')?.value
+
+    if (!csrfToken || !refreshToken)
+      return NextResponse.redirect(
+        new URL('/login?reason=user_not_authenticated', request.url)
+      )
+
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+      Cookie: `csrf_token=${csrfToken};refresh_token=${refreshToken}`,
+      'X-CSRF-Token': csrfToken
+    })
+
+    const rawData = await refreshAccessToken(headers)
+    if (!rawData.data && rawData.error) {
+      return NextResponse.redirect(
+        new URL('/login?reason=session_expired', request.url)
+      )
+    }
+
+    const { data, error, success } = TokenSchema.safeParse(rawData)
+    if (!success || error) {
+      return NextResponse.redirect(
+        new URL('/login?reason=refresh_failed', request.url)
+      )
+    }
+
+    const response = NextResponse.json({ refreshed: true })
+
+    const { access_token: accessToken, expires_in: accessExpiresIn } = data
+    response.cookies.set('access_token', accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      expires: new Date(Date.now() + accessExpiresIn * 1000),
+      secure: process.env.ENVIRONMENT === 'production'
+    })
+
+    return response
+  }
+
   const refreshToken = cookieStore.get('refresh_token')?.value
   const forwardHeaders = new Headers()
 
@@ -21,11 +67,12 @@ const handler = async (
     'Content-Type',
     request.headers.get('Content-Type') ?? 'application/json'
   )
+
   if (accessToken) {
     forwardHeaders.set('Authorization', `Bearer ${accessToken}`)
   }
-  const isRefreshEndpoint = apiPath === 'auth/refresh'
-  if (refreshToken && isRefreshEndpoint) {
+
+  if (refreshToken && isRefresh) {
     forwardHeaders.set('X-Refresh-Token', refreshToken)
   }
 
@@ -43,60 +90,6 @@ const handler = async (
           backendRes.headers.get('Content-Type') ?? 'application/json'
       }
     })
-  }
-
-  const isLogin = apiPath === 'auth/token'
-  const isLogout = apiPath === 'auth/logout'
-
-  if (isLogin) {
-    const rawData: unknown = await backendRes.json()
-    const { data, error, success } = TokenV2Schema.safeParse(rawData)
-    if (!success || error) {
-      return NextResponse.json(
-        {
-          detail: `Invalid login response: ${error?.message ?? 'Unknown error'}`
-        },
-        { status: 502 }
-      )
-    }
-
-    const response = NextResponse.json({ loggedIn: true })
-
-    const {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      access_expires_in: accessExpiresIn,
-      refresh_expires_in: refreshExpiresIn
-    } = data
-    response.cookies.set('access_token', accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      expires: new Date(Date.now() + accessExpiresIn * 1000),
-      secure: process.env.ENVIRONMENT === 'production'
-    })
-    response.cookies.set('refresh_token', refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      expires: new Date(Date.now() + refreshExpiresIn * 1000),
-      secure: process.env.ENVIRONMENT === 'production'
-    })
-
-    return response
-  }
-  if (isLogout) {
-    if (backendRes.status !== 204) {
-      return NextResponse.json(
-        { detail: 'Invalid logout response' },
-        { status: 502 }
-      )
-    }
-
-    const response = NextResponse.json({ loggedOut: true })
-    response.cookies.delete('access_token')
-    response.cookies.delete('refresh_token')
-    return response
   }
 
   const body = await backendRes.text()

@@ -4,9 +4,24 @@
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
 import type {
   APIBaseProps,
+  ApiCallInit,
   ApiProxyResponse,
+  BuildHeadersOptions,
   RequestFactoryOptions
 } from '@/types/api/types'
+
+const buildHeaders = (options: BuildHeadersOptions) => {
+  const { auth, hasBody, isSerializedBody } = options
+  const headers = new Headers(options.headers)
+
+  if (hasBody && !isSerializedBody && !headers.has('Content-Type'))
+    headers.set('Content-Type', 'application/json')
+  if (auth?.accessToken)
+    headers.set('Authorization', `Bearer ${auth.accessToken}`)
+  if (auth?.csrfToken) headers.set('X-CSRF-Token', auth.csrfToken)
+
+  return headers
+}
 
 const getProxyBase = (): string => {
   // En el servidor (Server Components), fetch necesita URL absoluta
@@ -37,24 +52,23 @@ const apiRequest = async <T>(
     method = 'GET',
     pathParam = null,
     body,
-    accessToken = null,
     headers = {},
     queryParams,
     apiVersion = '/latest',
-    credentials = 'include'
+    credentials = 'include',
+    auth
   } = options
 
   const hasBody = body !== undefined
   const isSerializedBody =
     body instanceof URLSearchParams || body instanceof FormData
 
-  const requestHeaders: HeadersInit = {
-    ...(hasBody && !isSerializedBody
-      ? { 'Content-Type': 'application/json' }
-      : {}),
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    ...headers
-  }
+  const requestHeaders = buildHeaders({
+    auth,
+    hasBody,
+    isSerializedBody,
+    headers
+  })
   const baseUrl = buildUrl({ endpoint, pathParam, apiVersion }, queryParams)
   const response = await fetch(baseUrl, {
     method,
@@ -89,56 +103,78 @@ const apiRequest = async <T>(
 }
 
 export const api = {
-  get: <T>(options: APIBaseProps, queryParams?: Record<string, string>) => {
-    const { endpoint, pathParam, accessToken, apiVersion } = options
+  get: <T>(options: APIBaseProps, init?: ApiCallInit) => {
+    const { endpoint, pathParam, apiVersion } = options
+    const { auth, credentials, headers, queryParams } = init ?? {}
     return apiRequest<T>(endpoint, {
       method: 'GET',
       pathParam,
-      accessToken,
+      headers,
+      auth,
+      credentials,
       queryParams,
       apiVersion
     })
   },
   post: <T, B = unknown>(
-    options: APIBaseProps & { credentials?: RequestCredentials },
-    body?: B
+    options: APIBaseProps & {
+      credentials?: RequestCredentials
+    },
+    body?: B,
+    init?: ApiCallInit
   ) => {
-    const { endpoint, accessToken, apiVersion, credentials } = options
+    const { endpoint, apiVersion } = options
+    const { auth, credentials, headers, queryParams } = init ?? {}
     return apiRequest<T>(endpoint, {
       method: 'POST',
       body,
-      accessToken,
       apiVersion,
-      credentials
+      headers,
+      credentials,
+      auth,
+      queryParams
     })
   },
-  put: <T, B = unknown>(options: APIBaseProps, body: B) => {
-    const { endpoint, pathParam, accessToken, apiVersion } = options
+  put: <T, B = unknown>(options: APIBaseProps, body?: B, init?: ApiCallInit) => {
+    const { endpoint, apiVersion } = options
+    const { auth, credentials, headers, queryParams } = init ?? {}
     return apiRequest<T>(endpoint, {
       method: 'PUT',
       body,
-      pathParam,
-      accessToken,
-      apiVersion
+      apiVersion,
+      headers,
+      credentials,
+      auth,
+      queryParams
     })
   },
-  patch: <T, B = unknown>(options: APIBaseProps, body: B) => {
-    const { endpoint, pathParam, accessToken, apiVersion } = options
+  patch: <T, B = unknown>(
+    options: APIBaseProps,
+    body?: B,
+    init?: ApiCallInit
+  ) => {
+    const { endpoint, apiVersion } = options
+    const { auth, credentials, headers, queryParams } = init ?? {}
     return apiRequest<T>(endpoint, {
-      method: 'PATCH',
+      method: 'PUT',
       body,
-      pathParam,
-      accessToken,
-      apiVersion
+      apiVersion,
+      headers,
+      credentials,
+      auth,
+      queryParams
     })
   },
-  delete: <T>(options: APIBaseProps) => {
-    const { endpoint, pathParam, accessToken, apiVersion } = options
+  delete: <T>(options: APIBaseProps, init?: ApiCallInit) => {
+    const { endpoint, apiVersion } = options
+    const { auth, credentials, headers, queryParams } = init ?? {}
     return apiRequest<T>(endpoint, {
       method: 'DELETE',
-      pathParam,
-      accessToken,
-      apiVersion
+      apiVersion,
+      headers,
+      credentials,
+      auth,
+      queryParams
     })
   }
 }

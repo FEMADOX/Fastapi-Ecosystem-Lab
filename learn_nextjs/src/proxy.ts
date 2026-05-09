@@ -1,9 +1,9 @@
 import { jwtVerify } from 'jose'
 import { type NextRequest, NextResponse } from 'next/server'
-import { refreshToken } from './app/api/server-endpoints'
+import { refreshAccessToken } from './app/api/server-endpoints'
 import { SECRET_KEY } from './common/const'
 
-const PROTECTED = ['/items/new']
+const PROTECTED = ['/items/new', '/me']
 const AUTH_ONLY = ['/login', '/signup']
 const JWT_SECRET = new TextEncoder().encode(SECRET_KEY)
 
@@ -12,13 +12,13 @@ export const proxy = async (request: NextRequest) => {
   const redirectTo = (redirectPath: string) =>
     NextResponse.redirect(new URL(`${redirectPath}`, request.url))
 
-  const token = request.cookies.get('access_token')?.value
+  const accessToken = request.cookies.get('access_token')?.value
 
   const isProtected = PROTECTED.some((route) => pathname.startsWith(route))
   const isAuthOnly = AUTH_ONLY.some((route) => pathname.startsWith(route))
 
   if (isProtected) {
-    if (!token) {
+    if (!accessToken) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set(
         'next',
@@ -28,7 +28,7 @@ export const proxy = async (request: NextRequest) => {
       if (!request.cookies.has('refresh_token'))
         return NextResponse.redirect(loginUrl)
 
-      const refreshResponse = await refreshToken()
+      const refreshResponse = await refreshAccessToken()
       if (refreshResponse.error || !refreshResponse.data) {
         console.error(
           `Failed to refresh token in proxy: ${refreshResponse.error}`
@@ -59,7 +59,7 @@ export const proxy = async (request: NextRequest) => {
     }
 
     try {
-      await jwtVerify(token, JWT_SECRET, {
+      await jwtVerify(accessToken, JWT_SECRET, {
         algorithms: ['HS256']
       })
     } catch (error) {
@@ -82,7 +82,7 @@ export const proxy = async (request: NextRequest) => {
     }
   }
 
-  if (isAuthOnly && token) return redirectTo('/')
+  if (isAuthOnly && accessToken) return redirectTo('/')
 
   return NextResponse.next()
 }

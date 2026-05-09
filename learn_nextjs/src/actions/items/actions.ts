@@ -1,65 +1,146 @@
 'use server'
 
-import { revalidateTag } from 'next/cache'
+import { revalidateTag, updateTag } from 'next/cache'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
-import { createItem, getMe } from '@/app/api/server-endpoints'
-import { ItemSchema, UserSchema } from '@/common/schemas/api/resources'
-import { itemFormSchema } from '@/schemas/items/forms'
+import { createItem, getMe, updateItem } from '@/app/api/server-endpoints'
+import type { CreateItemRequest, PatchItemRequest } from '@/app/api/types'
+import {
+  ItemPatchSchema,
+  ItemSchema,
+  UserSchema
+} from '@/common/schemas/api/resources'
+import {
+  itemCreateFormSchema,
+  itemPatchFormSchema
+} from '@/schemas/items/forms'
 import type { ItemActionState } from '@/types/items/types'
+import type { ItemBaseResult, itemFormSchemas } from '../types'
 
-export const createItemAction = async (
-  _prevState: ItemActionState,
-  formData: FormData
-): Promise<ItemActionState> => {
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get('access_token')?.value
+const itemBaseAction = async <T extends itemFormSchemas>(
+  formData: FormData,
+  itemSchema: T
+): Promise<ItemBaseResult<T>> => {
+  const accessToken = (await cookies()).get('access_token')?.value
   if (!accessToken) {
-    return { error: 'Authentication required. Please log in.' }
+    return { success: false, error: 'Authentication required. Please log in.' }
   }
 
   const { data: meData, error: meError } = await getMe(accessToken)
   if (meError || !meData) {
     return {
+      success: false,
       error: `Failed to verify authentication: ${meError ?? 'Unknown error'}.`
     }
   }
 
   const userResult = UserSchema.safeParse(meData)
   if (!userResult.success) {
-    return { error: 'Failed to verify user identity.' }
+    return { success: false, error: 'Failed to verify user identity.' }
   }
 
   const userId = userResult.data.id
   const rawFormData = Object.fromEntries(formData.entries())
-  const parseResult = itemFormSchema.safeParse(rawFormData)
-
+  const parseResult = itemSchema.safeParse(rawFormData)
   if (!parseResult.success) {
     const flatErrors = z.flattenError(parseResult.error).fieldErrors
     const firstError = Object.values(flatErrors).flat()[0]
-    return { error: firstError ?? 'Invalid form data.' }
+    return { success: false, error: firstError ?? 'Invalid form data.' }
   }
 
-  const itemData = { user_id: userId, ...parseResult.data }
-
-  const { data: newItem, error } = await createItem(itemData, accessToken)
-  if (error || !newItem) {
+  if (itemSchema === itemCreateFormSchema) {
     return {
-      error: `Failed to create item: ${error ?? 'Unknown error'}.`
+      success: true,
+      userId,
+      itemData: {
+        user_id: userId,
+        ...parseResult.data
+      } as CreateItemRequest,
+      accessToken
+    } as ItemBaseResult<T>
+  }
+
+  return {
+    success: true,
+    userId,
+    itemData: {
+      user_id: userId,
+      ...parseResult.data
+    } as PatchItemRequest,
+    accessToken
+  } as ItemBaseResult<T>
+}
+
+export const createItemAction = async (
+  _prevState: ItemActionState,
+  formData: FormData
+): Promise<ItemActionState> => {
+  const baseResult = await itemBaseAction(formData, itemCreateFormSchema)
+
+  if (!baseResult.success) {
+    return { error: baseResult.error ?? 'Failed to process item data.' }
+  }
+
+  const { data: newItem, error: createError } = await createItem(
+    baseResult.itemData,
+    baseResult.accessToken
+  )
+  if (createError || !newItem) {
+    return {
+      error: `Failed to create item: ${createError ?? 'Unknown error'}.`
     }
   }
 
-  const itemResult = ItemSchema.safeParse(newItem)
+  const { success, error } = ItemSchema.safeParse(newItem)
   revalidateTag('items', 'max')
 
-  if (itemResult.success) {
-    redirect(`/items/${itemResult.data.id}`)
+  if (!success) {
+    return {
+      error: `Item created but failed to parse item data: ${
+        JSON.stringify(error?.message) ?? 'Unknown error'
+      }.`
+    }
   }
 
-  console.error(
-    `Unexpectedly created item but failed to parse it: ${JSON.stringify(itemResult.error.message)}`
+  redirect(`/items/${newItem.id}`)
+}
+
+export const updateItemAction = async (
+  _prevState: ItemActionState,
+  formData: FormData,
+  itemId: string
+): Promise<ItemActionState> => {
+  const baseResult = await itemBaseAction(formData, itemPatchFormSchema)
+
+  if (!baseResult.success) {
+    return { error: baseResult.error ?? 'Failed to process item data.' }
+  }
+
+  const { data: updatedItem, error: updateError } = await updateItem(
+    itemId,
+    baseResult.itemData,
+    baseResult.accessToken
   )
-  redirect('/items')
+
+  if (updateError || !updatedItem) {
+    return {
+      error: `Failed to update item: ${updateError ?? 'Unknown error'}.`
+    }
+  }
+
+  const { success, error } = ItemPatchSchema.safeParse(updatedItem)
+  updateTag('items')
+  updateTag(`item-${itemId}`)
+
+  if (!success) {
+    return {
+      error: `Item updated but failed to parse updated item data: ${
+        JSON.stringify(error?.message) ?? 'Unknown error'
+      }.`
+    }
+  }
+
+  redirect(`/items/${itemId}`)
 }
