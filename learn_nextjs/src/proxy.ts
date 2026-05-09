@@ -25,10 +25,18 @@ export const proxy = async (request: NextRequest) => {
         request.nextUrl.pathname + request.nextUrl.search
       )
 
-      if (!request.cookies.has('refresh_token'))
+      const refreshToken = request.cookies.get('refresh_token')?.value
+      const csrfTokenCookies = request.cookies.get('csrf_token')?.value
+      if (!refreshToken || !csrfTokenCookies)
         return NextResponse.redirect(loginUrl)
 
-      const refreshResponse = await refreshAccessToken()
+      const headers = new Headers({
+        'Content-Type': 'application/json',
+        Cookie: `csrf_token=${csrfTokenCookies};refresh_token=${refreshToken}`,
+        'X-CSRF-Token': csrfTokenCookies
+      })
+
+      const refreshResponse = await refreshAccessToken(headers)
       if (refreshResponse.error || !refreshResponse.data) {
         console.error(
           `Failed to refresh token in proxy: ${refreshResponse.error}`
