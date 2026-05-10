@@ -14,8 +14,8 @@ import {
   updateItem
 } from '@/app/api/server-endpoints'
 import type { PatchItemRequest } from '@/app/api/types'
+import type { MeActionState } from '@/app/me/types'
 import { itemPatchFormSchema } from '@/schemas/items/forms'
-import type { MeActionState } from '@/types/me/types'
 
 const profileEmailSchema = z.object({
   email: z.email({

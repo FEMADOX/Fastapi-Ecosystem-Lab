@@ -1,6 +1,6 @@
 import type { Item, Items, User } from '@/common/types/api/resources'
 
-type MeActionState = {
+export type MeActionState = {
   error?: string
   success?: string
 } | null
