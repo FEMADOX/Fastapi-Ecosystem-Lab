@@ -3,8 +3,8 @@ import type { BACKEND_API_VERSIONS } from '@/app/api/consts'
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export type ApiProxyLoginResponse = { loggedIn: boolean }
-
 export type ApiProxyLogoutResponse = { loggedOut: boolean }
+export type ApiProxyRefreshResponse = { refreshed: boolean }
 
 export type ApiVersion = (typeof BACKEND_API_VERSIONS)[number]
 

@@ -22,9 +22,7 @@ const handler = async (
     const refreshToken = cookieStore.get('refresh_token')?.value
 
     if (!csrfToken || !refreshToken)
-      return NextResponse.redirect(
-        new URL('/login?reason=user_not_authenticated', request.url)
-      )
+      return NextResponse.json({ refreshed: false }, { status: 401 })
 
     const headers = new Headers({
       'Content-Type': 'application/json',
@@ -34,16 +32,12 @@ const handler = async (
 
     const rawData = await refreshAccessToken(headers)
     if (!rawData.data && rawData.error) {
-      return NextResponse.redirect(
-        new URL('/login?reason=session_expired', request.url)
-      )
+      return NextResponse.json({ refreshed: false }, { status: 401 })
     }
 
-    const { data, error, success } = TokenSchema.safeParse(rawData)
+    const { data, error, success } = TokenSchema.safeParse(rawData.data)
     if (!success || error) {
-      return NextResponse.redirect(
-        new URL('/login?reason=refresh_failed', request.url)
-      )
+      return NextResponse.json({ refreshed: false }, { status: 502 })
     }
 
     const response = NextResponse.json({ refreshed: true })
@@ -60,7 +54,6 @@ const handler = async (
     return response
   }
 
-  const refreshToken = cookieStore.get('refresh_token')?.value
   const forwardHeaders = new Headers()
 
   forwardHeaders.set(
@@ -70,10 +63,6 @@ const handler = async (
 
   if (accessToken) {
     forwardHeaders.set('Authorization', `Bearer ${accessToken}`)
-  }
-
-  if (refreshToken && isRefresh) {
-    forwardHeaders.set('X-Refresh-Token', refreshToken)
   }
 
   const backendRes = await fetch(`${BACKEND_URL}/${apiVersion}/${apiPath}`, {

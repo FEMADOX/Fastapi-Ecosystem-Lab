@@ -1,8 +1,6 @@
-'use client'
-
 import { MenuIcon } from 'lucide-react'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
-import { useAuth } from '@/app/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import {
@@ -16,9 +14,9 @@ import {
 } from '@/components/ui/sheet'
 import { LogoutGroup } from './LogoutGroup'
 
-export const NavBar = () => {
-  const { state } = useAuth()
-  const isLoggedIn = state.status === 'authenticated'
+export const NavBar = async () => {
+  const accessToken = (await cookies()).has('access_token')
+  const isLoggedIn = accessToken ?? false
 
   return (
     <nav className="border-b bg-white px-1 md:px-4">

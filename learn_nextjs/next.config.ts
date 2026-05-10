@@ -9,9 +9,9 @@ const nextConfig: NextConfig = {
     }
   },
   cacheComponents: true,
-  // experimental: {
-  //   turbopackFileSystemCacheForDev: false,
-  // },
+  experimental: {
+    turbopackFileSystemCacheForDev: true
+  },
   env: {
     SECRET_KEY: process.env.SECRET_KEY,
     LEARN_FASTAPI_API_URL: process.env.LEARN_FASTAPI_API_URL,
