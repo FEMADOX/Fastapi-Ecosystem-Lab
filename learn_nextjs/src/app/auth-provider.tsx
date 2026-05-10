@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useEffect, useReducer } from 'react'
+import { toast } from 'sonner'
 import { UserSchema } from '@/common/schemas/api/resources'
 import type { User } from '@/common/types/api/resources'
 import type { Children } from '@/common/types/layout'
@@ -26,29 +27,38 @@ export const AuthProvider = ({ children }: Children) => {
   )
 
   const checkAuth = useCallback(async (): Promise<AuthState> => {
-    const { data, error } = await getMe()
-
-    if (!data || error) {
-      const csrfToken = document.cookie
-        .split('; ')
-        .find((cookie) => cookie.startsWith('csrf_token='))
-      if (!csrfToken) return { status: 'unauthenticated' }
-
-      const refreshResult = await refreshAccessToken(csrfToken)
-
-      if (refreshResult.error || !refreshResult.data)
-        return { status: 'unauthenticated' }
-
-      return checkAuth()
+    const toAuthenticatedState = (rawUser: User): AuthState => {
+      const user = UserSchema.safeParse(rawUser)
+      if (!user.success) {
+        throw new Error(`Invalid user data format: ${user.error.message}`)
+      }
+      return { status: 'authenticated', user: user.data }
     }
 
-    const user = UserSchema.safeParse(data)
-    if (!user.success) {
-      console.error(`Invalid user data format: ${user.error.message}`)
+    const currentUserResult = await getMe()
+    if (currentUserResult.data && !currentUserResult.error) {
+      return toAuthenticatedState(currentUserResult.data)
+    }
+
+    const csrfToken = document.cookie
+      .split('; ')
+      .find((cookie) => cookie.startsWith('csrf_token='))
+      ?.split('=')[1]
+
+    if (!csrfToken) return { status: 'unauthenticated' }
+
+    const refreshResult = await refreshAccessToken(csrfToken)
+
+    if (refreshResult.error || refreshResult.data?.refreshed !== true) {
       return { status: 'unauthenticated' }
     }
 
-    return { status: 'authenticated', user: user.data }
+    const retriedUserResult = await getMe()
+    if (!retriedUserResult.data || retriedUserResult.error) {
+      return { status: 'unauthenticated' }
+    }
+
+    return toAuthenticatedState(retriedUserResult.data)
   }, [])
 
   const tryCheckAuth = useCallback(() => {
@@ -57,9 +67,9 @@ export const AuthProvider = ({ children }: Children) => {
         setAuthState(authState)
       })
       .catch((error) => {
-        console.error(
-          `Authentication check failed: ${error ?? 'Unknown error'}`
-        )
+        const message =
+          error instanceof Error ? error.message : 'Authentication failed.'
+        toast.error(message)
         setAuthState({ status: 'unauthenticated' })
       })
   }, [checkAuth])

@@ -2,13 +2,13 @@ import { NEXT_API_PROXY_PREFIX } from '@/common/const'
 import type {
   Item,
   Items,
-  Token,
   User,
   UserUpdate
 } from '@/common/types/api/resources'
 import type {
   ApiProxyLoginResponse,
   ApiProxyLogoutResponse,
+  ApiProxyRefreshResponse,
   ApiVersion
 } from '@/types/api/types'
 
@@ -165,7 +165,7 @@ export const register = async (email: string, password: string) => {
 }
 
 export const refreshAccessToken = async (csrfToken: string) => {
-  return api.post<Token>(
+  return api.post<ApiProxyRefreshResponse>(
     { endpoint: `${AUTH_PATH}/refresh`, credentials: 'include' },
     {},
     { auth: { csrfToken } }

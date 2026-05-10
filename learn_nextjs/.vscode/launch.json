@@ -2,42 +2,39 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Next.js — Full Stack (one-click)",
+      "name": "Next.js: debug server-side",
       "type": "node-terminal",
       "request": "launch",
-      "command": "pnpm dev:watch",
-      // "serverReadyAction": {
-      //   "action": "",
-      //   "pattern": "- Local:.+(https?://.+)",
-      //   "uriFormat": "%s"
-      // }
+      "command": "pnpm dev"
     },
     {
-      "name": "Next.js — Server only (attach)",
-      "type": "node",
-      "request": "attach",
-      "port": 9229,
-      "cwd": "${workspaceFolder}",
-      "sourceMaps": true,
-      "restart": true,
-      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
-    },
-    {
-      "name": "Next.js — Client only (Chrome)",
+      "name": "Next.js: debug client-side",
       "type": "chrome",
-      "request": "attach",
+      "request": "launch",
       "url": "http://localhost:3000",
-      "webRoot": "${workspaceFolder}/src",
+      "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
       "skipFiles": ["${workspaceFolder}/node_modules/**"]
+    },
+    {
+      "name": "Next.js: debug full stack",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev",
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}"
+      }
     }
   ],
   "compounds": [
     {
-      "name": "Next.js — Full Stack (compound)",
+      "name": "Next.js: server + client",
       "configurations": [
-        "Next.js — Server only (attach)",
-        "Next.js — Client only (Chrome)"
+        "Next.js: debug server-side",
+        "Next.js: debug client-side"
       ],
       "stopAll": true
     }

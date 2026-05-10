@@ -58,7 +58,8 @@ export const loginAction = async (
     access_token: accessToken,
     refresh_token: refreshToken,
     access_expires_in: accessExpiresIn,
-    refresh_expires_in: refreshExpiresIn
+    refresh_expires_in: refreshExpiresIn,
+    csrf_token: csrfToken
   } = tokenResult.data
 
   const cookieStore = await cookies()
@@ -73,6 +74,13 @@ export const loginAction = async (
   })
   cookieStore.set('refresh_token', refreshToken, {
     httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    expires: new Date(Date.now() + refreshExpiresIn * 1000),
+    secure: isProduction
+  })
+  cookieStore.set('csrf_token', csrfToken, {
+    httpOnly: false,
     sameSite: 'lax',
     path: '/',
     expires: new Date(Date.now() + refreshExpiresIn * 1000),
