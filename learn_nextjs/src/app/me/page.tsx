@@ -7,14 +7,15 @@ import { MePageClient } from './MePageClient'
 
 const MePage = async () => {
   const accessToken = (await cookies()).get('access_token')?.value
+  const redirectPath = '/login?next=%2Fme'
 
   if (!accessToken) {
-    redirect('/login?next=%2Fme')
+    redirect(redirectPath)
   }
 
   const { data: me, error: meError } = await getMe(accessToken)
   if (meError || !me) {
-    redirect('/login?next=%2Fme')
+    redirect(redirectPath)
   }
 
   const { data: ownedItems, error: itemsError } = await getOwnerItems(

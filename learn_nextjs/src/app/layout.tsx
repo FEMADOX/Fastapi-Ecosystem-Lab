@@ -35,9 +35,8 @@ const RootLayout = ({ children }: Children) => (
       </AuthProvider>
       <Toaster
         closeButton={true}
-        position="bottom-left"
+        position="bottom-right"
         swipeDirections={['right']}
-        duration={99999999999999}
       />
       <footer className="text-center leading-12 opacity-70">
         ©{' '}
