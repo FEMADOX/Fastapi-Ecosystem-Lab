@@ -2,21 +2,10 @@
 
 import { createContext, useCallback, useEffect, useReducer } from 'react'
 import { toast } from 'sonner'
-import { UserSchema } from '@/common/schemas/api/resources'
 import type { User } from '@/common/types/api/resources'
 import type { Children } from '@/common/types/layout'
-import { getMe, refreshAccessToken } from './api/endpoints'
-
-type AuthState =
-  | { status: 'loading' }
-  | { status: 'authenticated'; user: User }
-  | { status: 'unauthenticated' }
-
-interface AuthContextValue {
-  state: AuthState
-  onLoginSuccess: (user: User) => void
-  onLogoutSuccess: () => void
-}
+import { resolveAuthState } from './auth-provider.helpers'
+import type { AuthContextValue, AuthState } from './auth-provider.types'
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
@@ -27,38 +16,7 @@ export const AuthProvider = ({ children }: Children) => {
   )
 
   const checkAuth = useCallback(async (): Promise<AuthState> => {
-    const toAuthenticatedState = (rawUser: User): AuthState => {
-      const user = UserSchema.safeParse(rawUser)
-      if (!user.success) {
-        throw new Error(`Invalid user data format: ${user.error.message}`)
-      }
-      return { status: 'authenticated', user: user.data }
-    }
-
-    const currentUserResult = await getMe()
-    if (currentUserResult.data && !currentUserResult.error) {
-      return toAuthenticatedState(currentUserResult.data)
-    }
-
-    const csrfToken = document.cookie
-      .split('; ')
-      .find((cookie) => cookie.startsWith('csrf_token='))
-      ?.split('=')[1]
-
-    if (!csrfToken) return { status: 'unauthenticated' }
-
-    const refreshResult = await refreshAccessToken(csrfToken)
-
-    if (refreshResult.error || refreshResult.data?.refreshed !== true) {
-      return { status: 'unauthenticated' }
-    }
-
-    const retriedUserResult = await getMe()
-    if (!retriedUserResult.data || retriedUserResult.error) {
-      return { status: 'unauthenticated' }
-    }
-
-    return toAuthenticatedState(retriedUserResult.data)
+    return resolveAuthState()
   }, [])
 
   const tryCheckAuth = useCallback(() => {

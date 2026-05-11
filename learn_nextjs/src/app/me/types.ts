@@ -1,4 +1,4 @@
-import type { Item, Items, User } from '@/common/types/api/resources'
+import type { Items, User } from '@/common/types/api/resources'
 
 export type MeActionState = {
   error?: string
@@ -12,8 +12,4 @@ export type MePageClientProps = {
 
 export interface ActionFeedbackProps {
   state: MeActionState
-}
-
-export interface OwnedItemEditorProps {
-  item: Item
 }
