@@ -1,9 +1,22 @@
+import { cacheLife, cacheTag } from 'next/cache'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-
 import { getMe, getOwnerItems } from '@/app/api/server-endpoints'
 import { RetryCard } from '@/app/items/RetryCard'
 import { MePageClient } from './MePageClient'
+
+const getCachedOwnerAndItems = async (ownerId: string, acccessToken: string) => {
+  'use cache'
+  cacheLife('minutes')
+  cacheTag(`owner-items-${ownerId}`)
+
+  const { data: ownedItems, error: itemsError } = await getOwnerItems(
+    ownerId,
+    acccessToken
+  )
+
+  return [ownedItems, itemsError] as const
+}
 
 const MePage = async () => {
   const accessToken = (await cookies()).get('access_token')?.value
@@ -18,10 +31,7 @@ const MePage = async () => {
     redirect(redirectPath)
   }
 
-  const { data: ownedItems, error: itemsError } = await getOwnerItems(
-    me.id,
-    accessToken
-  )
+  const [ownedItems, itemsError] = await getCachedOwnerAndItems(me.id, accessToken)
 
   if (itemsError || !ownedItems) {
     return (

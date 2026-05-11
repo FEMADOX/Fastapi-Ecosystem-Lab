@@ -1,6 +1,6 @@
 'use server'
 
-import { revalidateTag, updateTag } from 'next/cache'
+import { updateTag } from 'next/cache'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -93,9 +93,11 @@ export const createItemAction = async (
     }
   }
 
-  const { success, error } = ItemSchema.safeParse(newItem)
-  revalidateTag('items', 'max')
+  updateTag('items')
+  updateTag(`item-${newItem.id}`)
+  updateTag(`owner-items-${newItem.user_id}`)
 
+  const { success, error } = ItemSchema.safeParse(newItem)
   if (!success) {
     return {
       error: `Item created but failed to parse item data: ${
@@ -130,10 +132,11 @@ export const updateItemAction = async (
     }
   }
 
-  const { success, error } = ItemPatchSchema.safeParse(updatedItem)
   updateTag('items')
-  updateTag(`item-${itemId}`)
+  updateTag(`item-${updatedItem.id}`)
+  updateTag(`owner-items-${updatedItem.user_id}`)
 
+  const { success, error } = ItemPatchSchema.safeParse(updatedItem)
   if (!success) {
     return {
       error: `Item updated but failed to parse updated item data: ${
