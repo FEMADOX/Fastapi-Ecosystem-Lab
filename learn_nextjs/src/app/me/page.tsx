@@ -5,7 +5,10 @@ import { getMe, getOwnerItems } from '@/app/api/server-endpoints'
 import { RetryCard } from '@/app/items/RetryCard'
 import { MePageClient } from './MePageClient'
 
-const getCachedOwnerAndItems = async (ownerId: string, acccessToken: string) => {
+const getCachedOwnerAndItems = async (
+  ownerId: string,
+  acccessToken: string
+) => {
   'use cache'
   cacheLife('minutes')
   cacheTag(`owner-items-${ownerId}`)
@@ -31,7 +34,10 @@ const MePage = async () => {
     redirect(redirectPath)
   }
 
-  const [ownedItems, itemsError] = await getCachedOwnerAndItems(me.id, accessToken)
+  const [ownedItems, itemsError] = await getCachedOwnerAndItems(
+    me.id,
+    accessToken
+  )
 
   if (itemsError || !ownedItems) {
     return (
