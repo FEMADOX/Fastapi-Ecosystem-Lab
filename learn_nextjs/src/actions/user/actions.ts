@@ -3,98 +3,18 @@
 import { updateTag } from 'next/cache'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { z } from 'zod'
 
 import {
   deleteCurrentUser,
   deleteItem,
-  getItem,
-  getMe,
   updateCurrentUser,
   updateItem
 } from '@/app/api/server-endpoints'
 import type { PatchItemRequest } from '@/app/api/types'
 import type { MeActionState } from '@/app/me/types'
 import { itemPatchFormSchema } from '@/schemas/items/forms'
-
-const profileEmailSchema = z.object({
-  email: z.email({
-    pattern: z.regexes.email,
-    message: 'Invalid email address'
-  }),
-  currentPassword: z
-    .string()
-    .min(8, { message: 'Password must be at least 8 characters long' })
-})
-
-const profilePasswordSchema = z
-  .object({
-    currentPassword: z
-      .string()
-      .min(8, { message: 'Password must be at least 8 characters long' }),
-    newPassword: z
-      .string()
-      .min(8, { message: 'Password must be at least 8 characters long' }),
-    confirmPassword: z
-      .string()
-      .min(1, { message: 'Please confirm your password' })
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'New password and confirmation must match',
-    path: ['confirmPassword']
-  })
-
-const getAuthenticatedUser = async () => {
-  const accessToken = (await cookies()).get('access_token')?.value
-  if (!accessToken) {
-    return {
-      success: false,
-      error: 'Authentication required. Please log in again.'
-    } as const
-  }
-
-  const { data: me, error } = await getMe(accessToken)
-  if (error || !me) {
-    return {
-      success: false,
-      error: `Failed to verify authentication: ${error ?? 'Unknown error'}.`
-    } as const
-  }
-
-  return {
-    success: true,
-    accessToken,
-    me
-  } as const
-}
-
-const checkItemAuthorization = async (
-  itemId: string,
-  currentUserId: string,
-  isSuperuser: boolean,
-  accessToken: string
-) => {
-  const { data: item, error } = await getItem(itemId)
-  if (error || !item) {
-    return {
-      success: false,
-      error: `Failed to load item: ${error ?? 'Unknown error'}.`
-    } as const
-  }
-
-  if (!isSuperuser && item.user_id !== currentUserId) {
-    return {
-      success: false,
-      error: 'You are not allowed to modify this item.'
-    } as const
-  }
-
-  return {
-    success: true,
-    item,
-    accessToken
-  } as const
-}
+import { checkItemAuthorization, getAuthenticatedUser } from './actions.helpers'
+import { profileEmailSchema, profilePasswordSchema } from './schemas'
 
 export const updateProfileEmailAction = async (
   _prevState: MeActionState,
@@ -129,8 +49,6 @@ export const updateProfileEmailAction = async (
       error: `Failed to update profile email: ${error ?? 'Unknown error'}.`
     }
   }
-
-  updateTag('items')
 
   return { success: 'Email updated successfully.' }
 }
@@ -271,6 +189,7 @@ export const updateOwnedItemAction = async (
 
   updateTag('items')
   updateTag(`item-${itemId}`)
+  updateTag(`owner-items-${authResult.me.id}`)
 
   return { success: 'Item updated successfully.' }
 }
@@ -308,6 +227,7 @@ export const deleteOwnedItemAction = async (
 
   updateTag('items')
   updateTag(`item-${itemId}`)
+  updateTag(`owner-items-${authResult.me.id}`)
 
   return { success: 'Item deleted successfully.' }
 }

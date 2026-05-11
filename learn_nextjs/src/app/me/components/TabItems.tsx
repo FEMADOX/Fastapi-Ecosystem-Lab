@@ -1,20 +1,22 @@
-import { Badge } from 'lucide-react'
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useActionState, useEffect } from 'react'
 import {
   deleteOwnedItemAction,
   updateOwnedItemAction
 } from '@/actions/user/actions'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { ActionFeedback } from '../ActionFeedback'
+// import { ActionFeedback } from '../ActionFeedback'
 import type { OwnedItemEditorProps, TabItemProps } from './types'
 
 const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
-  const [state, formAction, isPending] = useActionState(
+  const router = useRouter()
+  const [updateState, updateFormAction, isUpdatePending] = useActionState(
     updateOwnedItemAction,
     null
   )
@@ -22,6 +24,11 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
     deleteOwnedItemAction,
     null
   )
+
+  useEffect(() => {
+    if (updateState === null && deleteState === null) return
+    router.refresh()
+  }, [updateState, deleteState, router])
 
   return (
     <Card>
@@ -32,7 +39,7 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form action={formAction} className="space-y-4" noValidate>
+        <form action={updateFormAction} className="space-y-4" noValidate>
           <input type="hidden" name="itemId" value={item.id} readOnly />
           <FieldGroup>
             <Field>
@@ -85,21 +92,22 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
             </Field>
           </FieldGroup>
 
-          <ActionFeedback state={state} />
-
-          <Button type="submit" disabled={isPending} className="cursor-pointer">
-            {isPending ? 'Saving...' : 'Save Changes'}
+          <Button
+            type="submit"
+            disabled={isUpdatePending}
+            className="cursor-pointer"
+          >
+            {isUpdatePending ? 'Saving...' : 'Save Changes'}
           </Button>
         </form>
 
         <form action={deleteFormAction}>
           <input type="hidden" name="itemId" value={item.id} readOnly />
-          <ActionFeedback state={deleteState} />
           <Button
             type="submit"
             variant="destructive"
             disabled={isDeletePending}
-            className="mt-3 cursor-pointer"
+            className="cursor-pointer"
           >
             {isDeletePending ? 'Deleting...' : 'Delete Item'}
           </Button>

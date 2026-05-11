@@ -45,7 +45,7 @@ export const deleteItem = async (id: string, accessToken: string) =>
 
 export const getOwnerItems = async (userId?: string, accessToken?: string) => {
   return await serverGet<Items>(
-    `${ITEMS_BASE_PATH}owner/${userId ? `?order_id=${userId}` : ''}`,
+    `${ITEMS_BASE_PATH}owner${userId ? `?order_id=${userId}` : ''}`,
     accessToken
   )
 }
