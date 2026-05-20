@@ -7,7 +7,13 @@ import type {
   UserUpdate
 } from '@/common/types/api/resources'
 import 'server-only'
-import { serverDelete, serverGet, serverPatch, serverPost, serverPut } from './server-fetch'
+import {
+  serverDelete,
+  serverGet,
+  serverPatch,
+  serverPost,
+  serverPut
+} from './server-fetch'
 import type { AuthProps, CreateItemRequest, PatchItemRequest } from './types'
 
 const API_PREFIX = '/latest'

@@ -107,7 +107,10 @@ export const deleteAccountAction = async (
     return { error: authResult.error }
   }
 
-  const { error } = await deleteCurrentUser(authResult.accessToken, authResult.me?.id)
+  const { error } = await deleteCurrentUser(
+    authResult.accessToken,
+    authResult.me?.id
+  )
 
   if (error) {
     return {
