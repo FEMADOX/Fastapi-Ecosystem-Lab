@@ -6,6 +6,10 @@ import type { User } from '@/common/types/api/resources'
 import type { Children } from '@/common/types/layout'
 import { resolveAuthState } from './auth-provider.helpers'
 import type { AuthContextValue, AuthState } from './auth-provider.types'
+import {
+  SSEGlobalNotifications,
+  SSEUserNotifications
+} from './components/notifications/toasts'
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
@@ -46,6 +50,8 @@ export const AuthProvider = ({ children }: Children) => {
 
   return (
     <AuthContext.Provider value={{ state, onLoginSuccess, onLogoutSuccess }}>
+      <SSEGlobalNotifications />
+      <SSEUserNotifications />
       {children}
     </AuthContext.Provider>
   )

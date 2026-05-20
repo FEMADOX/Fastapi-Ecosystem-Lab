@@ -1,3 +1,6 @@
+allowBuilds:
+  msw: false
+  sharp: false
 ignoredBuiltDependencies:
   - '@tailwindcss/oxide'
   - msw

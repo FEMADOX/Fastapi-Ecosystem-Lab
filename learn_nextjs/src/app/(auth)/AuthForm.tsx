@@ -12,9 +12,9 @@ import {
   Field,
   FieldError,
   FieldGroup,
-  FieldLabel
-} from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+  FieldLabel,
+  Input
+} from '@/components/ui'
 import { parseAuthForm } from '@/schemas/auth/forms'
 import type { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
 

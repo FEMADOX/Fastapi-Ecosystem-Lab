@@ -2,9 +2,9 @@ import {
   Item,
   ItemContent,
   ItemDescription,
-  ItemTitle
-} from '@/components/ui/item'
-import { Spinner } from '@/components/ui/spinner'
+  ItemTitle,
+  Spinner
+} from '@/components/ui'
 
 const Loading = () => (
   <Item>

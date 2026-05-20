@@ -1,45 +1,15 @@
 import 'server-only'
 
-import { cookies } from 'next/headers'
-
 import { API_BASE_URL } from '@/common/const'
 import type { ApiProxyResponse } from '@/types/api/types'
-
-const RETRYABLE_STATUS_CODES = new Set([500, 502, 503, 504])
-const RETRY_DELAYS_MS = [700, 1400, 2200]
-
-const wait = async (ms: number): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-const isRetryableFetchError = (error: unknown): boolean => {
-  return (
-    error instanceof TypeError ||
-    (error instanceof Error && error.name === 'TimeoutError')
-  )
-}
-
-export const getAuthHeaders = async (): Promise<HeadersInit> => {
-  const cookieStore = await cookies()
-  const accessToken = cookieStore.get('access_token')?.value
-  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
-}
-
-const parseErrorMessage = async (res: Response): Promise<string> => {
-  let message = `${res.status} ${res.statusText}`
-  try {
-    const data = (await res.json()) as unknown
-    if (
-      typeof data === 'object' &&
-      data !== null &&
-      'detail' in data &&
-      typeof (data as Record<string, unknown>).detail === 'string'
-    ) {
-      message = String((data as Record<string, unknown>).detail)
-    }
-  } catch {}
-  return message
-}
+import {
+  buildHeaders,
+  isRetryableFetchError,
+  parseErrorMessage,
+  RETRY_DELAYS_MS,
+  RETRYABLE_STATUS_CODES,
+  wait
+} from './fetch.helpers'
 
 export const serverRequestBase = async <T>(
   path: string,
@@ -51,16 +21,21 @@ export const serverRequestBase = async <T>(
   const isUrlEncodedBody = body instanceof URLSearchParams
   const isFormDataBody = body instanceof FormData
 
-  const headers: HeadersInit = headersProp ?? {
-    ...(isFormDataBody
-      ? {}
-      : {
-          'Content-Type': isUrlEncodedBody
-            ? 'application/x-www-form-urlencoded'
-            : 'application/json'
-        }),
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
-  }
+  const baseHeaders = headersProp
+    ? headersProp
+    : isUrlEncodedBody
+      ? { 'Content-Type': 'application/x-www-form-urlencoded' }
+      : undefined
+
+  const headers = buildHeaders({
+    auth: accessToken ? { accessToken } : undefined,
+    hasBody: body !== undefined,
+    isSerializedBody: isFormDataBody || isUrlEncodedBody,
+    headers: baseHeaders
+  })
+
+  if (isUrlEncodedBody && !headers.has('Content-Type'))
+    headers.set('Content-Type', 'application/x-www-form-urlencoded')
 
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
@@ -80,6 +55,7 @@ export const serverRequestBase = async <T>(
 
       if (!response.ok) {
         const parsedError = await parseErrorMessage(response)
+
         if (
           RETRYABLE_STATUS_CODES.has(response.status) &&
           attempt < RETRY_DELAYS_MS.length

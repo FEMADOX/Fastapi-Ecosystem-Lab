@@ -7,7 +7,7 @@ import type {
   UserUpdate
 } from '@/common/types/api/resources'
 import 'server-only'
-import { serverDelete, serverGet, serverPost, serverPut } from './server-fetch'
+import { serverDelete, serverGet, serverPatch, serverPost, serverPut } from './server-fetch'
 import type { AuthProps, CreateItemRequest, PatchItemRequest } from './types'
 
 const API_PREFIX = '/latest'
@@ -99,13 +99,21 @@ export const getMe = async (accessToken: string) => {
 
 export const updateCurrentUser = async (
   accessToken: string,
-  userUpdate: UserUpdate
+  userUpdate: UserUpdate,
+  userId: string
 ) => {
-  return await serverPut<User>(`${USER_BASE_PATH}me`, userUpdate, accessToken)
+  return await serverPatch<User>(
+    `${USER_BASE_PATH}${userId}`,
+    userUpdate,
+    accessToken
+  )
 }
 
-export const deleteCurrentUser = async (accessToken: string) => {
-  return await serverDelete<null>(`${USER_BASE_PATH}me`, accessToken)
+export const deleteCurrentUser = async (
+  accessToken: string,
+  userId: string
+) => {
+  return await serverDelete<null>(`${USER_BASE_PATH}${userId}`, accessToken)
 }
 
 // export const changePassword = async (passwordData: PasswordChangeRequest) => {

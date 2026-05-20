@@ -41,7 +41,8 @@ export const updateProfileEmailAction = async (
     {
       email: parseResult.data.email,
       current_password: parseResult.data.currentPassword
-    }
+    },
+    authResult.me?.id
   )
 
   if (error || !updatedUser) {
@@ -79,7 +80,8 @@ export const updateProfilePasswordAction = async (
     {
       current_password: parseResult.data.currentPassword,
       new_password: parseResult.data.newPassword
-    }
+    },
+    authResult.me?.id
   )
 
   if (error || !updatedUser) {
@@ -105,7 +107,7 @@ export const deleteAccountAction = async (
     return { error: authResult.error }
   }
 
-  const { error } = await deleteCurrentUser(authResult.accessToken)
+  const { error } = await deleteCurrentUser(authResult.accessToken, authResult.me?.id)
 
   if (error) {
     return {

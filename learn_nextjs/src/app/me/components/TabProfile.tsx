@@ -4,15 +4,18 @@ import {
   updateProfileEmailAction,
   updateProfilePasswordAction
 } from '@/actions/user/actions'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Field,
   FieldError,
   FieldGroup,
-  FieldLabel
-} from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+  FieldLabel,
+  Input
+} from '@/components/ui'
 import { ActionFeedback } from '../ActionFeedback'
 import type { TabProfileProps } from './types'
 
@@ -149,7 +152,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
           <form action={deleteFormAction} className="space-y-4" noValidate>
             <Field>
               <FieldLabel htmlFor="confirmDelete">
-                Type DELETE to confirm
+                Type <strong>DELETE</strong> to confirm
               </FieldLabel>
               <Input id="confirmDelete" name="confirmDelete" required />
               <FieldError>This action is irreversible.</FieldError>

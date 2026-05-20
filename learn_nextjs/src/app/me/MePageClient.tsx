@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui'
 import { TabItemsComponent, TabProfileComponent } from './components'
 import type { MePageClientProps } from './types'
 

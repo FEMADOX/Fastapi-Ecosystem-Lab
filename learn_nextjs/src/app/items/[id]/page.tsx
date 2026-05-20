@@ -4,8 +4,8 @@ import Image from 'next/image'
 import { getItem } from '@/api/server-endpoints'
 import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
 import type { PromiseIdProp } from '@/common/types/routing'
-import { Button } from '@/components/ui/button'
-import { RetryCard } from '../RetryCard'
+import { Button } from '@/components/ui'
+import { RetryCard } from '../components/RetryCard'
 
 const ItemPage = async ({ params }: PromiseIdProp) => {
   'use cache'
@@ -52,7 +52,6 @@ const ItemPage = async ({ params }: PromiseIdProp) => {
         </div>
         <h1 className="mb-6 text-3xl font-bold">{item.name}</h1>
         <p className="mb-5 text-2xl font-bold">
-          {/* Round total price (item.price + item.tax) */}${' '}
           {Math.round((item.price + item.tax) * 100) / 100}{' '}
           <span className="text-sm font-normal text-muted-foreground">
             (Tax included: $ {Math.round(item.tax * 100) / 100})

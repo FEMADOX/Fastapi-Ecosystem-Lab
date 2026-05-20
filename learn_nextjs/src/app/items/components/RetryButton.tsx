@@ -2,7 +2,7 @@
 
 import { Button } from '@base-ui/react'
 import { useRouter } from 'next/navigation'
-import { revalidateItemsAction } from './actions'
+import { revalidateItemsAction } from '../actions'
 
 interface RetryButtonProps {
   tagToUpdate: string

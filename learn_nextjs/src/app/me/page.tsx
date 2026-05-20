@@ -2,7 +2,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getMe, getOwnerItems } from '@/app/api/server-endpoints'
-import { RetryCard } from '@/app/items/RetryCard'
+import { RetryCard } from '@/app/items/components/RetryCard'
 import { MePageClient } from './MePageClient'
 
 const getCachedOwnerAndItems = async (

@@ -9,10 +9,6 @@ import type { Children } from '@/common/types/layout'
 import { cn } from '@/lib/utils'
 import { AuthProvider } from './auth-provider'
 import { NavBar } from './components/NavBar'
-import {
-  SSEGlobalNotifications,
-  SSEUserNotifications
-} from './components/notifications/toasts'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -29,8 +25,6 @@ const RootLayout = ({ children }: Children) => (
         <NavBar />
       </Suspense>
       <AuthProvider>
-        <SSEGlobalNotifications />
-        <SSEUserNotifications />
         <main className="px-8 py-8">{children}</main>
       </AuthProvider>
       <Toaster
