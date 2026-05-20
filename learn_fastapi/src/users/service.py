@@ -12,6 +12,7 @@ from learn_fastapi.src.utils.exceptions import (
     email_already_registered_exception,
     user_doesnt_exist_exception,
 )
+from learn_fastapi.src.utils.service import BaseService
 
 from .exceptions import incorrect_password_exception, only_user_owner_is_authorized
 from .models import User
@@ -19,7 +20,7 @@ from .repository import UsersRepository
 from .schema import DeleteAccount, UserUpdate
 
 
-class UsersService:
+class UsersService(BaseService):
     """Service class for user account business logic."""
 
     def __init__(self, session: AsyncSessionDep) -> None:
@@ -107,16 +108,29 @@ class UsersService:
         await self.verify_userid_and_auth_user(
             user_id, authorized_user, data.current_password
         )
+
+        changed_fields: list[str] = []
+
         if data.new_email:
             existing = await self.repository.get_user_by_email(data.new_email)
             if existing:
                 raise email_already_registered_exception()
             authorized_user.email = data.new_email
+            changed_fields.append("email")
 
         if data.new_password:
             authorized_user.password_hash = hash_password(data.new_password)
+            changed_fields.append("password")
 
-        return await self.repository.update_user(authorized_user)
+        user = await self.repository.update_user(authorized_user)
+
+        await self._broadcast_sse_event(
+            "user.account_updated",
+            {"user_id": str(user.id), "changed_fields": changed_fields},
+            user_id=user.id,
+        )
+
+        return user
 
     async def delete_account(
         self,
@@ -136,4 +150,11 @@ class UsersService:
         """
         await self.verify_userid_and_auth_user(user_id, authorized_user, data.password)
         await self.repository.delete_user(authorized_user)
+
+        await self._broadcast_sse_event(
+            "user.account_deleted",
+            {"user_id": str(authorized_user.id)},
+            user_id=authorized_user.id,
+        )
+
         clear_auth_cookies(response)

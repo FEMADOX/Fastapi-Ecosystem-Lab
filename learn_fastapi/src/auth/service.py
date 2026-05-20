@@ -1,5 +1,6 @@
 import secrets
 from datetime import UTC, datetime
+from uuid import UUID
 
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.requests import Request
@@ -12,6 +13,7 @@ from learn_fastapi.src.utils.exceptions import (
     email_already_registered_exception,
     user_inactive_exception,
 )
+from learn_fastapi.src.utils.service import BaseService
 
 from .config import auth_config
 from .exceptions import (
@@ -38,7 +40,7 @@ async def _login(
     repository: AuthRepository,
     form_data: OAuth2PasswordRequestForm,
     response: Response,
-) -> tuple[str, str, str]:
+) -> tuple[str, str, str, UUID]:
     """Authenticate a user and mint new access/refresh/csrf tokens.
 
     Args:
@@ -47,10 +49,11 @@ async def _login(
         response: Response object used to set auth cookies.
 
     Returns:
-        (access_token, refresh_token_raw, csrf_token):
+        (access_token, refresh_token_raw, csrf_token, user_id):
             access_token: JWT access token string
             refresh_token_raw: The raw (unhashed) refresh token string
             csrf_token: CSRF token string
+            user_id: UUID of the authenticated user
 
     Raises:
         credentials_exception: If the credentials are invalid.
@@ -85,10 +88,10 @@ async def _login(
 
     set_auth_cookies(response, refresh_token_raw, csrf_token)
 
-    return access_token, refresh_token_raw, csrf_token
+    return access_token, refresh_token_raw, csrf_token, user_id
 
 
-class AuthService:
+class AuthService(BaseService):
     """Service class for auth business logic."""
 
     def __init__(self, session: AsyncSessionDep) -> None:
@@ -112,10 +115,17 @@ class AuthService:
         if existing_user is not None:
             raise email_already_registered_exception()
 
-        return await self.repository.create_user(
+        user = await self.repository.create_user(
             email=str(user_data.email),
             password_hash=hash_password(user_data.password),
         )
+
+        await self._broadcast_sse_event(
+            "auth.registered",
+            {"user_id": str(user.id), "email": user.email},
+        )
+
+        return user
 
     async def login(
         self,
@@ -132,7 +142,15 @@ class AuthService:
             A token response with access and CSRF tokens.
 
         """
-        access_token, _, csrf_token = await _login(self.repository, form_data, response)
+        access_token, _, csrf_token, user_id = await _login(
+            self.repository, form_data, response
+        )
+
+        await self._broadcast_sse_event(
+            "auth.logged_in",
+            {"user_id": str(user_id)},
+            user_id=user_id,
+        )
 
         return Token(
             access_token=access_token,
@@ -202,26 +220,28 @@ class AuthService:
         csrf_token = request.cookies.get("csrf_token")
 
         if (
-            not refresh_token_raw
-            or not csrf_token
-            or not x_csrf_token
-            or csrf_token != x_csrf_token
+            refresh_token_raw
+            and csrf_token
+            and x_csrf_token
+            and csrf_token == x_csrf_token
         ):
-            clear_auth_cookies(response)
-            return
-
-        token_record = await self.repository.get_refresh_token(user.id)
-        if not token_record:
-            clear_auth_cookies(response)
-            return
-        if verify_refresh_token(refresh_token_raw, token_record.token_hash):
-            token_record.revoked_at = datetime.now(tz=UTC)
-            await self.repository.commit()
+            token_record = await self.repository.get_refresh_token(user.id)
+            if token_record and verify_refresh_token(
+                refresh_token_raw, token_record.token_hash
+            ):
+                token_record.revoked_at = datetime.now(tz=UTC)
+                await self.repository.commit()
 
         clear_auth_cookies(response)
 
+        await self._broadcast_sse_event(
+            "auth.logged_out",
+            {"user_id": str(user.id)},
+            user_id=user.id,
+        )
 
-class AuthServiceV2:
+
+class AuthServiceV2(BaseService):
     """Service class for auth business logic for API Version 2."""
 
     def __init__(self, session: AsyncSessionDep) -> None:
@@ -247,8 +267,14 @@ class AuthServiceV2:
                 - CSRF
 
         """
-        access_token, refresh_token_raw, csrf_token = await _login(
+        access_token, refresh_token_raw, csrf_token, user_id = await _login(
             self.repository, form_data, response
+        )
+
+        await self._broadcast_sse_event(
+            "auth.logged_in",
+            {"user_id": str(user_id)},
+            user_id=user_id,
         )
 
         return TokenV2(
