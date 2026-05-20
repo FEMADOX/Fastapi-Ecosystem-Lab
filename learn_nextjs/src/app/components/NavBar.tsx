@@ -1,9 +1,9 @@
 import { MenuIcon } from 'lucide-react'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { ButtonGroup } from '@/components/ui/button-group'
 import {
+  Button,
+  ButtonGroup,
   Sheet,
   SheetClose,
   SheetContent,
@@ -11,7 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger
-} from '@/components/ui/sheet'
+} from '@/components/ui'
 import { LogoutGroup } from './LogoutGroup'
 
 export const NavBar = async () => {

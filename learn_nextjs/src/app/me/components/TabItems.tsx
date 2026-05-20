@@ -1,21 +1,30 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useRef } from 'react'
 import {
   deleteOwnedItemAction,
   updateOwnedItemAction
 } from '@/actions/user/actions'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-// import { ActionFeedback } from '../ActionFeedback'
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  DeleteIcon,
+  type DeleteIconHandle,
+  Field,
+  FieldGroup,
+  FieldLabel,
+  Input,
+  Textarea
+} from '@/components/ui'
 import type { OwnedItemEditorProps, TabItemProps } from './types'
 
 const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
   const router = useRouter()
+  const deleteIconRef = useRef<DeleteIconHandle>(null)
   const [updateState, updateFormAction, isUpdatePending] = useActionState(
     updateOwnedItemAction,
     null
@@ -32,14 +41,31 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
 
   return (
     <Card>
-      <CardHeader className="space-y-2">
+      <CardHeader className="flex justify-between items-center">
         <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
           <span>{item.name}</span>
           <Badge>${item.price.toFixed(2)}</Badge>
         </CardTitle>
+        <form action={deleteFormAction}>
+          <input type="hidden" name="itemId" value={item.id} readOnly />
+          <Button
+            type="submit"
+            variant="destructive"
+            disabled={isDeletePending}
+            className="cursor-pointer"
+            onMouseEnter={() => deleteIconRef.current?.startAnimation()}
+            onMouseLeave={() => deleteIconRef.current?.stopAnimation()}
+          >
+            <DeleteIcon ref={deleteIconRef} />
+          </Button>
+        </form>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form action={updateFormAction} className="space-y-4" noValidate>
+        <form
+          action={updateFormAction}
+          className="space-y-4 flex flex-col items-center"
+          noValidate
+        >
           <input type="hidden" name="itemId" value={item.id} readOnly />
           <FieldGroup>
             <Field>
@@ -95,21 +121,9 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
           <Button
             type="submit"
             disabled={isUpdatePending}
-            className="cursor-pointer"
+            className="cursor-pointer text-lg hover:bg-primary/70 transition-colors"
           >
             {isUpdatePending ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </form>
-
-        <form action={deleteFormAction}>
-          <input type="hidden" name="itemId" value={item.id} readOnly />
-          <Button
-            type="submit"
-            variant="destructive"
-            disabled={isDeletePending}
-            className="cursor-pointer"
-          >
-            {isDeletePending ? 'Deleting...' : 'Delete Item'}
           </Button>
         </form>
       </CardContent>

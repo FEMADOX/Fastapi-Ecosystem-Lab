@@ -6,22 +6,16 @@ import type {
   APIBaseProps,
   ApiCallInit,
   ApiProxyResponse,
-  BuildHeadersOptions,
   RequestFactoryOptions
 } from '@/types/api/types'
-
-const buildHeaders = (options: BuildHeadersOptions) => {
-  const { auth, hasBody, isSerializedBody } = options
-  const headers = new Headers(options.headers)
-
-  if (hasBody && !isSerializedBody && !headers.has('Content-Type'))
-    headers.set('Content-Type', 'application/json')
-  if (auth?.accessToken)
-    headers.set('Authorization', `Bearer ${auth.accessToken}`)
-  if (auth?.csrfToken) headers.set('X-CSRF-Token', auth.csrfToken)
-
-  return headers
-}
+import {
+  buildHeaders,
+  isRetryableFetchError,
+  parseErrorMessage,
+  RETRY_DELAYS_MS,
+  RETRYABLE_STATUS_CODES,
+  wait
+} from './fetch.helpers'
 
 const getProxyBase = (): string => {
   // En el servidor (Server Components), fetch necesita URL absoluta
@@ -70,36 +64,70 @@ const apiRequest = async <T>(
     headers
   })
   const baseUrl = buildUrl({ endpoint, pathParam, apiVersion }, queryParams)
-  const response = await fetch(baseUrl, {
-    method,
-    headers: requestHeaders,
-    ...(hasBody
-      ? { body: isSerializedBody ? (body as BodyInit) : JSON.stringify(body) }
-      : {}),
-    credentials
-  })
 
-  if (!response.ok) {
-    let message = `${response.status} ${response.statusText}`
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
-      const errorData = (await response.json()) as unknown
-      if (
-        typeof errorData === 'object' &&
-        errorData !== null &&
-        'detail' in errorData &&
-        typeof (errorData as Record<string, unknown>).detail === 'string'
-      ) {
-        message = String((errorData as Record<string, unknown>).detail)
+      const response = await fetch(baseUrl, {
+        method,
+        headers: requestHeaders,
+        ...(hasBody
+          ? {
+              body: isSerializedBody ? (body as BodyInit) : JSON.stringify(body)
+            }
+          : {}),
+        credentials
+      })
+
+      if (!response.ok) {
+        const parsedError = await parseErrorMessage(response)
+
+        if (
+          RETRYABLE_STATUS_CODES.has(response.status) &&
+          attempt < RETRY_DELAYS_MS.length
+        ) {
+          await wait(RETRY_DELAYS_MS[attempt])
+          continue
+        }
+
+        return { data: undefined, error: parsedError }
+        // let message = `${response.status} ${response.statusText}`
+        // try {
+        //   const errorData = (await response.json()) as unknown
+        //   if (
+        //     typeof errorData === 'object' &&
+        //     errorData !== null &&
+        //     'detail' in errorData &&
+        //     typeof (errorData as Record<string, unknown>).detail === 'string'
+        //   ) {
+        //     message = String((errorData as Record<string, unknown>).detail)
+        //   }
+        // } catch {}
+        // return { data: undefined, error: message }
       }
-    } catch {}
-    return { data: undefined, error: message }
+
+      if (response.status === 204) {
+        return { data: undefined }
+      }
+
+      return { data: (await response.json()) as T }
+    } catch (error: unknown) {
+      if (isRetryableFetchError(error) && attempt < RETRY_DELAYS_MS.length) {
+        await wait(RETRY_DELAYS_MS[attempt])
+        continue
+      }
+
+      return {
+        data: undefined,
+        error:
+          'Backend is temporarily unavailable. Please retry in a few seconds.'
+      }
+    }
   }
 
-  if (response.status === 204) {
-    return { data: undefined }
+  return {
+    data: undefined,
+    error: 'Backend did not respond in time. Please retry shortly.'
   }
-
-  return { data: (await response.json()) as T }
 }
 
 export const api = {

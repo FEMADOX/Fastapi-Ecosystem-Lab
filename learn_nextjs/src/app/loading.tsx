@@ -1,4 +1,4 @@
-import { Spinner } from '@/components/ui/spinner'
+import { Spinner } from '@/components/ui'
 
 const Loading = () => (
   <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">

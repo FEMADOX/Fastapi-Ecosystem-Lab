@@ -1,17 +1,16 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-
 import { createItemAction } from '@/actions/items/actions'
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
-  FieldLabel
-} from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+  FieldLabel,
+  Input,
+  Textarea
+} from '@/components/ui'
 import type { NewItemFormProps } from '@/types/items/types'
 import type { FormSubmitEvent } from './types'
 import { validateItemForm } from './utils'

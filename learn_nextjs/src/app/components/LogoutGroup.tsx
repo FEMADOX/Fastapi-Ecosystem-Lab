@@ -1,8 +1,7 @@
 'use client'
 
 import { logoutAction } from '@/actions/auth/actions'
-import { Button } from '@/components/ui/button'
-import { ButtonGroup } from '@/components/ui/button-group'
+import { Button, ButtonGroup } from '@/components/ui'
 
 interface LogoutButtonProps {
   isLoggedIn: boolean
