@@ -122,10 +122,7 @@ class AuthService(BaseService):
 
         await self._broadcast_sse_event(
             "auth.registered",
-            {
-                "user_id": str(user.id),
-                "email": user.email
-            },
+            {"user_id": str(user.id), "email": user.email},
         )
 
         return user

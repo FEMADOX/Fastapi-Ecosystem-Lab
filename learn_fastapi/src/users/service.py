@@ -126,10 +126,7 @@ class UsersService(BaseService):
 
         await self._broadcast_sse_event(
             "user.account_updated",
-            {
-                "user_id": str(user.id),
-                "changed_fields": changed_fields
-            },
+            {"user_id": str(user.id), "changed_fields": changed_fields},
             user_id=user.id,
         )
 
