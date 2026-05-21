@@ -1,11 +1,16 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { createContext, useCallback, useEffect, useReducer } from 'react'
 import { toast } from 'sonner'
 import type { User } from '@/common/types/api/resources'
 import type { Children } from '@/common/types/layout'
 import { resolveAuthState } from './auth-provider.helpers'
-import type { AuthContextValue, AuthState } from './auth-provider.types'
+import type {
+  AuthContextValue,
+  AuthState,
+  ResolveAuthResult
+} from './auth-provider.types'
 import {
   SSEGlobalNotifications,
   SSEUserNotifications
@@ -18,15 +23,19 @@ export const AuthProvider = ({ children }: Children) => {
     (_: AuthState, next: AuthState) => next,
     { status: 'loading' } as AuthState
   )
+  const router = useRouter()
 
-  const checkAuth = useCallback(async (): Promise<AuthState> => {
+  const checkAuth = useCallback(async (): Promise<ResolveAuthResult> => {
     return resolveAuthState()
   }, [])
 
   const tryCheckAuth = useCallback(() => {
     checkAuth()
-      .then((authState) => {
+      .then(({ authState, didRefresh }) => {
         setAuthState(authState)
+        if (didRefresh && authState.status === 'authenticated') {
+          router.refresh()
+        }
       })
       .catch((error) => {
         const message =
@@ -34,7 +43,7 @@ export const AuthProvider = ({ children }: Children) => {
         toast.error(message)
         setAuthState({ status: 'unauthenticated' })
       })
-  }, [checkAuth])
+  }, [checkAuth, router])
 
   useEffect(() => {
     tryCheckAuth()

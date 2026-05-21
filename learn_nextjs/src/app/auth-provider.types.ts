@@ -10,3 +10,8 @@ export interface AuthContextValue {
   onLoginSuccess: (user: User) => void
   onLogoutSuccess: () => void
 }
+
+export type ResolveAuthResult = {
+  authState: AuthState
+  didRefresh: boolean
+}
