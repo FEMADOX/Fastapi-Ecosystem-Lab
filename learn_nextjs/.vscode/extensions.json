@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "yoavbls.pretty-ts-errors",
+        "typescriptteam.native-preview",
+        "bradlc.vscode-tailwindcss",
+        "pmneo.tsimporter",
+        "biomejs.biome"
+    ]
+}

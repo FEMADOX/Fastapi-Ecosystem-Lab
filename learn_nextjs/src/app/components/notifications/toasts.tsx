@@ -1,22 +1,21 @@
 'use client'
 
 import { useEffect } from 'react'
-import { toast } from 'sonner'
 import type {
+  SSEEvent,
   SSEEventMap,
-  SSEItemEvent,
   SSEToastProps
 } from '@/app/api/sse/[channel]/types'
 import { useAuth } from '@/app/hooks/useAuth'
 import { useSSE } from '@/app/hooks/useSSE'
+import { globalEventMap, userEventMap } from './events'
+import { invokeHandler } from './toasts.helpers'
 
 const NotificationListener = ({ channel, eventMap }: SSEToastProps) => {
-  const { events } = useSSE<SSEItemEvent>(channel, true)
+  const { events } = useSSE<SSEEvent>(channel, true)
 
   useEffect(() => {
-    events.forEach((event) => {
-      eventMap[event.event]?.(event)
-    })
+    for (const event of events) invokeHandler(eventMap, event)
   }, [events, eventMap])
 
   return null
@@ -29,22 +28,6 @@ const SSEBaseNotifications = (channel: string, eventMap: SSEEventMap) => {
 
   if (status !== 'authenticated') return null
   return <NotificationListener channel={channel} eventMap={eventMap} />
-}
-
-const globalEventMap: SSEEventMap = {
-  'item.created': (event) =>
-    toast.success(`New item created: ${event.payload.name}`)
-}
-
-const userEventMap: SSEEventMap = {
-  'item.created': (event) =>
-    toast.success(`You created a new item: ${event.payload.name}`),
-  'item.updated': (event) =>
-    toast.success(`Your item was updated: ${event.payload.name}`),
-  'item.deleted': (event) =>
-    toast.error(`Your item was deleted: ${event.payload.name}`),
-  'item.image_updated': (event) =>
-    toast.success(`Your item's image was updated: ${event.payload.name}`)
 }
 
 export const SSEGlobalNotifications = () =>
