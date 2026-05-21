@@ -1,7 +1,7 @@
 import { UserSchema } from '@/common/schemas/api/resources'
 import type { User } from '@/common/types/api/resources'
 import { getMe, refreshAccessToken } from './api/endpoints'
-import type { AuthState } from './auth-provider.types'
+import type { AuthState, ResolveAuthResult } from './auth-provider.types'
 
 export const toAuthenticatedState = (rawUser: User): AuthState => {
   const user = UserSchema.safeParse(rawUser)
@@ -44,18 +44,22 @@ export const attemptRefresh = async (): Promise<boolean> => {
   return !refreshResult.error && refreshResult.data?.refreshed === true
 }
 
-export const resolveAuthState = async (): Promise<AuthState> => {
+export const resolveAuthState = async (): Promise<ResolveAuthResult> => {
   const currentUserState = await getCurrentUserState()
 
   if (currentUserState) {
-    return currentUserState
+    return { authState: currentUserState, didRefresh: false }
   }
 
   const refreshed = await attemptRefresh()
 
   if (!refreshed) {
-    return { status: 'unauthenticated' }
+    return { authState: { status: 'unauthenticated' }, didRefresh: false }
   }
 
-  return (await getCurrentUserState()) ?? { status: 'unauthenticated' }
+  const newUserState = await getCurrentUserState()
+  return {
+    authState: newUserState ?? { status: 'unauthenticated' },
+    didRefresh: true
+  }
 }

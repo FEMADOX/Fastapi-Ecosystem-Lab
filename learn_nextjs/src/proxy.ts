@@ -25,6 +25,14 @@ export const proxy = async (request: NextRequest) => {
         request.nextUrl.pathname + request.nextUrl.search
       )
 
+      const alreadyRefreshed =
+        request.nextUrl.searchParams.get('refreshed') === '1'
+      if (alreadyRefreshed) {
+        return NextResponse.redirect(
+          `${loginUrl}?reason=authentication-required`
+        )
+      }
+
       const refreshToken = request.cookies.get('refresh_token')?.value
       const csrfTokenCookies = request.cookies.get('csrf_token')?.value
       if (!refreshToken || !csrfTokenCookies)
@@ -53,7 +61,11 @@ export const proxy = async (request: NextRequest) => {
         csrf_token: csrfToken,
         expires_in: expiresIn
       } = refreshResponse.data
-      const response = NextResponse.next()
+
+      const url = request.nextUrl.clone()
+      url.searchParams.set('refreshed', '1')
+      const response = NextResponse.redirect(url)
+
       response.cookies.set('access_token', accessToken, {
         httpOnly: true,
         path: '/',
