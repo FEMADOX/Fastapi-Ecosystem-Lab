@@ -108,7 +108,7 @@ export const registerAction = async (
     }
   }
 
-  redirect(baseResult.redirectPath)
+  return { success: true, redirectTo: baseResult.redirectPath }
 }
 
 export const logoutAction = async () => {
@@ -119,5 +119,6 @@ export const logoutAction = async () => {
 
   cookieStore.delete('access_token')
   cookieStore.delete('refresh_token')
-  redirect('/login')
+
+  return { success: true }
 }

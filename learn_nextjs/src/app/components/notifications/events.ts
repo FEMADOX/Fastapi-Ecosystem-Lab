@@ -25,10 +25,10 @@ export const userEventMap: SSEEventMap = {
     toastMessage: (event) =>
       `Your item's image was updated: ${event.payload.name}`
   },
-  'auth.registered': {
-    toastType: 'success',
-    toastMessage: () => `Welcome! Account created successfully.`
-  },
+  // 'auth.registered': {
+  //   toastType: 'success',
+  //   toastMessage: () => `Welcome! Account created successfully.`
+  // },
   'auth.logged_in': {
     toastType: 'success',
     toastMessage: () => `Welcome back! You are now logged in.`
