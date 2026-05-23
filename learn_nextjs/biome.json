@@ -32,8 +32,10 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUnusedVariables": "warn",
-        "noUnusedImports": "error",
+        "noUnusedImports": {
+          "level": "warn",
+          "fix": "safe"
+        },
         "useExhaustiveDependencies": "warn",
         "useHookAtTopLevel": "error",
         "noNonoctalDecimalEscape": "error",

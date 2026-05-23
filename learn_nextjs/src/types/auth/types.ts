@@ -1,4 +1,7 @@
-export type AuthActionState = { error: string } | null
+export type AuthActionState =
+  | { error: string }
+  | { success: true; redirectTo: string }
+  | null
 
 export type AuthFormVariant = 'login' | 'signup'
 

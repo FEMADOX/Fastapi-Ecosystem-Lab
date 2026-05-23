@@ -50,7 +50,7 @@ export type SSEEvent = ItemEvent | AuthEvent | UserEvent
 export type SSEItemEvent = ItemEvent
 
 export type PromiseChannelProps = {
-  params: Promise<{ channel: SSEChannel }>
+  params: Promise<{ channel: string }>
 }
 
 export type SSEEventByPrefix = {

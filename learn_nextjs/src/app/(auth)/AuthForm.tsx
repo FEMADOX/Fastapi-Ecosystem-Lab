@@ -1,13 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import {
-  type SubmitEvent,
-  startTransition,
-  useActionState,
-  useState
-} from 'react'
-
+import { useRouter } from 'next/navigation'
+import { startTransition, useActionState, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import {
   Field,
   FieldError,
@@ -17,6 +13,7 @@ import {
 } from '@/components/ui'
 import { parseAuthForm } from '@/schemas/auth/forms'
 import type { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
+import type { FormSubmitEvent } from '../items/new/types'
 
 export const AuthForm = ({
   title,
@@ -25,6 +22,7 @@ export const AuthForm = ({
   action,
   redirectPath
 }: AuthFormProps) => {
+  const router = useRouter()
   const variant: AuthFormVariant = title === 'Login' ? 'login' : 'signup'
   const [state, formAction, isPending] = useActionState(action, null)
   const signUpHref = `/signup?next=${encodeURIComponent('/login')}`
@@ -33,7 +31,15 @@ export const AuthForm = ({
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
-  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (title !== 'Sign Up') return
+    if (!state || 'error' in state || !('success' in state)) return
+
+    toast.success('Welcome! Account created successfully.')
+    router.push(state.redirectTo)
+  }, [router, state, title])
+
+  const handleSubmit = (event: FormSubmitEvent) => {
     event.preventDefault()
     setFieldErrors({})
 
@@ -94,7 +100,7 @@ export const AuthForm = ({
             </Field>
           </FieldGroup>
 
-          {state?.error && (
+          {state && 'error' in state && state.error && (
             <p className="text-destructive text-sm">{state.error}</p>
           )}
 
