@@ -39,7 +39,7 @@ export const updateProfileEmailAction = async (
   const { data: updatedUser, error } = await updateCurrentUser(
     authResult.accessToken,
     {
-      email: parseResult.data.email,
+      new_email: parseResult.data.email,
       current_password: parseResult.data.currentPassword
     },
     authResult.me?.id

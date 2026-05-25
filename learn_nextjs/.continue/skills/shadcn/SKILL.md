@@ -2,14 +2,14 @@
 name: shadcn
 description: Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples. Applies when working with shadcn/ui, component registries, presets, --preset codes, or any project with a components.json file. Also triggers for "shadcn init", "create an app with --preset", or "switch to --preset".
 user-invocable: false
-allowed-tools: Bash(npx shadcn@latest *), Bash(pnpm dlx shadcn@latest *), Bash(bunx --bun shadcn@latest *)
+allowed-tools: Bash(bunx --bun shadcn@latest *), Bash(npx shadcn@latest *), Bash(pnpm dlx shadcn@latest *)
 ---
 
 # shadcn/ui
 
 A framework for building ui, components and design systems. Components are added as source code to the user's project via the CLI.
 
-> **IMPORTANT:** Run all CLI commands using the project's package runner: `npx shadcn@latest`, `pnpm dlx shadcn@latest`, or `bunx --bun shadcn@latest` — based on the project's `packageManager`. Examples below use `npx shadcn@latest` but substitute the correct runner for the project.
+> **IMPORTANT:** Run all CLI commands using the project's package runner: `bunx --bun shadcn@latest`, `npx shadcn@latest`, or `pnpm dlx shadcn@latest` — based on the project's `packageManager`. Examples below use `bunx --bun shadcn@latest` by default, but substitute the correct runner for the project.
 
 ## Current Project Context
 
@@ -149,7 +149,7 @@ The injected project context contains these key fields:
 - **`iconLibrary`** → determines icon imports. Use `lucide-react` for `lucide`, `@tabler/icons-react` for `tabler`, etc. Never assume `lucide-react`.
 - **`resolvedPaths`** → exact file-system destinations for components, utils, hooks, etc.
 - **`framework`** → routing and file conventions (e.g. Next.js App Router vs Vite SPA).
-- **`packageManager`** → use this for any non-shadcn dependency installs (e.g. `pnpm add date-fns` vs `npm install date-fns`).
+- **`packageManager`** → use this for any non-shadcn dependency installs (e.g. `bun add date-fns` vs `npm install date-fns`).
 
 See [cli.md — `info` command](./cli.md) for the full field reference.
 

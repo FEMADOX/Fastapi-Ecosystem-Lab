@@ -1,4 +1,5 @@
-import { useActionState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useActionState, useEffect } from 'react'
 import {
   deleteAccountAction,
   updateProfileEmailAction,
@@ -32,6 +33,11 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
     deleteAccountAction,
     null
   )
+  const router = useRouter()
+
+  useEffect(() => {
+    if (emailState?.success || passwordState?.success) router.refresh()
+  }, [emailState, passwordState, router])
 
   if (!isActive) return null
 

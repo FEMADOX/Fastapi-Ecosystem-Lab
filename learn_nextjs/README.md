@@ -136,14 +136,14 @@ Data-fetching functions use the experimental `'use cache'` directive:
 
 ### Prerequisites
 
-- **pnpm**
+- **Bun**
 - **Node.js** 20+
 - FastAPI backend running (see root `README.md`)
 
 ### Installation
 
 ```bash
-pnpm install
+bun install
 ```
 
 ## Development
@@ -151,13 +151,13 @@ pnpm install
 Run the development server:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 Or with `.env` hot-reload:
 
 ```bash
-pnpm dev:watch
+bun run dev:watch
 ```
 
 The app will be available at `http://localhost:3000`.
@@ -165,20 +165,20 @@ The app will be available at `http://localhost:3000`.
 ### Build for Production
 
 ```bash
-pnpm build
+bun run build
 ```
 
 ### Start Production Server
 
 ```bash
-pnpm start
+bun run start
 ```
 
 ### Linting
 
 ```bash
-pnpm lint          # check
-pnpm lint:fix      # auto-fix
+bun run lint          # check
+bun run lint:fix      # auto-fix
 ```
 
 ## Testing
@@ -186,9 +186,9 @@ pnpm lint:fix      # auto-fix
 Tests use [Vitest](https://vitest.dev/) with Node environment and `@/` path alias resolution.
 
 ```bash
-pnpm test            # run all tests once
-pnpm test:watch      # watch mode
-pnpm test:coverage   # with v8 coverage report
+bun run test            # run all tests once
+bun run test:watch      # watch mode
+bun run test:coverage   # with v8 coverage report
 ```
 
 ### What is tested
@@ -230,7 +230,7 @@ uv run run-api-server
 Then start Next.js dev server:
 
 ```bash
-cd learn_nextjs && pnpm dev:watch
+cd learn_nextjs && bun run dev:watch
 ```
 
 Both will be available:
