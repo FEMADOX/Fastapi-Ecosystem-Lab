@@ -115,7 +115,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ### Using shadcn/ui Dropdown Menu
 
 ```bash
-pnpm dlx shadcn@latest add dropdown-menu
+bunx --bun shadcn@latest add dropdown-menu
 ```
 
 ```typescript

@@ -94,9 +94,9 @@ bun add tailwindcss @tailwindcss/vite
 
 bun add -d @types/node
 
-# Note: Using pnpm for shadcn init due to known Bun compatibility issues
-# (bunx has "Script not found" and postinstall/msw problems)
-pnpm dlx shadcn@latest init
+# Note: Prefer Bun for shadcn init, with fallback to pnpm/npx for compatibility issues
+# (if bunx fails in your environment, fallback to pnpm dlx or npx)
+bunx --bun shadcn@latest init
 ```
 
 ### 2. Configure Vite
@@ -236,7 +236,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ### 3. Add Theme Toggle
 
 ```bash
-pnpm dlx shadcn@latest add dropdown-menu
+bunx --bun shadcn@latest add dropdown-menu
 ```
 
 See `reference/dark-mode.md` for ModeToggle component code.

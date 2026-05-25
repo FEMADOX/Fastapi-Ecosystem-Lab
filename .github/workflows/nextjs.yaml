@@ -16,29 +16,17 @@ jobs:
         working-directory: ./learn_nextjs/
         shell: bash
 
-    strategy:
-      matrix:
-        node-version: [ 22 ]
-      fail-fast: true
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6.3.0
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: pnpm
-          cache-dependency-path: learn_nextjs/pnpm-lock.yaml
+          bun-version: latest
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -49,7 +37,7 @@ jobs:
         run: biome ci ./src
 
       - name: Check TypeScript types
-        run: pnpm tsc
+        run: bun tsc
 
       - name: Run Vitest
-        run: pnpm test
+        run: bun test
