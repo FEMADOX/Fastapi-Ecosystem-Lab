@@ -2,7 +2,13 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { startTransition, useActionState, useEffect, useState } from 'react'
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState
+} from 'react'
 import { toast } from 'sonner'
 import {
   Field,
@@ -30,14 +36,22 @@ export const AuthForm = ({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const pendingActionRef = useRef(false)
 
   useEffect(() => {
-    if (title !== 'Sign Up') return
     if (!state || 'error' in state || !('success' in state)) return
+    if (!pendingActionRef.current) return
+    pendingActionRef.current = false
 
-    toast.success('Welcome! Account created successfully.')
+    const message =
+      variant === 'login'
+        ? 'Welcome back! You are now logged in.'
+        : 'Welcome! Account created successfully.'
+
     router.push(state.redirectTo)
-  }, [router, state, title])
+    router.refresh()
+    toast.success(message)
+  }, [router, state, variant])
 
   const handleSubmit = (event: FormSubmitEvent) => {
     event.preventDefault()
@@ -53,6 +67,7 @@ export const AuthForm = ({
       return
     }
 
+    pendingActionRef.current = true
     startTransition(() => {
       formAction(formData)
     })
