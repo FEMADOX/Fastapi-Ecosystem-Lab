@@ -1,8 +1,6 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-
 import { getSafeNextPath } from '@/app/(auth)/getSafeNextPath'
 import { login, logout, signup } from '@/app/api/server-endpoints'
 import { TokenV2Schema, UserCreateSchema } from '@/common/schemas/api/resources'
@@ -87,7 +85,7 @@ export const loginAction = async (
     secure: isProduction
   })
 
-  redirect(baseResult.redirectPath)
+  return { success: true, redirectTo: baseResult.redirectPath }
 }
 
 export const registerAction = async (

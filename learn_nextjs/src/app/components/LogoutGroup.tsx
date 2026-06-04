@@ -23,6 +23,7 @@ export const LogoutGroup = ({ isLoggedIn }: LogoutButtonProps) => {
     }
 
     router.refresh()
+    toast.info('You have been logged out.')
   }
 
   return (

@@ -29,14 +29,14 @@ export const userEventMap: SSEEventMap = {
   //   toastType: 'success',
   //   toastMessage: () => `Welcome! Account created successfully.`
   // },
-  'auth.logged_in': {
-    toastType: 'success',
-    toastMessage: () => `Welcome back! You are now logged in.`
-  },
-  'auth.logged_out': {
-    toastType: 'info',
-    toastMessage: () => `You have been logged out.`
-  },
+  // 'auth.logged_in': {
+  //   toastType: 'success',
+  //   toastMessage: () => `Welcome back! You are now logged in.`
+  // },
+  // 'auth.logged_out': {
+  //   toastType: 'info',
+  //   toastMessage: () => `You have been logged out.`
+  // },
   'user.account_updated': {
     toastType: 'info',
     toastMessage: (event) => {
