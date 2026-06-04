@@ -10,7 +10,9 @@ a missing or unreachable Redis instance never breaks the API.
 
 import json
 from collections.abc import Awaitable
+from dataclasses import dataclass
 from functools import lru_cache
+from typing import cast
 
 from redis import RedisError
 from redis import asyncio as aioredis
@@ -23,8 +25,28 @@ type JSONPrimitive = str | int | float | bool | None
 type JSONValue = JSONPrimitive | list[JSONValue] | dict[str, JSONValue]
 
 
-@lru_cache(maxsize=1)
-def get_redis_client() -> aioredis.Redis:
+@dataclass
+class RedisCacheState:
+    """Singleton state for Redis cache availability."""
+
+    is_available: bool = True
+
+    def disable(self) -> None:
+        """Mark the Redis cache as unavailable."""
+        self.is_available = False
+        get_redis_client.cache_clear()
+
+    def enable(self) -> None:
+        """Mark the Redis cache as available."""
+        self.is_available = True
+        get_redis_client.cache_clear()
+
+
+redis_cache_state = RedisCacheState()
+
+
+@lru_cache(1)
+def get_redis_client() -> aioredis.Redis | None:
     """Return (or create) the shared async Redis client.
 
     ``from_url`` is synchronous — it builds the client object and configures
@@ -36,6 +58,9 @@ def get_redis_client() -> aioredis.Redis:
 
     """
     from learn_fastapi.src.config import settings  # noqa: PLC0415
+
+    if not redis_cache_state.is_available:
+        return None
 
     return aioredis.from_url(
         settings.redis_url, encoding="utf-8", decode_responses=False
@@ -49,8 +74,10 @@ async def close_redis() -> None:
     """
     if get_redis_client.cache_info().currsize:
         client = get_redis_client()
-        await client.aclose()
         get_redis_client.cache_clear()
+        if not client:
+            return
+        await client.aclose()
 
 
 async def get_cache(key: str) -> JSONValue | None:
@@ -65,10 +92,13 @@ async def get_cache(key: str) -> JSONValue | None:
     """
     try:
         client = get_redis_client()
+        if not client:
+            return None
         raw = await client.get(key)
         return json.loads(raw) if raw else None
-    except json.JSONDecodeError:
+    except json.JSONDecodeError, RedisError:
         logger.exception(f"Failed to get cache for key '{key}'")
+        redis_cache_state.disable()
         return None
 
 
@@ -84,9 +114,12 @@ async def set_cache(key: str, value: JSONValue, ttl: int = 300) -> None:
     try:
         client = get_redis_client()
         parsed_value = json.dumps(value, default=str)
+        if not client:
+            return
         await client.setex(key, ttl, parsed_value)
-    except TypeError, ValueError:
+    except TypeError, ValueError, RedisError:
         logger.exception(f"Failed to set cache for key '{key}'")
+        redis_cache_state.disable()
 
 
 async def delete_cache(*keys: str) -> None:
@@ -100,9 +133,12 @@ async def delete_cache(*keys: str) -> None:
         return
     try:
         client = get_redis_client()
+        if not client:
+            return
         await client.delete(*keys)
     except RedisError:
         logger.exception(f"Failed to delete cache for keys {keys}")
+        redis_cache_state.disable()
 
 
 async def delete_cache_pattern(pattern: str) -> None:
@@ -117,10 +153,13 @@ async def delete_cache_pattern(pattern: str) -> None:
     """
     try:
         client = get_redis_client()
+        if not client:
+            return
         matched = await client.keys(pattern)
         await client.delete(*matched) if matched else None
     except RedisError:
         logger.exception(f"Failed to delete cache for pattern {pattern}")
+        redis_cache_state.disable()
 
 
 def build_cache_key(namespace: str, *parts: str) -> str:
@@ -141,7 +180,7 @@ def build_cache_key(namespace: str, *parts: str) -> str:
 async def check_redis_health() -> dict[str, str]:
     try:
         logger.info("[Redis]: Checking redis health...")
-        client = get_redis_client()
+        client = cast("aioredis.Redis", get_redis_client())
 
         async def await_ping(value: Awaitable[bool] | bool) -> bool:
             if isinstance(value, bool):
@@ -151,9 +190,11 @@ async def check_redis_health() -> dict[str, str]:
         pong = await await_ping(client.ping())
         if not pong:
             logger.warning("[Redis]: Connection failed")
+            redis_cache_state.disable()
             return {"redis": "unhealthy"}
         logger.info("[Redis]: Status healthy")
         return {"redis": "healthy"}
     except Exception:
         logger.exception("[Redis]: Health check failed")
+        redis_cache_state.disable()
         return {"redis": "unhealthy"}
