@@ -10,8 +10,6 @@ from learn_fastapi.src.sse.manager import sse_manager
 
 from .cache.redis_client import check_redis_health
 from .constants import (
-    IMAGES_DIR,
-    MEDIA_DIR,
     STATIC_DIR,
 )
 from .middleware import SwaggerHotReloadMiddleware
@@ -26,10 +24,7 @@ if TYPE_CHECKING:
 
 def mount_static_files(app: FastAPI) -> None:
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
-    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-    IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-    app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 
 def register_dev_reload(app: FastAPI) -> None:

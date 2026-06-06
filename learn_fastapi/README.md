@@ -85,7 +85,6 @@ learn_fastapi/
 │   │   ├── service.py      # Business logic layer
 │   │   ├── utils.py        # Item helpers (Cloudinary image upload, etc.)
 │   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
-|   ├── media/images/   # Legacy local media directory for file-serving examples
 |   ├── sse/
 │   │   ├── manager.py      # Server-Sent Events manager for handling connections and broadcasting
 │   │   └── router.py       # SSE endpoints for clients to subscribe to events 
@@ -162,7 +161,6 @@ Base prefix: `/items`
 | `PATCH`  | `/{id_param}`       | Partially update an existing item      |                 `ItemPatch` (`image_url` allowed)                |
 | `DELETE` | `/{id_param}`       | Delete an item                         |                                                                 |
 | `POST`   | `/image/{id_param}` | Upload/update image for an item        | `image_file` (`UploadFile`), `caption`, authenticated item owner |
-| `GET`    | `/image/`           | Get legacy local image file by filename |                                                                 |
 | `POST`   | `/with-image/`      | Create item with optional image upload | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
 
 #### `items` media uploads with Cloudinary
@@ -201,8 +199,6 @@ FastAPI-Ecosystem-Lab/media
 **Notes:**
 
 - Missing Cloudinary variables raise a runtime error only when an image upload is attempted.
-- The `GET /items/image/` endpoint still serves legacy local files from `src/media/images`; it is not used for new
-  Cloudinary uploads.
 - `PUT /items/{id_param}` and `PATCH /items/{id_param}` accept `image_url` for API compatibility, but normal user-facing
   image changes should go through the upload endpoint so the backend controls media storage.
 

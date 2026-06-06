@@ -6,11 +6,11 @@ import httpx
 from fastapi import UploadFile
 
 from learn_fastapi.src.config import settings
+from learn_fastapi.src.constants import CLOUDINARY_ASSET_FOLDER
 from learn_fastapi.src.utils.exceptions import image_filename_required_exception
 
 from .schema import ImageSchema
 
-CLOUDINARY_ASSET_FOLDER = "FastAPI-Ecosystem-Lab/media"
 CLOUDINARY_UPLOAD_TIMEOUT = 60
 
 

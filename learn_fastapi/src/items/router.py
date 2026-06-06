@@ -1,12 +1,9 @@
-import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks
-from fastapi.responses import FileResponse
 from fastapi_versionizer.versionizer import api_version
 from starlette.status import HTTP_204_NO_CONTENT
 
-from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.items.cache import invalidate_items_namespace
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
@@ -14,7 +11,6 @@ from .annotations import (
     AnnotatedOwnerId,
     ImageCaption,
     ImageFile,
-    ImageFilename,
     ImageFileOptional,
     ItemDescription,
     ItemName,
@@ -22,7 +18,6 @@ from .annotations import (
     ItemTax,
 )
 from .dependencies import ItemServiceDep
-from .exceptions import image_not_found_exception
 from .schema import (
     ItemPatchSchema,
     ItemSchema,
@@ -248,36 +243,6 @@ async def submit_an_item_image(  # noqa: PLR0913, PLR0917
     )
     background_tasks.add_task(invalidate_items_namespace)
     return result
-
-
-@api_version(1)
-@router.get("/image/")
-async def get_image(filename: ImageFilename) -> FileResponse:
-    """Serve a stored image file by its base filename (without extension).
-
-    Performs a glob search in ``IMAGES_DIR`` for any file whose stem matches
-    the supplied name, then streams it back with the correct media type.
-
-    Args:
-        filename: Base name of the image, without file extension.
-
-    Returns:
-        The image file as a ``FileResponse`` with the appropriate media type.
-
-    Raises:
-        image_not_found_exception: 404 if no matching image file is found.
-
-    """
-    matches = await asyncio.to_thread(lambda: list(IMAGES_DIR.glob(f"{filename}.*")))
-    if not matches:
-        raise image_not_found_exception()
-
-    file_path = matches[0]
-    return FileResponse(
-        path=file_path,
-        media_type=f"image/{file_path.suffix.lstrip('.')}",
-        filename=filename,
-    )
 
 
 @api_version(1)

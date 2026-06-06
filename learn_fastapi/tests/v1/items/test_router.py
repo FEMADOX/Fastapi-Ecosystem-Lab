@@ -1,4 +1,5 @@
 import uuid
+from asyncio import sleep
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -14,12 +15,9 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_CONTENT,
 )
 
-from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.items.schema import ImageSchema
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
-
     from httpx import AsyncClient
 
     from learn_fastapi.src.items.models import Item as ItemModel
@@ -31,6 +29,8 @@ def fake_cloudinary_upload(monkeypatch: pytest.MonkeyPatch) -> None:
         image_file: UploadFile,
         caption: str = "No description provided",
     ) -> ImageSchema:
+        # Simulate an await
+        await sleep(0)
         return ImageSchema(
             name=image_file.filename,
             description=caption,
@@ -391,15 +391,8 @@ class TestSubmitItemImage:
     FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
     @pytest.fixture(autouse=True)
-    async def cleanup_images(
-        self, fake_cloudinary_upload: None
-    ) -> AsyncGenerator[None]:
-        before = set(IMAGES_DIR.iterdir()) if IMAGES_DIR.exists() else set()
-        yield
-        if IMAGES_DIR.exists():
-            for f in IMAGES_DIR.iterdir():
-                if f not in before:
-                    f.unlink(missing_ok=True)
+    def use_fake_cloudinary_upload(self, fake_cloudinary_upload: None) -> None:
+        return None
 
     async def test_returns_200(
         self, client: AsyncClient, seeded_item: ItemModel
@@ -458,15 +451,8 @@ class TestCreateItemWithImage:
     FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
     @pytest.fixture(autouse=True)
-    async def cleanup_images(
-        self, fake_cloudinary_upload: None
-    ) -> AsyncGenerator[None]:
-        before = set(IMAGES_DIR.iterdir()) if IMAGES_DIR.exists() else set()
-        yield
-        if IMAGES_DIR.exists():
-            for f in IMAGES_DIR.iterdir():
-                if f not in before:
-                    f.unlink(missing_ok=True)
+    def use_fake_cloudinary_upload(self, fake_cloudinary_upload: None) -> None:
+        return None
 
     async def test_returns_200_without_image(self, client: AsyncClient) -> None:
         response = await client.post(
