@@ -8,7 +8,8 @@ import {
   deleteCurrentUser,
   deleteItem,
   updateCurrentUser,
-  updateItem
+  updateItem,
+  uploadItemImage
 } from '@/app/api/server-endpoints'
 import type { PatchItemRequest } from '@/app/api/types'
 import type { MeActionState } from '@/app/me/types'
@@ -158,27 +159,19 @@ export const updateOwnedItemAction = async (
     }
   }
 
-  const rawImageUrl = formData.get('imageUrl')
-  const imageUrl =
-    typeof rawImageUrl === 'string' && rawImageUrl.trim().length > 0
-      ? rawImageUrl.trim()
-      : undefined
-
   const patchData: PatchItemRequest = {
     user_id: itemAuthResult.item.user_id,
     name: parseResult.data.name,
     description: parseResult.data.description,
     price: parseResult.data.price,
-    tax: parseResult.data.tax,
-    image_url: imageUrl
+    tax: parseResult.data.tax
   }
 
   const hasAnyEditableValue =
     patchData.name !== undefined ||
     patchData.description !== undefined ||
     patchData.price !== undefined ||
-    patchData.tax !== undefined ||
-    patchData.image_url !== undefined
+    patchData.tax !== undefined
 
   if (!hasAnyEditableValue) {
     return { error: 'Please provide at least one field to update.' }
@@ -197,6 +190,67 @@ export const updateOwnedItemAction = async (
   updateTag(`owner-items-${authResult.me.id}`)
 
   return { success: 'Item updated successfully.' }
+}
+
+export const updateOwnedItemImageAction = async (
+  _prevState: MeActionState,
+  formData: FormData
+): Promise<MeActionState> => {
+  const itemId = formData.get('itemId')
+  if (typeof itemId !== 'string' || itemId.length === 0) {
+    return { error: 'Item ID is required.' }
+  }
+
+  const imageFile = formData.get('image_file')
+  if (!(imageFile instanceof File) || imageFile.size === 0) {
+    return { error: 'Image file is required.' }
+  }
+
+  if (!imageFile.type.startsWith('image/')) {
+    return { error: 'Selected file must be an image.' }
+  }
+
+  const maxImageSize = 5 * 1024 * 1024
+  if (imageFile.size > maxImageSize) {
+    return { error: 'Image file must be 5 MB or smaller.' }
+  }
+
+  const authResult = await getAuthenticatedUser()
+  if (!authResult.success) {
+    return { error: authResult.error }
+  }
+
+  const itemAuthResult = await checkItemAuthorization(
+    itemId,
+    authResult.me.id,
+    authResult.me.is_superuser,
+    authResult.accessToken
+  )
+  if (!itemAuthResult.success) {
+    return { error: itemAuthResult.error }
+  }
+
+  const imageFormData = new FormData()
+  imageFormData.set('image_file', imageFile)
+  imageFormData.set('caption', itemAuthResult.item.description)
+
+  const { data: updatedItem, error } = await uploadItemImage(
+    itemId,
+    imageFormData,
+    authResult.accessToken
+  )
+
+  if (error || !updatedItem) {
+    return {
+      error: `Failed to update item image: ${error ?? 'Unknown error'}.`
+    }
+  }
+
+  updateTag('items')
+  updateTag(`item-${itemId}`)
+  updateTag(`owner-items-${authResult.me.id}`)
+
+  return { success: 'Item image updated successfully.' }
 }
 
 export const deleteOwnedItemAction = async (

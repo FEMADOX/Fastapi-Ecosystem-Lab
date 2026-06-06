@@ -111,17 +111,6 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
             <FieldError>{fieldErrors.tax}</FieldError>
           </Field>
         </FieldGroup>
-
-        <Field data-invalid={!!fieldErrors.imageUrl}>
-          <FieldLabel htmlFor="imageUrl" className="font-semibold">
-            Image URL
-          </FieldLabel>
-          <FieldDescription>
-            A URL pointing to an image of the item.
-          </FieldDescription>
-          <Input id="imageUrl" name="imageUrl" type="text" />
-          <FieldError>{fieldErrors.imageUrl}</FieldError>
-        </Field>
       </FieldGroup>
 
       {state?.error && (

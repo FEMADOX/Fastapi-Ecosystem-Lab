@@ -1,11 +1,15 @@
+import { Camera } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useRef } from 'react'
+import { type ChangeEvent, useActionState, useEffect, useRef } from 'react'
 import {
   deleteOwnedItemAction,
-  updateOwnedItemAction
+  updateOwnedItemAction,
+  updateOwnedItemImageAction
 } from '@/actions/user/actions'
+import { ProductImage } from '@/components/product-image'
 import {
+  AspectRatio,
   Badge,
   Button,
   Card,
@@ -25,8 +29,13 @@ import type { OwnedItemEditorProps, TabItemProps } from './types'
 const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
   const router = useRouter()
   const deleteIconRef = useRef<DeleteIconHandle>(null)
+  const imageFormRef = useRef<HTMLFormElement>(null)
   const [updateState, updateFormAction, isUpdatePending] = useActionState(
     updateOwnedItemAction,
+    null
+  )
+  const [imageState, imageFormAction, isImagePending] = useActionState(
+    updateOwnedItemImageAction,
     null
   )
   const [deleteState, deleteFormAction, isDeletePending] = useActionState(
@@ -35,30 +44,74 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
   )
 
   useEffect(() => {
-    if (updateState === null && deleteState === null) return
+    if (updateState === null && imageState === null && deleteState === null)
+      return
     router.refresh()
-  }, [updateState, deleteState, router])
+  }, [updateState, imageState, deleteState, router])
+
+  const submitImageUpdate = (event: ChangeEvent<HTMLInputElement>) => {
+    if (!event.currentTarget.files?.length) return
+    imageFormRef.current?.requestSubmit()
+  }
 
   return (
-    <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
-          <span>{item.name}</span>
-          <Badge>${item.price.toFixed(2)}</Badge>
-        </CardTitle>
-        <form action={deleteFormAction}>
+    <Card className="min-w-75">
+      <CardHeader className="grid grid-rows-[1fr_auto] items-center">
+        <form ref={imageFormRef} action={imageFormAction}>
           <input type="hidden" name="itemId" value={item.id} readOnly />
-          <Button
-            type="submit"
-            variant="destructive"
-            disabled={isDeletePending}
-            className="cursor-pointer"
-            onMouseEnter={() => deleteIconRef.current?.startAnimation()}
-            onMouseLeave={() => deleteIconRef.current?.stopAnimation()}
+          <AspectRatio
+            ratio={1.268115942}
+            className="group relative overflow-hidden flex rounded"
           >
-            <DeleteIcon ref={deleteIconRef} />
-          </Button>
+            <label
+              htmlFor={`image-file-${item.id}`}
+              className="block size-full cursor-pointer"
+              aria-label={`Update image for ${item.name}`}
+            >
+              <ProductImage
+                src={item.image_url}
+                alt={item.description}
+                className="block size-full object-cover object-center transition-opacity group-hover:opacity-75"
+                width={500}
+                height={500}
+                loading="eager"
+              />
+              <span className="absolute inset-0 grid place-items-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
+                <span className="rounded-full bg-background p-3 text-foreground shadow-sm">
+                  <Camera className="size-5 hover:" aria-hidden="true" />
+                </span>
+              </span>
+            </label>
+            <Input
+              id={`image-file-${item.id}`}
+              name="image_file"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={isImagePending}
+              onChange={submitImageUpdate}
+            />
+          </AspectRatio>
         </form>
+        <div className="flex w-full justify-between">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
+            <span>{item.name}</span>
+            <Badge>${item.price.toFixed(2)}</Badge>
+          </CardTitle>
+          <form action={deleteFormAction}>
+            <input type="hidden" name="itemId" value={item.id} readOnly />
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={isDeletePending}
+              className="cursor-pointer"
+              onMouseEnter={() => deleteIconRef.current?.startAnimation()}
+              onMouseLeave={() => deleteIconRef.current?.stopAnimation()}
+            >
+              <DeleteIcon ref={deleteIconRef} />
+            </Button>
+          </form>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <form
@@ -108,14 +161,6 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
                 />
               </Field>
             </div>
-            <Field>
-              <FieldLabel htmlFor={`imageUrl-${item.id}`}>Image URL</FieldLabel>
-              <Input
-                id={`imageUrl-${item.id}`}
-                name="imageUrl"
-                defaultValue={item.image_url ?? ''}
-              />
-            </Field>
           </FieldGroup>
 
           <Button
@@ -162,7 +207,7 @@ export const TabItemsComponent = ({ ownedItems, isActive }: TabItemProps) => {
         </Card>
       )}
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] justify-items-center gap-4">
         {ownedItems.map((item) => (
           <OwnedItemEditor key={item.id} item={item} />
         ))}

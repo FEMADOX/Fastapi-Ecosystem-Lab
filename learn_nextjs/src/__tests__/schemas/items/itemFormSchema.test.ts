@@ -10,8 +10,7 @@ const VALID_INPUT = {
   name: 'Running Shoes',
   description: 'Lightweight and durable',
   price: '49.99',
-  tax: '5',
-  imageUrl: ''
+  tax: '5'
 }
 
 describe('itemFormSchema', () => {
@@ -27,25 +26,6 @@ describe('itemFormSchema', () => {
       if (result.success) {
         expect(result.data.price).toBe(49.99)
         expect(result.data.tax).toBe(5)
-      }
-    })
-
-    it('transforms imageUrl empty string to undefined', () => {
-      const result = parse(VALID_INPUT)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.image_url).toBeUndefined()
-      }
-    })
-
-    it('accepts a valid image URL', () => {
-      const result = parse({
-        ...VALID_INPUT,
-        imageUrl: 'https://example.com/shoe.png'
-      })
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.image_url).toBe('https://example.com/shoe.png')
       }
     })
 
@@ -79,6 +59,14 @@ describe('itemFormSchema', () => {
         expect(result.data).not.toHaveProperty('user_id')
       }
     })
+
+    it('output does not contain image_url from text fields', () => {
+      const result = parse(VALID_INPUT)
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data).not.toHaveProperty('image_url')
+      }
+    })
   })
 
   describe('invalid inputs', () => {
@@ -104,11 +92,6 @@ describe('itemFormSchema', () => {
 
     it('fails when price is a non-numeric string', () => {
       const result = parse({ ...VALID_INPUT, price: 'free' })
-      expect(result.success).toBe(false)
-    })
-
-    it('fails when imageUrl is present but not a valid URL', () => {
-      const result = parse({ ...VALID_INPUT, imageUrl: 'not-a-url' })
       expect(result.success).toBe(false)
     })
 

@@ -20,12 +20,3 @@ export const nonNegativeNumberFromForm = (message: string) =>
     const numericValue = Number(normalizedValue)
     return Number.isFinite(numericValue) ? numericValue : Number.NaN
   }, z.number().nonnegative(message))
-
-export const nullableImageUrlFromForm = z.preprocess((value) => {
-  if (typeof value !== 'string') {
-    return null
-  }
-
-  const normalizedValue = value.trim()
-  return normalizedValue.length === 0 ? null : normalizedValue
-}, z.string().url('Image URL must be a valid URL').nullable())
