@@ -51,6 +51,7 @@ A personal repository documenting my learning journey through the FastAPI ecosys
 - **[Alembic](https://alembic.sqlalchemy.org/)** — database migrations
 - **[Redis](https://redis.io/)** — in-memory data store (caching, sessions)
 - **[PostgreSQL](https://www.postgresql.org/)** — relational database
+- **[Cloudinary](https://cloudinary.com/)** — hosted media storage for item images
 
 **Frontends:**
 
@@ -115,7 +116,15 @@ POSTGRES_PORT=5432
 COOKIE_SECURE=false        # true in production (HTTPS only)
 COOKIE_SAMESITE=lax        # strict/lax/none
 COOKIE_DOMAIN=             # empty for localhost, set domain in production
+
+# Cloudinary image uploads
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 ```
+
+Cloudinary credentials are required only for endpoints that upload item images. Uploaded item media is stored in the
+`FastAPI-Ecosystem-Lab/media` Cloudinary folder, and the API stores the returned secure URL in `image_url`.
 
 **Streamlit frontend API configuration (`.streamlit/secrets.toml`):**
 
