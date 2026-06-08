@@ -3,7 +3,6 @@ import type { z } from 'zod'
 
 import {
   nonNegativeNumberFromForm,
-  nullableImageUrlFromForm,
   stringFromForm
 } from '@/app/utils/formInputValidators'
 
@@ -94,40 +93,6 @@ describe('nonNegativeNumberFromForm', () => {
 
   it('fails for a non-string non-number value', () => {
     const result = parse(schema, null)
-    expect(result.success).toBe(false)
-  })
-})
-
-describe('nullableImageUrlFromForm', () => {
-  const schema = nullableImageUrlFromForm
-
-  it('returns null for an empty string', () => {
-    const result = parse(schema, '')
-    expect(result.success).toBe(true)
-    if (result.success) expect(result.data).toBeNull()
-  })
-
-  it('returns null for a whitespace-only string', () => {
-    const result = parse(schema, '   ')
-    expect(result.success).toBe(true)
-    if (result.success) expect(result.data).toBeNull()
-  })
-
-  it('returns null for a non-string value', () => {
-    const result = parse(schema, null)
-    expect(result.success).toBe(true)
-    if (result.success) expect(result.data).toBeNull()
-  })
-
-  it('passes for a valid URL', () => {
-    const url = 'https://example.com/image.png'
-    const result = parse(schema, url)
-    expect(result.success).toBe(true)
-    if (result.success) expect(result.data).toBe(url)
-  })
-
-  it('fails for an invalid URL string', () => {
-    const result = parse(schema, 'not-a-url')
     expect(result.success).toBe(false)
   })
 })

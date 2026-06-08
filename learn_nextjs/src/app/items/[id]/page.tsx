@@ -1,9 +1,8 @@
 import { CreditCardIcon, ShoppingCartIcon, Star, StarHalf } from 'lucide-react'
 import { cacheTag } from 'next/cache'
-import Image from 'next/image'
 import { getItem } from '@/api/server-endpoints'
-import { NO_IMAGE_AVAILABLE_URL } from '@/common/const'
 import type { PromiseIdProp } from '@/common/types/routing'
+import { ProductImage } from '@/components/product-image'
 import { Button } from '@/components/ui'
 import { RetryCard } from '../components/RetryCard'
 
@@ -28,8 +27,8 @@ const ItemPage = async ({ params }: PromiseIdProp) => {
     <div>
       <div>
         <div className="border border-border rounded-2xl overflow-hidden">
-          <Image
-            src={NO_IMAGE_AVAILABLE_URL}
+          <ProductImage
+            src={item.image_url}
             alt={item.description}
             className="block size-full object-cover object-center"
             width={500}

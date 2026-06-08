@@ -11,8 +11,7 @@ import {
   serverDelete,
   serverGet,
   serverPatch,
-  serverPost,
-  serverPut
+  serverPost
 } from './server-fetch'
 import type { AuthProps, CreateItemRequest, PatchItemRequest } from './types'
 
@@ -35,19 +34,24 @@ export const updateItem = async (
   id: string,
   item: PatchItemRequest,
   accessToken: string
-) => await serverPut<Item>(`${ITEMS_BASE_PATH}${id}`, item, accessToken)
+) => await serverPatch<Item>(`${ITEMS_BASE_PATH}${id}`, item, accessToken)
+
+export const uploadItemImage = async (
+  id: string,
+  imageFormData: FormData,
+  accessToken: string
+) =>
+  await serverPost<Item>(
+    `${ITEMS_BASE_PATH}image/${id}`,
+    imageFormData,
+    accessToken
+  )
 
 export const deleteItem = async (id: string, accessToken: string) =>
   await serverDelete(`${ITEMS_BASE_PATH}${id}`, accessToken)
 
 // export const getItemImage = async (filename: string) =>
 //   await serverGet(`${ITEMS_BASE_PATH}image/?filename=${encodeURIComponent(filename)}`)
-
-// export const uploadImageForItem = async (id: string, imageFile: File) => {
-//   const formData = new FormData()
-//   formData.append('image', imageFile)
-//   return await serverPost(`${ITEMS_BASE_PATH}image/${id}`, formData)
-// }
 
 export const getOwnerItems = async (userId?: string, accessToken?: string) => {
   return await serverGet<Items>(
