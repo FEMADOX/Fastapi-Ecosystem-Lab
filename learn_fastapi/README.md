@@ -11,6 +11,7 @@ A personal learning module for exploring FastAPI concepts, patterns, and best pr
   - [API Version 1: Core Concepts and Patterns](#api-version-1-core-concepts-and-patterns)
     - [`items` App](#items-app)
       - [`items` Endpoints](#items-endpoints)
+      - [`items` media uploads with Cloudinary](#items-media-uploads-with-cloudinary)
       - [`items` cacheing with Redis](#items-cacheing-with-redis)
       - [`items` SSE (Server-Sent Events)](#items-sse-server-sent-events)
     - [`auth` App](#auth-app)
@@ -82,9 +83,8 @@ learn_fastapi/
 │   │   ├── router.py       # CRUD endpoints for /items
 │   │   ├── schema.py       # Item Pydantic model
 │   │   ├── service.py      # Business logic layer
-│   │   ├── utils.py        # Item helpers (image save, etc.)
+│   │   ├── utils.py        # Item helpers (Cloudinary image upload, etc.)
 │   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
-|   ├── media/images/   # Media storage (e.g. uploaded images)
 |   ├── sse/
 │   │   ├── manager.py      # Server-Sent Events manager for handling connections and broadcasting
 │   │   └── router.py       # SSE endpoints for clients to subscribe to events 
@@ -157,12 +157,50 @@ Base prefix: `/items`
 | `GET`    | `/`                 | List all items                         |                                                                 |
 | `GET`    | `/{id_param}`       | Get item by `UUID`                     |                                                                 |
 | `POST`   | `/`                 | Create a new item                      |                             `Item`                              |
-| `PUT`    | `/{id_param}`       | Replace fields of an existing item     |                          `ItemUpdate`                           |
-| `PATCH`  | `/{id_param}`       | Partially update an existing item      |                          `ItemUpdate`                           |
+| `PUT`    | `/{id_param}`       | Replace fields of an existing item     |                `ItemUpdate` (`image_url` allowed)                |
+| `PATCH`  | `/{id_param}`       | Partially update an existing item      |                 `ItemPatch` (`image_url` allowed)                |
 | `DELETE` | `/{id_param}`       | Delete an item                         |                                                                 |
-| `POST`   | `/image/{id_param}` | Upload/update image for an item        |             `image_file` (`UploadFile`), `caption`              |
-| `GET`    | `/image/`           | Get image file by filename             |                                                                 |
+| `POST`   | `/image/{id_param}` | Upload/update image for an item        | `image_file` (`UploadFile`), `caption`, authenticated item owner |
 | `POST`   | `/with-image/`      | Create item with optional image upload | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
+
+#### `items` media uploads with Cloudinary
+
+The items module now uploads item images to Cloudinary instead of persisting new uploads in the local
+`src/media/images` folder. This keeps the API stateless for media files and lets frontend clients render the
+Cloudinary-hosted `secure_url` stored on each item as `image_url`.
+
+**Configuration:**
+
+Add these variables to the repository root `.env` file:
+
+```.env
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
+
+Uploaded assets are sent to the Cloudinary folder:
+
+```text
+FastAPI-Ecosystem-Lab/media
+```
+
+**Upload flow:**
+
+1. `POST /items/image/{id_param}` receives `multipart/form-data` with `image_file` and optional `caption`.
+2. The route requires `CurrentUserDep`; regular users can only update images for their own items, while superusers can
+   update any item.
+3. `src/items/utils.py` signs the Cloudinary upload parameters and sends the file with `httpx.AsyncClient`.
+4. Cloudinary returns a `secure_url`, which is saved on the item as `image_url`.
+5. Item cache entries are invalidated and an `item.image_updated` SSE event is broadcast to the owner.
+
+`POST /items/with-image/` uses the same Cloudinary helper when an image is included during item creation.
+
+**Notes:**
+
+- Missing Cloudinary variables raise a runtime error only when an image upload is attempted.
+- `PUT /items/{id_param}` and `PATCH /items/{id_param}` accept `image_url` for API compatibility, but normal user-facing
+  image changes should go through the upload endpoint so the backend controls media storage.
 
 #### `items` cacheing with Redis
 

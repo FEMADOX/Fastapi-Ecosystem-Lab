@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     postgres_db: str = "learn_fastapi"
     postgres_host: str = "localhost"
     postgres_port: int = 5432
+    cloudinary_cloud_name: str | None = None
+    cloudinary_api_key: SecretStr | None = None
+    cloudinary_api_secret: SecretStr | None = None
 
     model_config = SettingsConfigDict(
         env_file=str(PROJECT_DIR.parent / ".env"),

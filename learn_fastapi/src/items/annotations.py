@@ -31,12 +31,6 @@ ItemPrice = Annotated[float, Form(ge=0, description="The price of the item")]
 ItemTax = Annotated[float, Form(ge=0, description="The tax of the item")]
 
 # ---------------------------------------------------------------------------
-# Image Query parameter annotation
-# ---------------------------------------------------------------------------
-
-ImageFilename = Annotated[str, Query(description="The filename of the image")]
-
-# ---------------------------------------------------------------------------
 # Image Form field annotations
 # ---------------------------------------------------------------------------
 

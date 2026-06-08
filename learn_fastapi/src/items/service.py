@@ -216,7 +216,7 @@ class ItemService(BaseService):
         """Create a new item and optionally attach an uploaded image.
 
         Checks that no other item shares the same name before creation.
-        If an image file is supplied, it is saved to disk and its URL
+        If an image file is supplied, it is uploaded and its URL
         is stored on the new item record.
 
         Args:
@@ -366,26 +366,41 @@ class ItemService(BaseService):
         )
 
     async def update_item_image(
-        self, item_id: UUID, image_file: UploadFile, caption: str
+        self,
+        item_id: UUID,
+        image_file: UploadFile,
+        caption: str,
+        owner: User,
     ) -> ItemSchema:
-        """Save an uploaded image and associate it with an existing item.
+        """Upload an image and associate it with an existing item.
 
         Args:
             item_id: The UUID of the item to attach the image to.
-            image_file: The image file to persist to disk.
+            image_file: The image file to upload.
             caption: Alt-text or description stored alongside the image URL.
+            owner: The authenticated user who must own the item.
 
         Returns:
             The updated ItemSchema with the new ``image_url``.
 
         Raises:
-            item_not_found_exception: When no item with the given UUID exists.
+            item_not_found_or_not_belong_to_user_exception:
+                When the item does not exist or does not belong to the owner.
 
         """
-        image = await save_image_file(image_file, caption)
-        item = await self.repository.update_item_image(item_id, image.url)
+        if owner.is_superuser:
+            item = await self.repository.get_item(item_id)
+        else:
+            item = await self.repository.get_user_item(item_id, owner)
+
         if item is None:
-            raise item_not_found_exception()
+            raise item_not_found_or_not_belong_to_user_exception()
+
+        image = await save_image_file(image_file, caption)
+        item = await self.repository.update_item_image(item.id, image.url)
+
+        if item is None:
+            raise item_not_found_or_not_belong_to_user_exception()
 
         schema = ItemSchema.model_validate(item, from_attributes=True)
 

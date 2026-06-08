@@ -153,11 +153,8 @@ class ItemRepository(BaseRepository):
         if item is None:
             return None
 
-        await self.session.execute(
-            update(Item)
-            .where(condition)
-            .values(**item_data.model_dump(exclude=exclude_args))
-        )
+        values = item_data.model_dump(exclude=exclude_args, exclude_none=True)
+        await self.session.execute(update(Item).where(condition).values(**values))
         await self.session.commit()
         await self.session.refresh(item)
         return item
@@ -189,11 +186,10 @@ class ItemRepository(BaseRepository):
         if item is None:
             return None
 
-        await self.session.execute(
-            update(Item)
-            .where(condition)
-            .values(**item_data.model_dump(exclude=exclude_args, exclude_unset=True))
+        values = item_data.model_dump(
+            exclude=exclude_args, exclude_none=True, exclude_unset=True
         )
+        await self.session.execute(update(Item).where(condition).values(**values))
         await self.commit()
         await self.session.refresh(item)
         return item
@@ -209,18 +205,15 @@ class ItemRepository(BaseRepository):
             The updated Item.
 
         """
-        result = await self.session.execute(
-            select(Item).where(bool_to_column(Item.id == item_id))
-        )
+        id_bool_column = bool_to_column(Item.id == item_id)
+        result = await self.session.execute(select(Item).where(id_bool_column))
 
         item = result.scalar_one_or_none()
         if item is None:
             return None
 
         await self.session.execute(
-            update(Item)
-            .where(bool_to_column(Item.id == item_id))
-            .values(image_url=image_url)
+            update(Item).where(id_bool_column).values(image_url=image_url)
         )
         await self.commit()
         await self.session.refresh(item)

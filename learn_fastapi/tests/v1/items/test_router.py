@@ -1,8 +1,10 @@
 import uuid
+from asyncio import sleep
 from typing import TYPE_CHECKING
 from uuid import UUID
 
 import pytest
+from fastapi import UploadFile
 from starlette.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
@@ -13,14 +15,36 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_CONTENT,
 )
 
-from learn_fastapi.src.constants import IMAGES_DIR
+from learn_fastapi.src.items.schema import ImageSchema
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
-
     from httpx import AsyncClient
 
     from learn_fastapi.src.items.models import Item as ItemModel
+
+
+@pytest.fixture
+def fake_cloudinary_upload(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_save_image_file(
+        image_file: UploadFile,
+        caption: str = "No description provided",
+    ) -> ImageSchema:
+        # Simulate an await
+        await sleep(0)
+        return ImageSchema(
+            name=image_file.filename,
+            description=caption,
+            content_type=image_file.content_type,
+            url=(
+                "https://res.cloudinary.com/test/image/upload/"
+                f"FastAPI-Ecosystem-Lab/media/{image_file.filename}"
+            ),
+        )
+
+    monkeypatch.setattr(
+        "learn_fastapi.src.items.service.save_image_file",
+        fake_save_image_file,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +302,21 @@ class TestUpdateItem:
         body = response.json()
         assert body["name"] == sample_item["name"]
 
+    async def test_update_accepts_image_url(
+        self,
+        client: AsyncClient,
+        sample_item: dict,
+        seeded_item: ItemModel,
+    ) -> None:
+        # The profile editor updates image_url directly from a URL field.
+        image_url = "https://example.com/images/item.png"
+        response = await client.put(
+            f"/items/{seeded_item.id}",
+            json={**sample_item, "image_url": image_url},
+        )
+        assert response.status_code == HTTP_200_OK
+        assert response.json()["image_url"] == image_url
+
     async def test_invalid_payload_returns_422(
         self, client: AsyncClient, seeded_item: ItemModel
     ) -> None:
@@ -285,6 +324,27 @@ class TestUpdateItem:
             f"/items/{seeded_item.id}", json={"name": "Bad", "price": "not-a-float"}
         )
         assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
+
+
+# ---------------------------------------------------------------------------
+# PATCH /items/{id_param}
+# ---------------------------------------------------------------------------
+
+
+class TestPatchItem:
+    async def test_patch_accepts_image_url(
+        self,
+        client: AsyncClient,
+        seeded_item: ItemModel,
+    ) -> None:
+        # The profile editor sends a partial update when only the image changes.
+        image_url = "https://example.com/images/patched-item.png"
+        response = await client.patch(
+            f"/items/{seeded_item.id}",
+            json={"image_url": image_url},
+        )
+        assert response.status_code == HTTP_200_OK
+        assert response.json()["image_url"] == image_url
 
 
 # ---------------------------------------------------------------------------
@@ -331,13 +391,8 @@ class TestSubmitItemImage:
     FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
     @pytest.fixture(autouse=True)
-    async def cleanup_images(self) -> AsyncGenerator[None]:
-        before = set(IMAGES_DIR.iterdir()) if IMAGES_DIR.exists() else set()
-        yield
-        if IMAGES_DIR.exists():
-            for f in IMAGES_DIR.iterdir():
-                if f not in before:
-                    f.unlink(missing_ok=True)
+    def use_fake_cloudinary_upload(self, fake_cloudinary_upload: None) -> None:
+        return None
 
     async def test_returns_200(
         self, client: AsyncClient, seeded_item: ItemModel
@@ -349,13 +404,19 @@ class TestSubmitItemImage:
         assert response.status_code == HTTP_200_OK
 
     async def test_image_url_set(
-        self, client: AsyncClient, seeded_item: ItemModel
+        self,
+        client: AsyncClient,
+        seeded_item: ItemModel,
     ) -> None:
         response = await client.post(
             f"/items/image/{seeded_item.id}",
             files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
         )
-        assert response.json()["image_url"] == "/media/images/test.png"
+        assert (
+            response.json()["image_url"]
+            == "https://res.cloudinary.com/test/image/upload/"
+            "FastAPI-Ecosystem-Lab/media/test.png"
+        )
 
     async def test_item_name_unchanged(
         self, client: AsyncClient, seeded_item: ItemModel
@@ -390,13 +451,8 @@ class TestCreateItemWithImage:
     FAKE_PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
 
     @pytest.fixture(autouse=True)
-    async def cleanup_images(self) -> AsyncGenerator[None]:
-        before = set(IMAGES_DIR.iterdir()) if IMAGES_DIR.exists() else set()
-        yield
-        if IMAGES_DIR.exists():
-            for f in IMAGES_DIR.iterdir():
-                if f not in before:
-                    f.unlink(missing_ok=True)
+    def use_fake_cloudinary_upload(self, fake_cloudinary_upload: None) -> None:
+        return None
 
     async def test_returns_200_without_image(self, client: AsyncClient) -> None:
         response = await client.post(
@@ -448,7 +504,11 @@ class TestCreateItemWithImage:
             },
             files={"image_file": ("product.png", self.FAKE_PNG, "image/png")},
         )
-        assert response.json()["image_url"] == "/media/images/product.png"
+        assert (
+            response.json()["image_url"]
+            == "https://res.cloudinary.com/test/image/upload/"
+            "FastAPI-Ecosystem-Lab/media/product.png"
+        )
 
     async def test_default_values_used(self, client: AsyncClient) -> None:
         item_name = "Default Item"

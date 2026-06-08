@@ -1,12 +1,9 @@
-import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks
-from fastapi.responses import FileResponse
 from fastapi_versionizer.versionizer import api_version
 from starlette.status import HTTP_204_NO_CONTENT
 
-from learn_fastapi.src.constants import IMAGES_DIR
 from learn_fastapi.src.items.cache import invalidate_items_namespace
 from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
@@ -14,7 +11,6 @@ from .annotations import (
     AnnotatedOwnerId,
     ImageCaption,
     ImageFile,
-    ImageFilename,
     ImageFileOptional,
     ItemDescription,
     ItemName,
@@ -22,7 +18,6 @@ from .annotations import (
     ItemTax,
 )
 from .dependencies import ItemServiceDep
-from .exceptions import image_not_found_exception
 from .schema import (
     ItemPatchSchema,
     ItemSchema,
@@ -221,59 +216,33 @@ async def delete_item(
 
 @api_version(1)
 @router.post("/image/{id_param}")
-async def submit_an_item_image(
+async def submit_an_item_image(  # noqa: PLR0913, PLR0917
     id_param: UUID,
     service: ItemServiceDep,
     image_file: ImageFile,
     background_tasks: BackgroundTasks,
+    current_user: CurrentUserDep,
     caption: ImageCaption = "No description provided",
 ) -> ItemSchema:
-    """Upload an image and attach it to an existing item.
+    """Upload an image to the configured media storage and attach it to an item.
 
     Args:
         id_param: UUID of the target item.
         service: Injected ItemService dependency.
         image_file: Image file to upload (multipart/form-data).
-        caption: Optional alt-text or description for the image.
         background_tasks: Background tasks manager.
+        current_user: Authenticated user who must own the item.
+        caption: Optional alt-text or description for the image.
 
     Returns:
         The updated item with its new ``image_url``.
 
     """
-    result = await service.update_item_image(id_param, image_file, caption)
+    result = await service.update_item_image(
+        id_param, image_file, caption, current_user
+    )
     background_tasks.add_task(invalidate_items_namespace)
     return result
-
-
-@api_version(1)
-@router.get("/image/")
-async def get_image(filename: ImageFilename) -> FileResponse:
-    """Serve a stored image file by its base filename (without extension).
-
-    Performs a glob search in ``IMAGES_DIR`` for any file whose stem matches
-    the supplied name, then streams it back with the correct media type.
-
-    Args:
-        filename: Base name of the image, without file extension.
-
-    Returns:
-        The image file as a ``FileResponse`` with the appropriate media type.
-
-    Raises:
-        image_not_found_exception: 404 if no matching image file is found.
-
-    """
-    matches = await asyncio.to_thread(lambda: list(IMAGES_DIR.glob(f"{filename}.*")))
-    if not matches:
-        raise image_not_found_exception()
-
-    file_path = matches[0]
-    return FileResponse(
-        path=file_path,
-        media_type=f"image/{file_path.suffix.lstrip('.')}",
-        filename=filename,
-    )
 
 
 @api_version(1)
@@ -292,7 +261,7 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
     """Create an item with an optional image in a single multipart request.
 
     Validates that no other item shares the same name before creation.
-    If an image file is supplied it is saved to disk and its URL stored on
+    If an image file is supplied it is uploaded and its URL stored on
     the newly created item.
 
     Args:
