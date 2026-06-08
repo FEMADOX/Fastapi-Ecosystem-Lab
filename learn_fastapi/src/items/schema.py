@@ -48,6 +48,7 @@ class ItemUpdateSchema(BaseModel):
         " (Only admins users can update this attribute)",
         default=None,
     )
+    image_url: str | None = Field(description="The url of the image", default=None)
 
 
 class ItemPatchSchema(BaseModel):
@@ -66,3 +67,4 @@ class ItemPatchSchema(BaseModel):
         " (Only admins users can update this attribute)",
         default=None,
     )
+    image_url: str | None = Field(description="The url of the image", default=None)

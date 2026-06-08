@@ -8,13 +8,6 @@ if TYPE_CHECKING:
     from fastapi import HTTPException
 
 
-def image_not_found_exception() -> HTTPException:
-    return build_http_exception(
-        status_code=HTTP_404_NOT_FOUND,
-        detail="Image not found",
-    )
-
-
 def item_not_found_exception() -> HTTPException:
     return build_http_exception(
         status_code=HTTP_404_NOT_FOUND,

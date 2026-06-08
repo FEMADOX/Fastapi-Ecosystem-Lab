@@ -8,6 +8,7 @@ dependencies = [
   "fakeredis>=2.35.1",
   "fastapi-versionizer>=4.0.2",
   "fastapi[standard-no-fastapi-cloud-cli]>=0.135.1",
+  "httpx>=0.28.1",
   "pre-commit>=4.5.1",
   "psycopg[binary]>=3.3.3",
   "pydantic-settings>=2.13.1",
@@ -33,7 +34,6 @@ dev = [
   "ty>=0.0.17",
 ]
 streamlit-deps = [
-  "httpx>=0.28.1",
   "streamlit>=1.55.0",
 ]
 types-stubs = []

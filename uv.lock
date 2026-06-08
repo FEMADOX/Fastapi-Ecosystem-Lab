@@ -458,6 +458,7 @@ dependencies = [
     { name = "fakeredis" },
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },
     { name = "fastapi-versionizer" },
+    { name = "httpx" },
     { name = "pre-commit" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-settings" },
@@ -478,7 +479,6 @@ dev = [
     { name = "ty" },
 ]
 streamlit-deps = [
-    { name = "httpx" },
     { name = "streamlit" },
 ]
 
@@ -492,6 +492,7 @@ requires-dist = [
     { name = "fakeredis", specifier = ">=2.35.1" },
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = ">=0.135.1" },
     { name = "fastapi-versionizer", specifier = ">=4.0.2" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pydantic-settings", specifier = ">=2.13.1" },
@@ -511,10 +512,7 @@ dev = [
     { name = "ruff", specifier = ">=0.15.2" },
     { name = "ty", specifier = ">=0.0.17" },
 ]
-streamlit-deps = [
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "streamlit", specifier = ">=1.55.0" },
-]
+streamlit-deps = [{ name = "streamlit", specifier = ">=1.55.0" }]
 types-stubs = []
 
 [[package]]
