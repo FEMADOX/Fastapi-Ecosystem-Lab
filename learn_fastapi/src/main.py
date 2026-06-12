@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import APIRouter, FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi_versionizer.versionizer import Versionizer, api_version
 from sqlalchemy.exc import DBAPIError
 
@@ -11,8 +12,9 @@ from learn_fastapi.src.index import (
     sse_router,
     users_router,
 )
-from learn_fastapi.src.lifespan import lifespan
+from learn_fastapi.src.lifespan import lifespan, register_dev_reload
 from learn_fastapi.src.middleware import CorsMiddlewareConfigurer
+from learn_fastapi.src.styles import SWAGGER_GRID_STYLE
 from learn_fastapi.src.utils.alembic import app_logger
 
 app = FastAPI(
@@ -20,9 +22,22 @@ app = FastAPI(
     title="Learn FastAPI",
     version="1.0.0",
     root_path="/api",
+    openapi_url="/openapi.json",
+    docs_url=None,
 )
-# register_dev_reload(app)
+register_dev_reload(app)
 CorsMiddlewareConfigurer(settings.allowed_hosts).add_middleware(app)
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui() -> HTMLResponse:
+    response = get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title=f"{app.title} - Swagger UI",
+    )
+    body = bytes(response.body).decode()
+    body = body.replace("</head>", f"{SWAGGER_GRID_STYLE}</head>")
+    return HTMLResponse(content=body)
 
 
 @app.exception_handler(DBAPIError)
@@ -54,6 +69,14 @@ versions = Versionizer(
     latest_prefix="/latest",
     sort_routes=True,
 ).versionize()
+
+
+app.add_api_route(
+    "/docs",
+    custom_swagger_ui,
+    include_in_schema=False,
+    methods=["GET"],
+)
 
 
 def main() -> None:
