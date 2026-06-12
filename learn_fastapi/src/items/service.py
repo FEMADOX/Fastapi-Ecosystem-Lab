@@ -26,7 +26,7 @@ from .exceptions import (
 )
 from .repository import ItemRepository
 from .schema import ItemPatchSchema, ItemSchema, ItemUpdateSchema
-from .utils import save_image_file
+from .utils import delete_image_file, extract_cloudinary_public_id, save_image_file
 
 
 class ItemService(BaseService):
@@ -395,6 +395,13 @@ class ItemService(BaseService):
 
         if item is None:
             raise item_not_found_or_not_belong_to_user_exception()
+
+        if item.image_url:
+            image_id = extract_cloudinary_public_id(item.image_url)
+            await delete_image_file(image_id)
+            await self.repository.patch_item(
+                item_id, ItemPatchSchema(image_url=None), owner
+            )
 
         image = await save_image_file(image_file, caption)
         item = await self.repository.update_item_image(item.id, image.url)

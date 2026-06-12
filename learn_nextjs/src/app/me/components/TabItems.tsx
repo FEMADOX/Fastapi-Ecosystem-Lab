@@ -55,7 +55,7 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
   }
 
   return (
-    <Card className="min-w-75">
+    <Card className="max-w-md">
       <CardHeader className="grid grid-rows-[1fr_auto] items-center">
         <form ref={imageFormRef} action={imageFormAction}>
           <input type="hidden" name="itemId" value={item.id} readOnly />
@@ -207,7 +207,7 @@ export const TabItemsComponent = ({ ownedItems, isActive }: TabItemProps) => {
         </Card>
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] justify-items-center gap-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] justify-items-center gap-4 md:gap-8">
         {ownedItems.map((item) => (
           <OwnedItemEditor key={item.id} item={item} />
         ))}
