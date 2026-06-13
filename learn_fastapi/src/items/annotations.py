@@ -18,6 +18,7 @@ float_default = Annotated[
     float, mapped_column(CheckConstraint("price >= 0"), default=0.00)
 ]
 str_url = Annotated[str, mapped_column(default="")]
+str_nullable = Annotated[str | None, mapped_column(default=None, nullable=True)]
 
 # ---------------------------------------------------------------------------
 # Item Form field annotations

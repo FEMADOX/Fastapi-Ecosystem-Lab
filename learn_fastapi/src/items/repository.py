@@ -154,6 +154,9 @@ class ItemRepository(BaseRepository):
             return None
 
         values = item_data.model_dump(exclude=exclude_args, exclude_none=True)
+        if "image_url" in values:
+            values["image_public_id"] = None
+
         await self.session.execute(update(Item).where(condition).values(**values))
         await self.session.commit()
         await self.session.refresh(item)
@@ -189,17 +192,23 @@ class ItemRepository(BaseRepository):
         values = item_data.model_dump(
             exclude=exclude_args, exclude_none=True, exclude_unset=True
         )
+        if "image_url" in values:
+            values["image_public_id"] = None
+
         await self.session.execute(update(Item).where(condition).values(**values))
         await self.commit()
         await self.session.refresh(item)
         return item
 
-    async def update_item_image(self, item_id: UUID, image_url: str) -> Item | None:
-        """Update the image_url of an item.
+    async def update_item_image(
+        self, item_id: UUID, image_url: str, image_public_id: str
+    ) -> Item | None:
+        """Update the Cloudinary image metadata of an item.
 
         Args:
             item_id: The UUID of the item to update.
             image_url: The new image URL to store on the item.
+            image_public_id: The Cloudinary public ID for deletion/replacement.
 
         Returns:
             The updated Item.
@@ -213,7 +222,9 @@ class ItemRepository(BaseRepository):
             return None
 
         await self.session.execute(
-            update(Item).where(id_bool_column).values(image_url=image_url)
+            update(Item)
+            .where(id_bool_column)
+            .values(image_url=image_url, image_public_id=image_public_id)
         )
         await self.commit()
         await self.session.refresh(item)

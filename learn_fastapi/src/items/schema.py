@@ -12,6 +12,7 @@ class ImageSchema(BaseModel):
         description="The MIME type of the image", default=None
     )
     url: str = Field(description="The url of the image", default="")
+    public_id: str = Field(description="The Cloudinary public ID", default="")
 
 
 class ItemSchema(BaseModel):

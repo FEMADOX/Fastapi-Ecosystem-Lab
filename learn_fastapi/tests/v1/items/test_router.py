@@ -15,12 +15,12 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_CONTENT,
 )
 
+from learn_fastapi.src.items.models import Item as ItemModel
 from learn_fastapi.src.items.schema import ImageSchema
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
-
-    from learn_fastapi.src.items.models import Item as ItemModel
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.fixture
@@ -39,12 +39,30 @@ def fake_cloudinary_upload(monkeypatch: pytest.MonkeyPatch) -> None:
                 "https://res.cloudinary.com/test/image/upload/"
                 f"FastAPI-Ecosystem-Lab/media/{image_file.filename}"
             ),
+            public_id=f"FastAPI-Ecosystem-Lab/media/{image_file.filename}",
         )
 
     monkeypatch.setattr(
         "learn_fastapi.src.items.service.save_image_file",
         fake_save_image_file,
     )
+
+
+@pytest.fixture
+def fake_cloudinary_delete(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    deleted_public_ids: list[str] = []
+
+    async def fake_delete_image_file(image_public_id: str) -> bool:
+        # Preserve the awaited production contract while avoiding Cloudinary I/O.
+        await sleep(0)
+        deleted_public_ids.append(image_public_id)
+        return True
+
+    monkeypatch.setattr(
+        "learn_fastapi.src.items.service.delete_image_file",
+        fake_delete_image_file,
+    )
+    return deleted_public_ids
 
 
 # ---------------------------------------------------------------------------
@@ -317,6 +335,25 @@ class TestUpdateItem:
         assert response.status_code == HTTP_200_OK
         assert response.json()["image_url"] == image_url
 
+    async def test_update_clears_stale_image_public_id(
+        self,
+        client: AsyncClient,
+        sample_item: dict,
+        seeded_item: ItemModel,
+        test_session: AsyncSession,
+    ) -> None:
+        seeded_item.image_public_id = "FastAPI-Ecosystem-Lab/media/old"
+        await test_session.commit()
+
+        response = await client.put(
+            f"/items/{seeded_item.id}",
+            json={**sample_item, "image_url": "https://example.com/images/item.png"},
+        )
+
+        assert response.status_code == HTTP_200_OK
+        await test_session.refresh(seeded_item)
+        assert seeded_item.image_public_id is None
+
     async def test_invalid_payload_returns_422(
         self, client: AsyncClient, seeded_item: ItemModel
     ) -> None:
@@ -345,6 +382,24 @@ class TestPatchItem:
         )
         assert response.status_code == HTTP_200_OK
         assert response.json()["image_url"] == image_url
+
+    async def test_patch_clears_stale_image_public_id(
+        self,
+        client: AsyncClient,
+        seeded_item: ItemModel,
+        test_session: AsyncSession,
+    ) -> None:
+        seeded_item.image_public_id = "FastAPI-Ecosystem-Lab/media/old"
+        await test_session.commit()
+
+        response = await client.patch(
+            f"/items/{seeded_item.id}",
+            json={"image_url": "https://example.com/images/patched-item.png"},
+        )
+
+        assert response.status_code == HTTP_200_OK
+        await test_session.refresh(seeded_item)
+        assert seeded_item.image_public_id is None
 
 
 # ---------------------------------------------------------------------------
@@ -418,6 +473,21 @@ class TestSubmitItemImage:
             "FastAPI-Ecosystem-Lab/media/test.png"
         )
 
+    async def test_image_public_id_saved(
+        self,
+        client: AsyncClient,
+        seeded_item: ItemModel,
+        test_session: AsyncSession,
+    ) -> None:
+        response = await client.post(
+            f"/items/image/{seeded_item.id}",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+        )
+
+        assert response.status_code == HTTP_200_OK
+        await test_session.refresh(seeded_item)
+        assert seeded_item.image_public_id == "FastAPI-Ecosystem-Lab/media/test.png"
+
     async def test_item_name_unchanged(
         self, client: AsyncClient, seeded_item: ItemModel
     ) -> None:
@@ -426,6 +496,29 @@ class TestSubmitItemImage:
             files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
         )
         assert response.json()["name"] == "Foo"
+
+    async def test_existing_cloudinary_image_is_deleted_before_replacement(
+        self,
+        client: AsyncClient,
+        seeded_item: ItemModel,
+        fake_cloudinary_delete: list[str],
+        test_session: AsyncSession,
+    ) -> None:
+        old_image_url = (
+            "https://res.cloudinary.com/test/image/upload/v123/"
+            "FastAPI-Ecosystem-Lab/media/old.png"
+        )
+        seeded_item.image_url = old_image_url
+        seeded_item.image_public_id = "FastAPI-Ecosystem-Lab/media/old"
+        await test_session.commit()
+
+        response = await client.post(
+            f"/items/image/{seeded_item.id}",
+            files={"image_file": ("test.png", self.FAKE_PNG, "image/png")},
+        )
+
+        assert response.status_code == HTTP_200_OK
+        assert fake_cloudinary_delete == ["FastAPI-Ecosystem-Lab/media/old"]
 
     async def test_non_existing_id_returns_404(self, client: AsyncClient) -> None:
         random_id = uuid.uuid4()
@@ -509,6 +602,27 @@ class TestCreateItemWithImage:
             == "https://res.cloudinary.com/test/image/upload/"
             "FastAPI-Ecosystem-Lab/media/product.png"
         )
+
+    async def test_image_public_id_saved_when_file_provided(
+        self,
+        client: AsyncClient,
+        test_session: AsyncSession,
+    ) -> None:
+        response = await client.post(
+            "/items/with-image/",
+            data={
+                "name": "Image Item",
+                "description": "A long enough description",
+                "price": "5.00",
+            },
+            files={"image_file": ("product.png", self.FAKE_PNG, "image/png")},
+        )
+
+        assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
+
+        item = await test_session.get(ItemModel, UUID(response.json()["id"]))
+        assert item is not None
+        assert item.image_public_id == "FastAPI-Ecosystem-Lab/media/product.png"
 
     async def test_default_values_used(self, client: AsyncClient) -> None:
         item_name = "Default Item"
