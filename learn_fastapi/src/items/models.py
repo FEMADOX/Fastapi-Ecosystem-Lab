@@ -17,6 +17,7 @@ from .annotations import (
     float_default,
     str_default,
     str_indexed,
+    str_nullable,
     str_url,
 )
 
@@ -33,6 +34,7 @@ class Item(Base):
     price: Mapped[float_default]
     tax: Mapped[float_default]
     image_url: Mapped[str_url]
+    image_public_id: Mapped[str_nullable]
     created_at: Mapped[timestamp_created]
     updated_at: Mapped[timestamp_updated]
     user_id: Mapped[user_id_fk]

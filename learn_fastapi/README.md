@@ -109,7 +109,8 @@ learn_fastapi/
 |   |   |   └── test_router.py  # User account endpoints tests
 |   |   ├── items/
 |   |   |   ├── conftest.py     # Item fixtures (test_user, sample_item, seeded_item)
-|   |   |   └── test_router.py  # Item CRUD endpoints tests
+|   |   |   ├── test_router.py  # Item CRUD endpoints tests
+|   |   |   └── test_utils.py   # Cloudinary image helper tests
 |   |   ├── conftest.py # V1 global fixtures (if needed)
 |   |   └── test_items_authorization.py # Authorization tests for item ownership
 |   ├── v2/
@@ -166,8 +167,9 @@ Base prefix: `/items`
 #### `items` media uploads with Cloudinary
 
 The items module now uploads item images to Cloudinary instead of persisting new uploads in the local
-`src/media/images` folder. This keeps the API stateless for media files and lets frontend clients render the
-Cloudinary-hosted `secure_url` stored on each item as `image_url`.
+`src/media/images` folder. This keeps the API stateless for media files, lets frontend clients render the
+Cloudinary-hosted `secure_url` stored on each item as `image_url`, and stores Cloudinary's `public_id` internally as
+`image_public_id` so replacements can delete the previous asset without parsing URLs.
 
 **Configuration:**
 
@@ -190,9 +192,10 @@ FastAPI-Ecosystem-Lab/media
 1. `POST /items/image/{id_param}` receives `multipart/form-data` with `image_file` and optional `caption`.
 2. The route requires `CurrentUserDep`; regular users can only update images for their own items, while superusers can
    update any item.
-3. `src/items/utils.py` signs the Cloudinary upload parameters and sends the file with `httpx.AsyncClient`.
-4. Cloudinary returns a `secure_url`, which is saved on the item as `image_url`.
-5. Item cache entries are invalidated and an `item.image_updated` SSE event is broadcast to the owner.
+3. If the item already has an `image_public_id`, the service deletes that Cloudinary asset first.
+4. `src/items/utils.py` configures the Cloudinary Python SDK and uploads the file with `cloudinary.uploader.upload`.
+5. Cloudinary returns a `secure_url` and `public_id`, which are saved on the item as `image_url` and `image_public_id`.
+6. Item cache entries are invalidated and an `item.image_updated` SSE event is broadcast to the owner.
 
 `POST /items/with-image/` uses the same Cloudinary helper when an image is included during item creation.
 
@@ -201,6 +204,8 @@ FastAPI-Ecosystem-Lab/media
 - Missing Cloudinary variables raise a runtime error only when an image upload is attempted.
 - `PUT /items/{id_param}` and `PATCH /items/{id_param}` accept `image_url` for API compatibility, but normal user-facing
   image changes should go through the upload endpoint so the backend controls media storage.
+- Direct `image_url` edits clear `image_public_id` because those URLs did not come from the backend Cloudinary upload
+  flow.
 
 #### `items` cacheing with Redis
 
