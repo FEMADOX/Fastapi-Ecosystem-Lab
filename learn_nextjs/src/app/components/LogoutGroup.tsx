@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { logoutAction } from '@/actions/auth/actions'
-import { Button, ButtonGroup } from '@/components/ui'
+import { Button, ButtonGroup, Form } from '@/components/ui'
 import type { FormSubmitEvent } from '../items/new/types'
 
 interface LogoutButtonProps {
@@ -27,7 +27,7 @@ export const LogoutGroup = ({ isLoggedIn }: LogoutButtonProps) => {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <Form onSubmit={handleSubmit}>
       <ButtonGroup className="px-1" hidden={!isLoggedIn}>
         <Button
           className="text-md cursor-pointer py-3.5 font-semibold transition-opacity hover:opacity-80"
@@ -38,6 +38,6 @@ export const LogoutGroup = ({ isLoggedIn }: LogoutButtonProps) => {
           Logout
         </Button>
       </ButtonGroup>
-    </form>
+    </Form>
   )
 }
