@@ -21,6 +21,7 @@ import {
   Field,
   FieldGroup,
   FieldLabel,
+  Form,
   Input,
   Textarea
 } from '@/components/ui'
@@ -55,15 +56,15 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
   }
 
   return (
-    <Card className="max-w-md">
+    <Card className="max-w-md min-w-75 w-[90%]">
       <CardHeader className="grid grid-rows-[1fr_auto] items-center">
-        <form ref={imageFormRef} action={imageFormAction}>
-          <input type="hidden" name="itemId" value={item.id} readOnly />
+        <Form ref={imageFormRef} action={imageFormAction}>
+          <Input type="hidden" name="itemId" value={item.id} readOnly />
           <AspectRatio
             ratio={1.268115942}
             className="group relative overflow-hidden flex rounded"
           >
-            <label
+            <FieldLabel
               htmlFor={`image-file-${item.id}`}
               className="block size-full cursor-pointer"
               aria-label={`Update image for ${item.name}`}
@@ -81,7 +82,7 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
                   <Camera className="size-5 hover:" aria-hidden="true" />
                 </span>
               </span>
-            </label>
+            </FieldLabel>
             <Input
               id={`image-file-${item.id}`}
               name="image_file"
@@ -92,14 +93,14 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
               onChange={submitImageUpdate}
             />
           </AspectRatio>
-        </form>
-        <div className="flex w-full justify-between">
+        </Form>
+        <div className="mt-4 flex w-full justify-between">
           <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
             <span>{item.name}</span>
             <Badge>${item.price.toFixed(2)}</Badge>
           </CardTitle>
-          <form action={deleteFormAction}>
-            <input type="hidden" name="itemId" value={item.id} readOnly />
+          <Form action={deleteFormAction}>
+            <Input type="hidden" name="itemId" value={item.id} readOnly />
             <Button
               type="submit"
               variant="destructive"
@@ -110,16 +111,12 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
             >
               <DeleteIcon ref={deleteIconRef} />
             </Button>
-          </form>
+          </Form>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <form
-          action={updateFormAction}
-          className="space-y-4 flex flex-col items-center"
-          noValidate
-        >
-          <input type="hidden" name="itemId" value={item.id} readOnly />
+      <CardContent>
+        <Form action={updateFormAction} className="items-center" noValidate>
+          <Input type="hidden" name="itemId" value={item.id} readOnly />
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor={`name-${item.id}`}>Name</FieldLabel>
@@ -170,7 +167,7 @@ const OwnedItemEditor = ({ item }: OwnedItemEditorProps) => {
           >
             {isUpdatePending ? 'Saving...' : 'Save Changes'}
           </Button>
-        </form>
+        </Form>
       </CardContent>
     </Card>
   )
@@ -180,7 +177,7 @@ export const TabItemsComponent = ({ ownedItems, isActive }: TabItemProps) => {
   if (!isActive) return null
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-semibold">My Items</h2>
         <Link

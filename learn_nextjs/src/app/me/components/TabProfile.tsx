@@ -15,6 +15,7 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
+  Form,
   Input
 } from '@/components/ui'
 import { ActionFeedback } from '../ActionFeedback'
@@ -65,7 +66,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
           <CardTitle>Update Email</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={emailFormAction} className="space-y-4" noValidate>
+          <Form action={emailFormAction} noValidate>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">New Email</FieldLabel>
@@ -93,7 +94,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
             >
               {isEmailPending ? 'Updating...' : 'Update Email'}
             </Button>
-          </form>
+          </Form>
         </CardContent>
       </Card>
 
@@ -102,7 +103,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
           <CardTitle>Update Password</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={passwordFormAction} className="space-y-4" noValidate>
+          <Form action={passwordFormAction} noValidate>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="currentPasswordForPassword">
@@ -146,7 +147,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
             >
               {isPasswordPending ? 'Updating...' : 'Update Password'}
             </Button>
-          </form>
+          </Form>
         </CardContent>
       </Card>
 
@@ -155,7 +156,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
           <CardTitle className="text-destructive">Delete Account</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={deleteFormAction} className="space-y-4" noValidate>
+          <Form action={deleteFormAction} noValidate>
             <Field>
               <FieldLabel htmlFor="confirmDelete">
                 Type <strong>DELETE</strong> to confirm
@@ -174,7 +175,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
             >
               {isDeletePending ? 'Deleting...' : 'Delete My Account'}
             </Button>
-          </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

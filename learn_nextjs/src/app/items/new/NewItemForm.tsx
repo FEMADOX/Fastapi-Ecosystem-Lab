@@ -3,11 +3,13 @@
 import { useActionState, useState } from 'react'
 import { createItemAction } from '@/actions/items/actions'
 import {
+  Button,
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
+  Form,
   Input,
   Textarea
 } from '@/components/ui'
@@ -42,7 +44,7 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
   }
 
   return (
-    <form
+    <Form
       className={`
         grid max-w-xl grid-cols-1 gap-y-5 md:mx-auto
         [&>div>input]:w-full [&>div>input]:rounded [&>div>input]:bg-gray-300 [&>div>input]:px-2 [&>div>input]:text-black
@@ -119,13 +121,13 @@ export const NewItemForm = ({ userId }: NewItemFormProps) => {
         </p>
       )}
 
-      <button
-        className={`col-span-2 mx-auto rounded-md bg-gray-700 px-10 py-1 text-white transition-colors [&:hover]:cursor-pointer [&:hover]:bg-gray-800 [&:hover]:text-gray-300`}
+      <Button
+        className="col-span-2 mx-auto cursor-pointer px-10"
         type="submit"
         disabled={isPending}
       >
         {isPending ? 'Creating...' : 'Create Item'}
-      </button>
-    </form>
+      </Button>
+    </Form>
   )
 }

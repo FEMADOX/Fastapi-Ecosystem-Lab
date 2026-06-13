@@ -11,10 +11,12 @@ import {
 } from 'react'
 import { toast } from 'sonner'
 import {
+  Button,
   Field,
   FieldError,
   FieldGroup,
   FieldLabel,
+  Form,
   Input
 } from '@/components/ui'
 import { parseAuthForm } from '@/schemas/auth/forms'
@@ -78,7 +80,7 @@ export const AuthForm = ({
       <section className="card">
         <h1 className="mb-6 text-2xl font-semibold">{title}</h1>
 
-        <form method="post" onSubmit={handleSubmit} className="space-y-4">
+        <Form method="post" onSubmit={handleSubmit}>
           <Input type="hidden" name="redirectPath" value={redirectPath} />
           <FieldGroup>
             <Field>
@@ -119,16 +121,14 @@ export const AuthForm = ({
             <p className="text-destructive text-sm">{state.error}</p>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={isPending}
-            className={
-              'bg-primary text-primary-foreground hover:text-primary hover:border-primary w-full rounded-md border px-4 py-2 font-semibold transition-colors hover:cursor-pointer hover:border hover:bg-transparent disabled:opacity-60'
-            }
+            className="w-full cursor-pointer font-semibold"
           >
             {isPending ? submittingLabel : submitLabel}
-          </button>
-        </form>
+          </Button>
+        </Form>
 
         {(title === 'Login' && (
           <p className="mt-4 text-center text-sm">
