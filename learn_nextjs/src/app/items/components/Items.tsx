@@ -18,7 +18,7 @@ interface ItemsComponentProps {
 }
 
 export const ItemsComponent = ({ items, badge }: ItemsComponentProps) => (
-  <ul className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6">
+  <ul className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
     {items?.map((item) => (
       <Link
         className="opacity-animation block h-full w-full max-w-md"
