@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui'
-import { TabItemsComponent, TabProfileComponent } from './components'
+import { TabItemsComponent, TabProfileComponent } from '.'
 import type { MePageClientProps } from './types'
 
 type TabKey = 'items' | null
