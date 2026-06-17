@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getMe, getOwnerItems } from '@/app/api/server-endpoints'
 import { RetryCard } from '@/app/items/components/RetryCard'
-import { MePageClient } from './MePageClient'
+import { MePageClient } from './components/MePageClient'
 
 const getCachedOwnerAndItems = async (
   ownerId: string,

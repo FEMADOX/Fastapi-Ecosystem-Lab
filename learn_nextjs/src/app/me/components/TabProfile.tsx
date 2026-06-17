@@ -1,3 +1,4 @@
+import { KeyRoundIcon, MailIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useActionState, useEffect } from 'react'
 import {
@@ -6,20 +7,18 @@ import {
   updateProfilePasswordAction
 } from '@/actions/user/actions'
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Field,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  Form,
   Input
 } from '@/components/ui'
-import { ActionFeedback } from '../ActionFeedback'
+import ProfileUpdateForm from './ProfileUpdateForm'
 import type { TabProfileProps } from './types'
+import UpdateCard from './UpdateCard'
 
 export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
   const [emailState, emailFormAction, isEmailPending] = useActionState(
@@ -43,7 +42,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
   if (!isActive) return null
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Account Overview</CardTitle>
@@ -61,102 +60,58 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Update Email</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form action={emailFormAction} noValidate>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">New Email</FieldLabel>
-                <Input id="email" name="email" type="email" required />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="currentPasswordForEmail">
-                  Current Password
-                </FieldLabel>
-                <Input
-                  id="currentPasswordForEmail"
-                  name="currentPassword"
-                  type="password"
-                  required
-                />
-              </Field>
-            </FieldGroup>
+      <div className="grid gap-6 md:grid-cols-2">
+        <UpdateCard
+          title="Update Email"
+          description={user.email}
+          content="Change the address used for sign-in and account messages."
+          actionLabel="Update Email"
+          dialogDescription="Use your current password to confirm this change."
+          icon={MailIcon}
+        >
+          <ProfileUpdateForm
+            action={emailFormAction}
+            state={emailState}
+            isPending={isEmailPending}
+            submitLabel="Update Email"
+            pendingLabel="Updating..."
+            formVariant="email"
+            userEmail={user.email}
+          />
+        </UpdateCard>
 
-            <ActionFeedback state={emailState} />
-
-            <Button
-              type="submit"
-              disabled={isEmailPending}
-              className="cursor-pointer"
-            >
-              {isEmailPending ? 'Updating...' : 'Update Email'}
-            </Button>
-          </Form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Update Password</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form action={passwordFormAction} noValidate>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="currentPasswordForPassword">
-                  Current Password
-                </FieldLabel>
-                <Input
-                  id="currentPasswordForPassword"
-                  name="currentPassword"
-                  type="password"
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="newPassword">New Password</FieldLabel>
-                <Input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="confirmPassword">
-                  Confirm New Password
-                </FieldLabel>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                />
-              </Field>
-            </FieldGroup>
-
-            <ActionFeedback state={passwordState} />
-
-            <Button
-              type="submit"
-              disabled={isPasswordPending}
-              className="cursor-pointer"
-            >
-              {isPasswordPending ? 'Updating...' : 'Update Password'}
-            </Button>
-          </Form>
-        </CardContent>
-      </Card>
+        <UpdateCard
+          title="Update Password"
+          description="Refresh your account credentials."
+          content="Replace your password without expanding the full form inline."
+          actionLabel="Update Password"
+          dialogDescription="Enter your current password before choosing a new one."
+          icon={KeyRoundIcon}
+        >
+          <ProfileUpdateForm
+            action={passwordFormAction}
+            state={passwordState}
+            isPending={isPasswordPending}
+            submitLabel="Update Password"
+            pendingLabel="Updating..."
+            formVariant="password"
+          />
+        </UpdateCard>
+      </div>
 
       <Card className="border-red-200">
         <CardHeader>
           <CardTitle className="text-destructive">Delete Account</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form action={deleteFormAction} noValidate>
+          <ProfileUpdateForm
+            action={deleteFormAction}
+            state={deleteState}
+            isPending={isDeletePending}
+            submitLabel="Delete My Account"
+            pendingLabel="Deleting..."
+            submitVariant="destructive"
+          >
             <Field>
               <FieldLabel htmlFor="confirmDelete">
                 Type <strong>DELETE</strong> to confirm
@@ -164,18 +119,7 @@ export const TabProfileComponent = ({ user, isActive }: TabProfileProps) => {
               <Input id="confirmDelete" name="confirmDelete" required />
               <FieldError>This action is irreversible.</FieldError>
             </Field>
-
-            <ActionFeedback state={deleteState} />
-
-            <Button
-              type="submit"
-              variant="destructive"
-              disabled={isDeletePending}
-              className="cursor-pointer"
-            >
-              {isDeletePending ? 'Deleting...' : 'Delete My Account'}
-            </Button>
-          </Form>
+          </ProfileUpdateForm>
         </CardContent>
       </Card>
     </div>
