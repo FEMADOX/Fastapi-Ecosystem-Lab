@@ -22,7 +22,6 @@ app = FastAPI(
     title="Learn FastAPI",
     version="1.0.0",
     root_path="/api",
-    openapi_url="/openapi.json",
     docs_url=None,
 )
 register_dev_reload(app)
@@ -83,7 +82,6 @@ def main() -> None:
     uvicorn.run(
         "learn_fastapi.src.main:app",
         host="0.0.0.0",  # noqa: S104
-        port=8000,
         reload=settings.debug,
         log_level="debug" if settings.debug else "info",
     )

@@ -4,7 +4,8 @@ import {
   FieldGroup,
   FieldLabel,
   Form,
-  Input
+  Input,
+  PasswordInput
 } from '@/components/ui'
 import { ActionFeedback } from './ActionFeedback'
 import type { FieldsBaseComponentProps, ProfileUpdateFormProps } from './types'
@@ -15,13 +16,20 @@ const FieldsBaseComponent = ({ fields }: FieldsBaseComponentProps) => (
     {fields.map((field) => (
       <Field key={field.inputId}>
         <FieldLabel htmlFor={field.inputId}>{field.label}</FieldLabel>
-        <Input
-          id={field.inputId}
-          name={field.inputName}
-          type={field.inputType}
-          defaultValue={field.defaultValue}
-          required
-        />
+        {field.inputType === 'password' ? (
+          <PasswordInput
+            id={field.inputId}
+            name={field.inputName}
+            defaultValue={field.defaultValue}
+          />
+        ) : (
+          <Input
+            id={field.inputId}
+            name={field.inputName}
+            type={field.inputType}
+            defaultValue={field.defaultValue}
+          />
+        )}
       </Field>
     ))}
   </FieldGroup>
