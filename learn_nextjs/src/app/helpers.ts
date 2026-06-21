@@ -1,7 +1,7 @@
 import { UserSchema } from '@/common/schemas/api/resources'
 import type { User } from '@/common/types/api/resources'
 import { getMe, refreshAccessToken } from './api/endpoints'
-import type { AuthState, ResolveAuthResult } from './auth-provider.types'
+import type { AuthState, ResolveAuthResult } from './types'
 
 export const toAuthenticatedState = (rawUser: User): AuthState => {
   const user = UserSchema.safeParse(rawUser)
