@@ -26,3 +26,12 @@ export const profilePasswordSchema = z
     message: 'New password and confirmation must match',
     path: ['confirmPassword']
   })
+
+export const deleteAccountSchema = z.object({
+  confirmDelete: z.literal('DELETE', {
+    message: 'Type DELETE to confirm account deletion.'
+  }),
+  currentPassword: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters long' })
+})

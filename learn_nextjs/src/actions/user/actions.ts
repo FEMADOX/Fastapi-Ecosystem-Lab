@@ -15,7 +15,11 @@ import type { PatchItemRequest } from '@/app/api/types'
 import type { MeActionState } from '@/app/me/types'
 import { itemPatchFormSchema } from '@/schemas/items/forms'
 import { checkItemAuthorization, getAuthenticatedUser } from './actions.helpers'
-import { profileEmailSchema, profilePasswordSchema } from './schemas'
+import {
+  deleteAccountSchema,
+  profileEmailSchema,
+  profilePasswordSchema
+} from './schemas'
 
 export const updateProfileEmailAction = async (
   _prevState: MeActionState,
@@ -98,9 +102,15 @@ export const deleteAccountAction = async (
   _prevState: MeActionState,
   formData: FormData
 ): Promise<MeActionState> => {
-  const confirmDelete = formData.get('confirmDelete')
-  if (confirmDelete !== 'DELETE') {
-    return { error: 'Type DELETE to confirm account deletion.' }
+  const parseResult = deleteAccountSchema.safeParse({
+    confirmDelete: formData.get('confirmDelete'),
+    currentPassword: formData.get('currentPassword')
+  })
+
+  if (!parseResult.success) {
+    return {
+      error: parseResult.error.issues[0]?.message ?? 'Invalid form data.'
+    }
   }
 
   const authResult = await getAuthenticatedUser()
@@ -110,7 +120,10 @@ export const deleteAccountAction = async (
 
   const { error } = await deleteCurrentUser(
     authResult.accessToken,
-    authResult.me?.id
+    authResult.me?.id,
+    {
+      current_password: parseResult.data.currentPassword
+    }
   )
 
   if (error) {

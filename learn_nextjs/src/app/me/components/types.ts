@@ -1,5 +1,10 @@
-import type { LucideIcon } from 'lucide-react'
-import type { ComponentProps, ReactNode } from 'react'
+import type {
+  ComponentProps,
+  ForwardRefExoticComponent,
+  HTMLAttributes,
+  ReactNode,
+  RefAttributes
+} from 'react'
 import type { Item, Items, User } from '@/common/types/api/resources'
 
 export interface OwnedItemEditorProps {
@@ -30,13 +35,36 @@ export interface ActionFeedbackProps {
   state: MeActionState
 }
 
+export interface AnimatedIconHandle {
+  startAnimation: () => void
+  stopAnimation: () => void
+}
+
+export type AnimatedIconComponent = ForwardRefExoticComponent<
+  Omit<
+    HTMLAttributes<HTMLDivElement>,
+    | 'color'
+    | 'onDrag'
+    | 'onDragStart'
+    | 'onDragEnd'
+    | 'onAnimationStart'
+    | 'onAnimationEnd'
+    | 'onAnimationIteration'
+  > & {
+    size?: number
+    duration?: number
+    isAnimated?: boolean
+    color?: string
+  } & RefAttributes<AnimatedIconHandle>
+>
+
 export interface UpdateCardProps {
   title: string
   description: ReactNode
   content: ReactNode
   actionLabel: string
   dialogDescription: ReactNode
-  icon: LucideIcon
+  icon: AnimatedIconComponent
   children: ReactNode
 }
 
@@ -50,6 +78,10 @@ export interface ProfileUpdateFormProps {
   formVariant?: 'email' | 'password'
   userEmail?: string
   children?: ReactNode
+}
+
+export interface UpdateAccountComponentProps {
+  userEmail: string
 }
 
 export type FieldsProps = Array<{

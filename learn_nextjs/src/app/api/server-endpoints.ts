@@ -13,7 +13,12 @@ import {
   serverPatch,
   serverPost
 } from './server-fetch'
-import type { AuthProps, CreateItemRequest, PatchItemRequest } from './types'
+import type {
+  AuthProps,
+  CreateItemRequest,
+  DeleteAccountRequest,
+  PatchItemRequest
+} from './types'
 
 const API_PREFIX = '/latest'
 
@@ -121,9 +126,14 @@ export const updateCurrentUser = async (
 
 export const deleteCurrentUser = async (
   accessToken: string,
-  userId: string
+  userId: string,
+  deleteAccountRequest: DeleteAccountRequest
 ) => {
-  return await serverDelete<null>(`${USER_BASE_PATH}${userId}`, accessToken)
+  return await serverDelete<null>(
+    `${USER_BASE_PATH}${userId}`,
+    accessToken,
+    deleteAccountRequest
+  )
 }
 
 // export const changePassword = async (passwordData: PasswordChangeRequest) => {

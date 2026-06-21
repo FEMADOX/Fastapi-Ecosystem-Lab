@@ -116,9 +116,10 @@ export const serverPut = async <T>(
 
 export const serverDelete = async <T>(
   path: string,
-  accessToken?: string
+  accessToken?: string,
+  body?: unknown
 ): Promise<ApiProxyResponse<T>> => {
-  return serverRequestBase<T>(path, 'DELETE', undefined, accessToken)
+  return serverRequestBase<T>(path, 'DELETE', body, accessToken)
 }
 
 export const serverPatch = async <T>(

@@ -1,3 +1,6 @@
+'use client'
+
+import { useRef } from 'react'
 import {
   Button,
   Card,
@@ -13,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui'
-import type { UpdateCardProps } from './types'
+import type { AnimatedIconHandle, UpdateCardProps } from './types'
 
 const UpdateCard = ({
   title,
@@ -24,6 +27,8 @@ const UpdateCard = ({
   icon: Icon,
   children
 }: UpdateCardProps) => {
+  const iconRef = useRef<AnimatedIconHandle>(null)
+
   return (
     <Card>
       <CardHeader>
@@ -33,8 +38,16 @@ const UpdateCard = ({
       <CardContent className="text-muted-foreground">{content}</CardContent>
       <CardFooter>
         <Dialog>
-          <DialogTrigger render={<Button className="cursor-pointer" />}>
-            <Icon data-icon="inline-start" />
+          <DialogTrigger
+            render={
+              <Button
+                className="cursor-pointer"
+                onMouseEnter={() => iconRef.current?.startAnimation()}
+                onMouseLeave={() => iconRef.current?.stopAnimation()}
+              />
+            }
+          >
+            <Icon ref={iconRef} data-icon="inline-start" />
             {actionLabel}
           </DialogTrigger>
           <DialogContent>
@@ -42,7 +55,6 @@ const UpdateCard = ({
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>{dialogDescription}</DialogDescription>
             </DialogHeader>
-
             {children}
           </DialogContent>
         </Dialog>

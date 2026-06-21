@@ -5,16 +5,12 @@ import { createContext, useCallback, useEffect, useReducer } from 'react'
 import { toast } from 'sonner'
 import type { User } from '@/common/types/api/resources'
 import type { Children } from '@/common/types/layout'
-import { resolveAuthState } from './auth-provider.helpers'
-import type {
-  AuthContextValue,
-  AuthState,
-  ResolveAuthResult
-} from './auth-provider.types'
 import {
   SSEGlobalNotifications,
   SSEUserNotifications
 } from './components/notifications/toasts'
+import { resolveAuthState } from './helpers'
+import type { AuthContextValue, AuthState, ResolveAuthResult } from './types'
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
