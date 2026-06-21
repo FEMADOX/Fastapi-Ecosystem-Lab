@@ -17,7 +17,8 @@ import {
   FieldGroup,
   FieldLabel,
   Form,
-  Input
+  Input,
+  PasswordInput
 } from '@/components/ui'
 import { parseAuthForm } from '@/schemas/auth/forms'
 import type { AuthFormProps, AuthFormVariant } from '@/types/auth/types'
@@ -103,10 +104,9 @@ export const AuthForm = ({
               <FieldLabel htmlFor="password">
                 Password<span className="text-destructive">*</span>
               </FieldLabel>
-              <Input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 autoComplete="current-password"
                 required
                 value={password}
