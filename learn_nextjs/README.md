@@ -36,9 +36,9 @@ A modern Next.js frontend implementation demonstrating best practices for buildi
 This module showcases a complete Next.js 16 (canary) setup with:
 
 - **App Router** — modern file-based routing with nested layouts
-- **TypeScript** — full type safety throughout
+- **TypeScript 7 (Go)** — full type safety throughout
 - **Tailwind CSS 4** — utility-first styling
-- **ESLint 9 + StandardJS** — code quality and style consistency
+- **Biome (StandardJS)** — code quality and style consistency
 - **React 19** — latest React features including `useActionState`
 - **Zod v4** — runtime schema validation
 - **Server Actions** — form submissions handled server-side
