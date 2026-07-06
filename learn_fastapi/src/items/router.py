@@ -39,7 +39,7 @@ async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
         A list of all ItemSchema objects (maybe empty).
 
     """
-    return await service.get_all_items()
+    return await service.list_all_items()
 
 
 @api_version(1)
@@ -61,7 +61,7 @@ async def read_owner_items(
 
     """
     owner = await service.resolve_owner(current_user, owner_id)
-    return await service.get_user_items(owner)
+    return await service.list_user_items(owner)
 
 
 @api_version(1)
