@@ -116,7 +116,7 @@ async def set_cache(key: str, value: JSONValue, ttl: int = 300) -> None:
         parsed_value = json.dumps(value, default=str)
         if not client:
             return
-        await client.setex(key, ttl, parsed_value)
+        await client.set(key, parsed_value, ex=ttl)
     except TypeError, ValueError, RedisError:
         logger.exception(f"Failed to set cache for key '{key}'")
         redis_cache_state.disable()
