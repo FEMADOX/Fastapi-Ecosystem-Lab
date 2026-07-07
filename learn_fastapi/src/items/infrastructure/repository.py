@@ -2,8 +2,8 @@ from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from learn_fastapi.src.items.domain.entities import Item as ItemDomain
-from learn_fastapi.src.items.domain.value_objects import ItemId, OwnerId
 from learn_fastapi.src.items.models import Item as ItemORM
+from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 from learn_fastapi.src.utils.repository import bool_to_column
 
 from .mappers import item_from_orm, items_from_orm
@@ -45,7 +45,7 @@ class SQLAlchemyItemRepository:
             return None
         return item_from_orm(orm_item)
 
-    async def list_owner_items(self, owner_id: OwnerId) -> list[ItemDomain]:
+    async def list_owner_items(self, owner_id: UserId) -> list[ItemDomain]:
         """List all items owned by a specific user.
 
         Args:
@@ -64,7 +64,7 @@ class SQLAlchemyItemRepository:
         return items_from_orm(orm_items)
 
     async def get_owner_item(
-        self, item_id: ItemId, owner_id: OwnerId
+        self, item_id: ItemId, owner_id: UserId
     ) -> ItemDomain | None:
         """Get an owner item by its ID.
 

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class User(Base):
-    """User model representing application users with authentication details and relationships."""
+    """User model representing application users."""
 
     __tablename__ = "users"
 

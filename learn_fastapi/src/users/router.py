@@ -15,24 +15,24 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @api_version(1)
-@router.get("/me", response_model=UserResponse)
-async def get_me(current_user: CurrentUserDep) -> User:
+@router.get("/me")
+async def get_me(current_user: CurrentUserDep) -> UserResponse:
     """Return the currently authenticated user's profile.
 
     Returns:
         The current authenticated user.
 
     """
-    return current_user
+    return UserResponse(**current_user.__dict__)
 
 
 @api_version(1)
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}")
 async def get_account(
     user_id: UUID,
     service: UsersServiceDep,
     current_user: CurrentUserDep,
-) -> User:
+) -> UserResponse:
     """Return account details for the given user id.
 
     Returns:

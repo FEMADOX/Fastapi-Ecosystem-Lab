@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from learn_fastapi.src.items.domain.value_objects import ItemId, OwnerId
+from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 
 
 @dataclass(slots=True, frozen=True)
@@ -18,7 +18,7 @@ class GetItemQuery:
 class ListOwnerItemsQuery:
     """Query for retrieving all items belonging to a specific owner."""
 
-    owner_id: OwnerId
+    owner_id: UserId
 
 
 @dataclass(slots=True, frozen=True)
@@ -26,4 +26,4 @@ class GetOwnerItemQuery:
     """Query for retrieving a specific item belonging to a specific owner."""
 
     item_id: ItemId
-    owner_id: OwnerId
+    owner_id: UserId
