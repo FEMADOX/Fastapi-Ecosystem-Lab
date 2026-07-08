@@ -17,7 +17,6 @@ from learn_fastapi.src.items.domain.errors import (
     ItemNotFoundForUserError,
     ItemsNotFoundForUserError,
 )
-from learn_fastapi.src.items.domain.value_objects import ItemId, OwnerId
 from learn_fastapi.src.items.infrastructure.mappers import (
     item_domain_to_schema,
     items_domain_to_schema,
@@ -25,6 +24,7 @@ from learn_fastapi.src.items.infrastructure.mappers import (
 from learn_fastapi.src.items.infrastructure.repository import (
     SQLAlchemyItemRepository,
 )
+from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 from learn_fastapi.src.users.exceptions import only_user_owner_is_authorized
 from learn_fastapi.src.users.models import User
 from learn_fastapi.src.users.repository import UsersRepository
@@ -65,9 +65,7 @@ class ItemService(BaseService):
         self.list_owner_items_use_case = ListOwnerItemsUseCase(clean_item_repository)
         self.get_owner_item_use_case = GetOwnerItemUseCase(clean_item_repository)
 
-    async def _resolve_owner(
-        self, current_user: User, owner_id: OwnerId | None
-    ) -> User:
+    async def _resolve_owner(self, current_user: User, owner_id: UserId | None) -> User:
         """Resolve the owner for user-scoped item reads.
 
         Non-admin users can only query their own items. Admin users can target
@@ -97,7 +95,7 @@ class ItemService(BaseService):
             raise user_doesnt_exist_exception()
         return owner
 
-    async def resolve_owner(self, current_user: User, owner_id: OwnerId | None) -> User:
+    async def resolve_owner(self, current_user: User, owner_id: UserId | None) -> User:
         return await self._resolve_owner(current_user, owner_id)
 
     async def list_all_items(self) -> list[ItemSchema]:
@@ -134,13 +132,14 @@ class ItemService(BaseService):
         if cached:
             return ItemSchema.model_validate(cached)
 
+        query = GetItemQuery(id_param)
         try:
-            item = await self.get_item_use_case.execute(GetItemQuery(item_id=id_param))
+            item = await self.get_item_use_case.execute(query)
             schema = item_domain_to_schema(item)
             await cache_item(id_param, schema.model_dump(mode="json"))
 
-        except ItemNotFoundError as exc:
-            raise item_not_found_exception() from exc
+        except ItemNotFoundError as exception:
+            raise item_not_found_exception() from exception
 
         return schema
 
@@ -161,17 +160,16 @@ class ItemService(BaseService):
         if cached:
             return [ItemSchema.model_validate(item) for item in cached]
 
+        query = ListOwnerItemsQuery(owner.id)
         try:
-            items = await self.list_owner_items_use_case.execute(
-                ListOwnerItemsQuery(owner.id)
-            )
+            items = await self.list_owner_items_use_case.execute(query)
             schemas = items_domain_to_schema(items)
             await cache_user_items(
                 [schema.model_dump(mode="json") for schema in schemas], owner
             )
 
-        except ItemsNotFoundForUserError as exc:
-            raise item_not_found_or_not_belong_to_user_exception() from exc
+        except ItemsNotFoundForUserError as exception:
+            raise item_not_found_or_not_belong_to_user_exception() from exception
 
         return schemas
 
@@ -195,13 +193,12 @@ class ItemService(BaseService):
             return ItemSchema.model_validate(cached)
 
         try:
-            item = await self.get_owner_item_use_case.execute(
-                GetOwnerItemQuery(item_id, owner.id)
-            )
+            query = GetOwnerItemQuery(item_id, owner.id)
+            item = await self.get_owner_item_use_case.execute(query)
             schema = item_domain_to_schema(item)
             await cache_user_item(item_id, schema.model_dump(mode="json"), owner)
-        except ItemNotFoundForUserError as exc:
-            raise item_not_found_or_not_belong_to_user_exception() from exc
+        except ItemNotFoundForUserError as exception:
+            raise item_not_found_or_not_belong_to_user_exception() from exception
 
         return schema
 

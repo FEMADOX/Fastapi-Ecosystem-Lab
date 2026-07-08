@@ -8,6 +8,13 @@ from learn_fastapi.src.auth.utils import (
     verify_password,
 )
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.users.application.queries import GetUserByIdQuery
+from learn_fastapi.src.users.application.use_cases import (
+    GetUserByIdUseCase,
+)
+from learn_fastapi.src.users.domain.errors import DoesntExistError
+from learn_fastapi.src.users.infrastructure.mappers import user_domain_to_schema
+from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUserRepository
 from learn_fastapi.src.utils.exceptions import (
     email_already_registered_exception,
     user_doesnt_exist_exception,
@@ -15,9 +22,9 @@ from learn_fastapi.src.utils.exceptions import (
 from learn_fastapi.src.utils.service import BaseService
 
 from .exceptions import incorrect_password_exception, only_user_owner_is_authorized
-from .models import User
+from .models import User as UserORM
 from .repository import UsersRepository
-from .schema import DeleteAccount, UserUpdate
+from .schema import DeleteAccount, UserResponse, UserUpdate
 
 
 class UsersService(BaseService):
@@ -27,12 +34,15 @@ class UsersService(BaseService):
         """Initialize the service with an async database session."""
         self.repository: UsersRepository = UsersRepository(session)
 
+        clean_user_repository = SQLAlchemyUserRepository(session)
+        self.get_user_by_id_use_case = GetUserByIdUseCase(clean_user_repository)
+
     async def verify_userid_and_auth_user(
         self,
         user_id: UUID,
-        authorized_user: User,
+        authorized_user: UserORM,
         user_password: str | None,
-    ) -> User:
+    ) -> UserResponse:
         """Verify if the authorized user is the owner.
 
         This method verify if the authorized user is the owner of the user_id account
@@ -57,14 +67,18 @@ class UsersService(BaseService):
             incorrect_password_exception: If `current_password` is wrong.
 
         """
-        user_from_user_id = await self.repository.get_user_by_id(user_id)
-        if not user_from_user_id:
-            raise user_doesnt_exist_exception()
+        query = GetUserByIdQuery(user_id)
+        try:
+            user_from_user_id = await self.get_user_by_id_use_case.execute(query)
+            schema = user_domain_to_schema(user_from_user_id)
+
+        except DoesntExistError as exception:
+            raise user_doesnt_exist_exception() from exception
 
         if authorized_user.is_superuser:
-            return user_from_user_id
+            return schema
 
-        if not user_from_user_id == authorized_user:
+        if not user_from_user_id.id == authorized_user.id:
             raise only_user_owner_is_authorized()
 
         if user_password and not verify_password(
@@ -72,9 +86,11 @@ class UsersService(BaseService):
         ):
             raise incorrect_password_exception()
 
-        return user_from_user_id
+        return schema
 
-    async def get_account(self, user_id: UUID, authorized_user: User) -> User:
+    async def get_account(
+        self, user_id: UUID, authorized_user: UserORM
+    ) -> UserResponse:
         """Return account details for an allowed user.
 
         Args:
@@ -88,8 +104,8 @@ class UsersService(BaseService):
         return await self.verify_userid_and_auth_user(user_id, authorized_user, None)
 
     async def update_account(
-        self, user_id: UUID, authorized_user: User, data: UserUpdate
-    ) -> User:
+        self, user_id: UUID, authorized_user: UserORM, data: UserUpdate
+    ) -> UserORM:
         """Update the authenticated user's email and/or password.
 
         Args:
@@ -135,7 +151,7 @@ class UsersService(BaseService):
     async def delete_account(
         self,
         user_id: UUID,
-        authorized_user: User,
+        authorized_user: UserORM,
         data: DeleteAccount,
         response: Response,
     ) -> None:

@@ -4,9 +4,8 @@ from datetime import datetime
 from learn_fastapi.src.items.domain.value_objects import (
     ImagePublicId,
     ImageUrl,
-    ItemId,
-    OwnerId,
 )
+from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 
 
 @dataclass(slots=True)
@@ -14,7 +13,7 @@ class Item:
     """Domain entity representing an item."""
 
     id: ItemId | None
-    owner_id: OwnerId
+    owner_id: UserId
     name: str
     description: str
     price: float
@@ -24,7 +23,7 @@ class Item:
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
-    def is_owned_by(self, user_id: OwnerId) -> bool:
+    def is_owned_by(self, user_id: UserId) -> bool:
         return self.owner_id == user_id
 
     @property
