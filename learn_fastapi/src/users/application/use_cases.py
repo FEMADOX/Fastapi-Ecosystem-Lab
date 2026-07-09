@@ -48,6 +48,6 @@ class GetUserByEmailUseCase(BaseUseCase):
 
         """
         user = await self.user_repository.get_user_by_email(query.user_email)
-        if not user:
+        if not user or not user.id or not user.password_hash:
             raise DoesntExistError
         return user

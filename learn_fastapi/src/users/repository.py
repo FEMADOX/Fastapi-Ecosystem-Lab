@@ -40,6 +40,23 @@ class UsersRepository(BaseRepository):
         )
         return result.scalar_one_or_none()
 
+    async def create_user(self, email: str, password_hash: str) -> User:
+        """Persist a new user.
+
+        Args:
+            email: The user's email address.
+            password_hash: The Argon2 password hash to store.
+
+        Returns:
+            The newly created and refreshed user instance.
+
+        """
+        user = User(email=email, password_hash=password_hash)
+        self.session.add(user)
+        await self.commit()
+        await self.session.refresh(user)
+        return user
+
     async def update_user(self, user: User) -> User:
         """Persist in-place changes to a user and return the refreshed instance.
 

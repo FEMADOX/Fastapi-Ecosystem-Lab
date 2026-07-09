@@ -13,53 +13,6 @@ from .models import RefreshToken
 class AuthRepository(BaseRepository):
     """Repository class for auth-related ORM operations."""
 
-    async def get_user_by_id(self, user_id: UUID) -> User | None:
-        """Fetch a user by primary key.
-
-        Args:
-            user_id: The UUID of the user to retrieve.
-
-        Returns:
-            The matching user or ``None`` if no user exists.
-
-        """
-        result = await self.session.execute(
-            select(User).where(bool_to_column(User.id == user_id))
-        )
-        return result.scalar_one_or_none()
-
-    async def get_user_by_email(self, email: str) -> User | None:
-        """Fetch a user by email address.
-
-        Args:
-            email: The email to search for.
-
-        Returns:
-            The matching user or ``None`` if no user exists.
-
-        """
-        result = await self.session.scalars(
-            select(User).where(bool_to_column(User.email == email))
-        )
-        return result.one_or_none()
-
-    async def create_user(self, email: str, password_hash: str) -> User:
-        """Persist a new user.
-
-        Args:
-            email: The user's email address.
-            password_hash: The Argon2 password hash to store.
-
-        Returns:
-            The newly created and refreshed user instance.
-
-        """
-        user = User(email=email, password_hash=password_hash)
-        self.session.add(user)
-        await self.commit()
-        await self.session.refresh(user)
-        return user
-
     async def get_refresh_token(self, user_id: UUID) -> RefreshToken | None:
         """Get the active refresh token for a user, handling duplicates.
 

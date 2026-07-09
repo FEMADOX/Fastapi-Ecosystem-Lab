@@ -12,3 +12,7 @@ class OnlyOwnerIsAuthorizedError(UserDomainError):
 
 class DoesntExistError(UserDomainError):
     """Raised when the user requested doesn't exist."""
+
+
+class UserInactiveError(UserDomainError):
+    """Raised when the user account is inactive."""
