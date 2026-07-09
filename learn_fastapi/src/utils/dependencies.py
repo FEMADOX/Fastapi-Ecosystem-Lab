@@ -4,10 +4,10 @@ from typing import Annotated
 from fastapi import Depends
 
 from learn_fastapi.src.auth.dependencies import OAuth2_Dep
-from learn_fastapi.src.auth.repository import AuthRepository
 from learn_fastapi.src.auth.utils import verify_access_token
 from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.users.models import User
+from learn_fastapi.src.users.repository import UsersRepository
 
 from .exceptions import (
     invalid_expire_token_exception,
@@ -41,7 +41,7 @@ async def get_current_user(session: AsyncSessionDep, token: OAuth2_Dep) -> User:
     except (TypeError, ValueError) as exception:
         raise invalid_expire_token_exception() from exception
 
-    repository = AuthRepository(session)
+    repository = UsersRepository(session)
     user = await repository.get_user_by_id(user_id_uuid)
     if not user:
         raise user_doesnt_exist_exception()
