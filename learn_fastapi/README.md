@@ -137,15 +137,15 @@ The API base path is `/api` (configured in `src/main.py`), and the main topics c
 
 | Concept                                      | Where                                                                            |
 |----------------------------------------------|----------------------------------------------------------------------------------|
-| `APIRouter` with prefix & tags               | [`router.py`](src/items/router.py)                                               |
+| `APIRouter` with prefix & tags               | [`router.py`](src/items/presentation/router.py)                                               |
 | Pydantic model with `Field` validation       | [`schema.py`](src/items/schema.py)                                               |
 | `Annotated` aliases                          | [`annotations.py`](src/items/annotations.py)                                     |
 | Cross-field business rule validation         | [`validators.py`](src/items/validators.py)                                       |
 | Repository + Service pattern                 | [`repository.py`](src/items/repository.py), [`service.py`](src/items/service.py) |
-| Ownership-aware CRUD (`User` -> `Item`)      | [`models.py`](src/items/models.py), [`router.py`](src/items/router.py)           |
-| Full CRUD: GET / POST / PUT / PATCH / DELETE | [`router.py`](src/items/router.py)                                               |
-| HTTP status codes via `starlette.status`     | [`router.py`](src/items/router.py)                                               |
-| `HTTPException` for 404 responses            | [`router.py`](src/items/router.py)                                               |
+| Ownership-aware CRUD (`User` -> `Item`)      | [`models.py`](src/items/models.py), [`router.py`](src/items/presentation/router.py)           |
+| Full CRUD: GET / POST / PUT / PATCH / DELETE | [`router.py`](src/items/presentation/router.py)                                               |
+| HTTP status codes via `starlette.status`     | [`router.py`](src/items/presentation/router.py)                                               |
+| `HTTPException` for 404 responses            | [`router.py`](src/items/presentation/router.py)                                               |
 | Integration tests with `httpx.AsyncClient`   | [`tests/items/test_router.py`](tests/v1/items/test_router.py)                    |
 | Authorization and ownership tests            | [`tests/test_items_authorization.py`](tests/v1/items/test_items_authorization.py)      |
 
@@ -344,10 +344,10 @@ The items module includes a Server-Sent Events (SSE) implementation to provide r
 | Password hashing with Argon2                 | [`utils.py`](src/auth/utils.py)                                                |
 | OAuth2 Password Flow with Bearer tokens      | [`dependencies.py`](src/auth/dependencies.py)                                  |
 | Repository + Service pattern                 | [`repository.py`](src/auth/repository.py), [`service.py`](src/auth/service.py) |
-| CSRF token protection                        | [`service.py`](src/auth/service.py), [`router.py`](src/auth/router.py)         |
+| CSRF token protection                        | [`service.py`](src/auth/service.py), [`router.py`](src/auth/presentation/router.py)         |
 | Refresh token rotation with expiration       | [`service.py`](src/auth/service.py), [`models.py`](src/auth/models.py)         |
 | Secure HTTP-only cookie handling             | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)             |
-| Custom exceptions for auth errors            | [`exceptions.py`](src/auth/exceptions.py)                                      |
+| Custom exceptions for auth errors            | [`exceptions.py`](src/auth/presentation/exceptions.py)                                      |
 | RefreshToken model with SQLAlchemy ORM       | [`models.py`](src/auth/models.py)                                              |
 | Circular import avoidance with TYPE_CHECKING | [`models.py`](src/auth/models.py)                                              |
 | Integration tests for authentication flow    | [`tests/auth/test_router.py`](tests/v1/auth/test_router.py)                    |
@@ -377,8 +377,8 @@ Base prefix: `/auth`
 |:----------------------------------------------|:---------------------------------------------------------------------------------|
 | Repository + Service pattern                  | [`repository.py`](src/users/repository.py), [`service.py`](src/users/service.py) |
 | User model with SQLAlchemy ORM                | [`models.py`](src/users/models.py)                                               |
-| Ownership-aware operations (user only access) | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)         |
-| Superuser override capability                 | [`service.py`](src/users/service.py), [`router.py`](src/users/router.py)         |
+| Ownership-aware operations (user only access) | [`service.py`](src/users/service.py), [`router.py`](src/users/presentation/router.py)         |
+| Superuser override capability                 | [`service.py`](src/users/service.py), [`router.py`](src/users/presentation/router.py)         |
 | Account update (email + password with verify) | [`service.py`](src/users/service.py)                                             |
 | Account deletion with cascading cleanup       | [`service.py`](src/users/service.py), [`repository.py`](src/users/repository.py) |
 | Test fixtures with dependency chains          | [`conftest.py`](tests/v1/users/conftest.py)                                      |

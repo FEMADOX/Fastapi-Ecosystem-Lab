@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from fastapi_versionizer.versionizer import api_version
 
+from learn_fastapi.src.shared.presentation.dependencies import CurrentUserDep
 from learn_fastapi.src.utils.alembic import app_logger as logger
-from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
 from .manager import sse_manager
 

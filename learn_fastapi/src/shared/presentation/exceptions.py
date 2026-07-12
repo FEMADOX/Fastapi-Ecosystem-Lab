@@ -32,6 +32,7 @@ def build_http_exception(
 
 
 def user_doesnt_exist_exception() -> HTTPException:
+    """Create a FastAPI HTTPException instance."""
     return build_http_exception(
         status_code=HTTP_401_UNAUTHORIZED,
         detail="User does not exist",
@@ -39,6 +40,7 @@ def user_doesnt_exist_exception() -> HTTPException:
 
 
 def user_inactive_exception() -> HTTPException:
+    """Create a FastAPI HTTPException instance."""
     return build_http_exception(
         status_code=HTTP_400_BAD_REQUEST,
         detail="Inactive user",
@@ -46,6 +48,7 @@ def user_inactive_exception() -> HTTPException:
 
 
 def email_already_registered_exception() -> HTTPException:
+    """Create a FastAPI HTTPException instance."""
     return build_http_exception(
         status_code=HTTP_400_BAD_REQUEST,
         detail="Email already registered",
@@ -53,6 +56,7 @@ def email_already_registered_exception() -> HTTPException:
 
 
 def invalid_expire_token_exception() -> HTTPException:
+    """Create a FastAPI HTTPException instance."""
     return build_http_exception(
         status_code=HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token",
@@ -61,6 +65,7 @@ def invalid_expire_token_exception() -> HTTPException:
 
 
 def image_filename_required_exception() -> HTTPException:
+    """Create a FastAPI HTTPException instance."""
     return build_http_exception(
         status_code=HTTP_422_UNPROCESSABLE_CONTENT,
         detail="Image file must have a filename",

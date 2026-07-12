@@ -1,49 +1,55 @@
 import contextlib
 import secrets
-from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.requests import Request
 from starlette.responses import Response
 
-from learn_fastapi.src.auth.application.commands import LoginCommand
+from learn_fastapi.src.auth.application.commands import (
+    CreateRefreshTokenCommand,
+    LoginCommand,
+    RevokeRefreshTokenCommand,
+    RevokeRefreshTokensCommand,
+)
 from learn_fastapi.src.auth.application.queries import (
     GetRefreshTokenQuery,
     GetUserFromRefreshTokenQuery,
 )
 from learn_fastapi.src.auth.application.use_cases import (
+    CreateRefreshTokenUseCase,
     GetRefreshTokenUseCase,
     GetUserFromRefreshTokenUseCase,
     LoginUseCase,
+    RevokeRefreshTokensUseCase,
+    RevokeRefreshTokenUseCase,
 )
 from learn_fastapi.src.auth.domain.errors import (
     CredentialsError,
     DoesntExistRefreshTokenError,
     DoesntExistUserError,
 )
-from learn_fastapi.src.auth.infrastructure.repository import SQLAlchemyAuthRepository
-from learn_fastapi.src.database import AsyncSessionDep
-from learn_fastapi.src.users.application.queries import GetUserByEmailQuery
-from learn_fastapi.src.users.application.use_cases import GetUserByEmailUseCase
-from learn_fastapi.src.users.domain.errors import DoesntExistError, UserInactiveError
-from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUserRepository
-from learn_fastapi.src.users.models import User
-from learn_fastapi.src.users.repository import UsersRepository
-from learn_fastapi.src.users.schema import UserCreate
-from learn_fastapi.src.utils.exceptions import (
-    email_already_registered_exception,
-    user_inactive_exception,
-)
-from learn_fastapi.src.utils.service import BaseService
-
-from .config import auth_config
-from .exceptions import (
+from learn_fastapi.src.auth.presentation.exceptions import (
     credentials_exception,
     invalid_refresh_or_csrf_token_exception,
     invalid_refresh_token_exception,
 )
-from .repository import AuthRepository
+from learn_fastapi.src.shared.presentation.exceptions import (
+    email_already_registered_exception,
+    user_inactive_exception,
+)
+from learn_fastapi.src.users.application.queries import GetUserByEmailQuery
+from learn_fastapi.src.users.application.use_cases import GetUserByEmailUseCase
+from learn_fastapi.src.users.domain.errors import (
+    UserDoesntExistError,
+    UserInactiveError,
+)
+from learn_fastapi.src.users.models import User
+from learn_fastapi.src.users.repository import UsersRepository
+from learn_fastapi.src.users.schema import UserCreate, UserResponse
+from learn_fastapi.src.utils.service import BaseService
+
+from .config import auth_config
 from .schema import Token, TokenData, TokenV2
 from .utils import (
     clear_auth_cookies,
@@ -53,24 +59,27 @@ from .utils import (
     hash_password,
     hash_refresh_token,
     set_auth_cookies,
-    verify_refresh_token,
 )
 
 
 async def _login(
-    auth_rep: AuthRepository,
     login_use_case: LoginUseCase,
     get_refresh_token_use_case: GetRefreshTokenUseCase,
+    create_refresh_token_use_case: CreateRefreshTokenUseCase,
+    revoke_refresh_tokens_use_case: RevokeRefreshTokensUseCase,
     form_data: OAuth2PasswordRequestForm,
     response: Response,
 ) -> tuple[str, str, str, UUID]:
     """Authenticate a user and mint new access/refresh/csrf tokens.
 
     Args:
-        auth_rep: The AuthRepository instance to use for authentication operations.
         login_use_case: The use case for logging in a user.
         get_refresh_token_use_case:
             The use case for retrieving a refresh token by the owner id.
+        create_refresh_token_use_case:
+            The use case for creating a refresh token.
+        revoke_refresh_tokens_use_case:
+            The use case for revoking all the active refresh token.
         form_data: OAuth2 login form data.
         response: Response object used to set auth cookies.
 
@@ -86,11 +95,10 @@ async def _login(
         user_inactive_exception: If the user account is inactive.
 
     """
-    login_command = LoginCommand(
-        email=form_data.username.lower(), password=form_data.password
-    )
     try:
-        user = await login_use_case.execute(login_command)
+        user = await login_use_case.execute(
+            LoginCommand(email=form_data.username.lower(), password=form_data.password)
+        )
     except DoesntExistUserError as exc:
         raise credentials_exception() from exc
     except CredentialsError as exc:
@@ -104,17 +112,18 @@ async def _login(
     refresh_token_raw = generate_refresh_token()
     refresh_token_hashed = hash_refresh_token(refresh_token_raw)
 
-    get_refresh_token_query = GetRefreshTokenQuery(user_id)
     with contextlib.suppress(DoesntExistRefreshTokenError):
-        await get_refresh_token_use_case.execute(get_refresh_token_query)
-        await auth_rep.revoke_refresh_token(user_id)
+        await get_refresh_token_use_case.execute(GetRefreshTokenQuery(user_id))
+        await revoke_refresh_tokens_use_case.execute(
+            RevokeRefreshTokensCommand(user_id)
+        )
 
     csrf_token = secrets.token_urlsafe(24)
 
-    await auth_rep.create_refresh_token(
-        user_id=user_id,
-        token_hash=refresh_token_hashed,
-        expires_at=get_refresh_token_expiration(),
+    await create_refresh_token_use_case.execute(
+        CreateRefreshTokenCommand(
+            user_id, refresh_token_hashed, get_refresh_token_expiration()
+        )
     )
 
     set_auth_cookies(response, refresh_token_raw, csrf_token)
@@ -125,26 +134,33 @@ async def _login(
 class BaseAuthService(BaseService):
     """Base service class for auth business logic."""
 
-    def __init__(self, session: AsyncSessionDep) -> None:
+    def __init__(
+        self,
+        users_repository: UsersRepository,
+        get_refresh_token_use_case: GetRefreshTokenUseCase,
+        get_user_by_email_use_case: GetUserByEmailUseCase,
+        get_user_from_refresh_token_use_case: GetUserFromRefreshTokenUseCase,
+        login_use_case: LoginUseCase,
+        create_refresh_token_use_case: CreateRefreshTokenUseCase,
+        revoke_refresh_tokens_use_case: RevokeRefreshTokensUseCase,
+        revoke_refresh_token_use_case: RevokeRefreshTokenUseCase,
+    ) -> None:
         """Initialize the service with an async database session."""
-        self.auth_repository = AuthRepository(session)
-        self.users_repository = UsersRepository(session)
+        self.users_repository = users_repository
 
-        clean_auth_repository = SQLAlchemyAuthRepository(session)
-        clean_users_repository = SQLAlchemyUserRepository(session)
-
-        self.login_use_case = LoginUseCase(clean_users_repository)
-        self.get_user_by_email_use_case = GetUserByEmailUseCase(clean_users_repository)
-        self.get_refresh_token_use_case = GetRefreshTokenUseCase(clean_auth_repository)
-        self.get_user_from_refresh_token_use_case = GetUserFromRefreshTokenUseCase(
-            clean_auth_repository
-        )
+        self.get_refresh_token_use_case = get_refresh_token_use_case
+        self.get_user_by_email_use_case = get_user_by_email_use_case
+        self.get_user_from_refresh_token_use_case = get_user_from_refresh_token_use_case
+        self.login_use_case = login_use_case
+        self.create_refresh_token_use_case = create_refresh_token_use_case
+        self.revoke_refresh_tokens_use_case = revoke_refresh_tokens_use_case
+        self.revoke_refresh_token_use_case = revoke_refresh_token_use_case
 
 
 class AuthService(BaseAuthService):
     """Service class for auth business logic."""
 
-    async def register(self, user_data: UserCreate) -> User:
+    async def register(self, user_data: UserCreate) -> UserResponse:
         """Register a new user account.
 
         Args:
@@ -161,12 +177,18 @@ class AuthService(BaseAuthService):
         try:
             await self.get_user_by_email_use_case.execute(query)
             raise email_already_registered_exception()
-        except DoesntExistError:
+        except UserDoesntExistError:
             pass
 
         user = await self.users_repository.create_user(
             email=str(user_data.email),
             password_hash=hash_password(user_data.password),
+        )
+        schema = UserResponse(
+            id=user.id,
+            email=user.email,
+            is_active=user.is_active,
+            is_superuser=user.is_superuser,
         )
 
         await self._broadcast_sse_event(
@@ -174,7 +196,7 @@ class AuthService(BaseAuthService):
             {"user_id": str(user.id), "email": user.email},
         )
 
-        return user
+        return schema
 
     async def login(
         self,
@@ -192,9 +214,10 @@ class AuthService(BaseAuthService):
 
         """
         access_token, _, csrf_token, user_id = await _login(
-            self.auth_repository,
             self.login_use_case,
             self.get_refresh_token_use_case,
+            self.create_refresh_token_use_case,
+            self.revoke_refresh_tokens_use_case,
             form_data,
             response,
         )
@@ -283,12 +306,15 @@ class AuthService(BaseAuthService):
             and x_csrf_token
             and csrf_token == x_csrf_token
         ):
-            token_record = await self.auth_repository.get_refresh_token(user.id)
-            if token_record and verify_refresh_token(
-                refresh_token_raw, token_record.token_hash
-            ):
-                token_record.revoked_at = datetime.now(tz=UTC)
-                await self.auth_repository.commit()
+            try:
+                token_record = await self.get_refresh_token_use_case.execute(
+                    GetRefreshTokenQuery(user.id)
+                )
+                await self.revoke_refresh_token_use_case.execute(
+                    RevokeRefreshTokenCommand(token_record, refresh_token_raw)
+                )
+            except DoesntExistRefreshTokenError:
+                pass
 
         clear_auth_cookies(response)
 
@@ -322,9 +348,10 @@ class AuthServiceV2(BaseAuthService):
 
         """
         access_token, refresh_token_raw, csrf_token, user_id = await _login(
-            self.auth_repository,
             self.login_use_case,
             self.get_refresh_token_use_case,
+            self.create_refresh_token_use_case,
+            self.revoke_refresh_tokens_use_case,
             form_data,
             response,
         )

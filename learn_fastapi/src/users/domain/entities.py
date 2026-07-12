@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
-from learn_fastapi.src.users.domain.value_objects import RefreshTokenId
+from learn_fastapi.src.shared.domain.value_object import ItemId, RefreshTokenId, UserId
 
 
 @dataclass(slots=True)

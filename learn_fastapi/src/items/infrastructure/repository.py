@@ -1,20 +1,16 @@
 from sqlalchemy import and_, desc, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from learn_fastapi.src.items.domain.entities import Item as ItemDomain
 from learn_fastapi.src.items.models import Item as ItemORM
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
+from learn_fastapi.src.shared.infrastructure.repository import BaseSQLAlchemyRepository
 from learn_fastapi.src.utils.repository import bool_to_column
 
 from .mappers import item_from_orm, items_from_orm
 
 
-class SQLAlchemyItemRepository:
+class SQLAlchemyItemRepository(BaseSQLAlchemyRepository):
     """Repository for managing items using SQLAlchemy."""
-
-    def __init__(self, session: AsyncSession) -> None:
-        """Initialize the repository with an asynchronous SQLAlchemy session."""
-        self.session = session
 
     async def list_items(self) -> list[ItemDomain]:
         """List all items in the repository.

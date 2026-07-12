@@ -37,4 +37,4 @@ def bool_to_column(value: bool) -> ColumnElement[bool]:
         A SQLAlchemy ColumnElement representing the boolean value.
 
     """
-    return cast("ColumnElement[bool]", value)
+    return cast("ColumnElement[bool]", cast("object", value))

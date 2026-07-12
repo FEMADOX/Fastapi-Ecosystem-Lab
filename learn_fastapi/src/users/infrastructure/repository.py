@@ -1,23 +1,19 @@
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from learn_fastapi.src.shared.domain.value_object import UserId
+from learn_fastapi.src.shared.infrastructure.repository import BaseSQLAlchemyRepository
 from learn_fastapi.src.users.domain.entities import User as UserDomain
 from learn_fastapi.src.users.infrastructure.mappers import user_from_orm
 from learn_fastapi.src.users.models import User as UserORM
 from learn_fastapi.src.utils.repository import bool_to_column
 
 
-class SQLAlchemyUserRepository:
+class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
     """Repository for managing items using SQLAlchemy."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        """Initialize the repository with an asynchronous SQLAlchemy session."""
-        self.session = session
-
     async def get_user_by_id(self, user_id: UserId) -> UserDomain | None:
-        """Fetch a user by primary key.
+        """Fetch a user by ID.
 
         Args:
             user_id: The UUID of the user to retrieve.

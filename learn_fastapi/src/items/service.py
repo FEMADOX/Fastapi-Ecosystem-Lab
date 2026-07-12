@@ -24,11 +24,18 @@ from learn_fastapi.src.items.infrastructure.mappers import (
 from learn_fastapi.src.items.infrastructure.repository import (
     SQLAlchemyItemRepository,
 )
+from learn_fastapi.src.items.presentation.exceptions import (
+    duplicate_item_name_exception,
+    item_not_found_exception,
+    item_not_found_or_not_belong_to_user_exception,
+)
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
-from learn_fastapi.src.users.exceptions import only_user_owner_is_authorized
+from learn_fastapi.src.shared.presentation.exceptions import user_doesnt_exist_exception
 from learn_fastapi.src.users.models import User
+from learn_fastapi.src.users.presentation.exceptions import (
+    only_user_owner_is_authorized,
+)
 from learn_fastapi.src.users.repository import UsersRepository
-from learn_fastapi.src.utils.exceptions import user_doesnt_exist_exception
 from learn_fastapi.src.utils.service import BaseService
 
 from .cache import (
@@ -40,11 +47,6 @@ from .cache import (
     get_cached_items,
     get_cached_user_item,
     get_cached_user_items,
-)
-from .exceptions import (
-    duplicate_item_name_exception,
-    item_not_found_exception,
-    item_not_found_or_not_belong_to_user_exception,
 )
 from .repository import ItemRepository
 from .schema import ItemPatchSchema, ItemSchema, ItemUpdateSchema
