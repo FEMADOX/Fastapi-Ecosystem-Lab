@@ -6,7 +6,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from learn_fastapi.src.auth.application.use_cases import (
     CreateRefreshTokenUseCase,
     GetRefreshTokenUseCase,
-    GetUserFromRefreshTokenUseCase,
     LoginUseCase,
     RevokeRefreshTokensUseCase,
     RevokeRefreshTokenUseCase,
@@ -14,9 +13,12 @@ from learn_fastapi.src.auth.application.use_cases import (
 from learn_fastapi.src.auth.infrastructure.repository import SQLAlchemyAuthRepository
 from learn_fastapi.src.auth.service import AuthService, AuthServiceV2
 from learn_fastapi.src.database import AsyncSessionDep
-from learn_fastapi.src.users.application.use_cases import GetUserByEmailUseCase
+from learn_fastapi.src.users.application.use_cases import (
+    GetUserByEmailUseCase,
+    GetUserByRefreshTokenUseCase,
+    RegisterUserUseCase,
+)
 from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
-from learn_fastapi.src.users.repository import UsersRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/auth/token")
 
@@ -31,17 +33,15 @@ def get_auth_service(session: AsyncSessionDep) -> AuthService:
         A configured ``AuthService`` instance.
 
     """
-    users_repository = UsersRepository(session)
-
     clean_auth_repository = SQLAlchemyAuthRepository(session)
     clean_users_repository = SQLAlchemyUsersRepository(session)
 
     return AuthService(
-        users_repository,
         GetRefreshTokenUseCase(clean_auth_repository),
         GetUserByEmailUseCase(clean_users_repository),
-        GetUserFromRefreshTokenUseCase(clean_auth_repository),
+        GetUserByRefreshTokenUseCase(clean_users_repository),
         LoginUseCase(clean_users_repository),
+        RegisterUserUseCase(clean_users_repository),
         CreateRefreshTokenUseCase(clean_auth_repository),
         RevokeRefreshTokensUseCase(clean_auth_repository),
         RevokeRefreshTokenUseCase(clean_auth_repository),
@@ -58,21 +58,12 @@ def get_auth_service_v2(service: AuthServiceDep) -> AuthServiceV2:
         A configured ``AuthServiceV2`` instance.
 
     """
-    # try:
-    #     token_record = await self.get_refresh_token_use_case.execute(
-    #         GetRefreshTokenQuery(user.id)
-    #     )
-    #     await self.revoke_refresh_token_use_case.execute(
-    #         RevokeRefreshTokenCommand(token_record, refresh_token_raw)
-    #     )
-    # except DoesntExistRefreshTokenError:
-    #     pass
     return AuthServiceV2(
-        service.users_repository,
         service.get_refresh_token_use_case,
         service.get_user_by_email_use_case,
-        service.get_user_from_refresh_token_use_case,
+        service.get_user_by_refresh_token_use_case,
         service.login_use_case,
+        service.register_user_use_case,
         service.create_refresh_token_use_case,
         service.revoke_refresh_tokens_use_case,
         service.revoke_refresh_token_use_case,

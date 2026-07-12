@@ -11,7 +11,7 @@ class GetRefreshTokenQuery:
 
 
 @dataclass(slots=True, frozen=True)
-class GetUserFromRefreshTokenQuery:
+class GetUserByRefreshTokenQuery:
     """Query for retrieving the owner by the refresh token."""
 
     refresh_token: str

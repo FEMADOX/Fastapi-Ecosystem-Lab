@@ -6,9 +6,10 @@ from learn_fastapi.src.auth.application.commands import (
 )
 from learn_fastapi.src.auth.application.queries import (
     GetRefreshTokenQuery,
-    GetUserFromRefreshTokenQuery,
 )
-from learn_fastapi.src.auth.domain.entities import RefreshToken as RefreshTokenDomain
+from learn_fastapi.src.auth.domain.entities import (
+    PersistedRefreshToken,
+)
 from learn_fastapi.src.auth.domain.errors import (
     CredentialsError,
     DoesntExistRefreshTokenError,
@@ -19,10 +20,9 @@ from learn_fastapi.src.auth.utils import verify_password
 from learn_fastapi.src.users.domain.entities import (
     AuthenticatedUser,
 )
-from learn_fastapi.src.users.domain.entities import (
-    User as UserDomain,
+from learn_fastapi.src.users.domain.errors import (
+    UserInactiveError,
 )
-from learn_fastapi.src.users.domain.errors import UserInactiveError
 from learn_fastapi.src.users.domain.ports import UsersRepository
 
 
@@ -37,7 +37,7 @@ class BaseUseCase:
 class GetRefreshTokenUseCase(BaseUseCase):
     """Use case for retrieving a refresh token by Owner ID."""
 
-    async def execute(self, query: GetRefreshTokenQuery) -> RefreshTokenDomain:
+    async def execute(self, query: GetRefreshTokenQuery) -> PersistedRefreshToken:
         """Execute the use case.
 
         Returns:
@@ -51,27 +51,6 @@ class GetRefreshTokenUseCase(BaseUseCase):
         if not refresh_token:
             raise DoesntExistRefreshTokenError
         return refresh_token
-
-
-class GetUserFromRefreshTokenUseCase(BaseUseCase):
-    """Use case for retrieving a User through the refresh token."""
-
-    async def execute(self, query: GetUserFromRefreshTokenQuery) -> UserDomain:
-        """Execute the use case.
-
-        Returns:
-            UserDomain: The requested user.
-
-        Raises:
-            DoesntExistUserError: If the user doesn't exist.
-
-        """
-        user = await self.auth_repository.get_user_from_refresh_token(
-            query.refresh_token
-        )
-        if not user:
-            raise DoesntExistUserError
-        return user
 
 
 class LoginUseCase:
@@ -122,7 +101,9 @@ class LoginUseCase:
 class CreateRefreshTokenUseCase(BaseUseCase):
     """Use case for creating a refresh token."""
 
-    async def execute(self, command: CreateRefreshTokenCommand) -> RefreshTokenDomain:
+    async def execute(
+        self, command: CreateRefreshTokenCommand
+    ) -> PersistedRefreshToken:
         """Execute the use case.
 
         Returns:

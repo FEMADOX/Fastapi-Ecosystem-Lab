@@ -338,19 +338,19 @@ The items module includes a Server-Sent Events (SSE) implementation to provide r
 
 ### `auth` App
 
-| Concept                                      | Where                                                                          |
-|:---------------------------------------------|:-------------------------------------------------------------------------------|
-| JWT authentication with refresh tokens       | [`service.py`](src/auth/service.py), [`utils.py`](src/auth/utils.py)           |
-| Password hashing with Argon2                 | [`utils.py`](src/auth/utils.py)                                                |
-| OAuth2 Password Flow with Bearer tokens      | [`dependencies.py`](src/auth/dependencies.py)                                  |
-| Repository + Service pattern                 | [`repository.py`](src/auth/repository.py), [`service.py`](src/auth/service.py) |
-| CSRF token protection                        | [`service.py`](src/auth/service.py), [`router.py`](src/auth/presentation/router.py)         |
-| Refresh token rotation with expiration       | [`service.py`](src/auth/service.py), [`models.py`](src/auth/models.py)         |
-| Secure HTTP-only cookie handling             | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)             |
-| Custom exceptions for auth errors            | [`exceptions.py`](src/auth/presentation/exceptions.py)                                      |
-| RefreshToken model with SQLAlchemy ORM       | [`models.py`](src/auth/models.py)                                              |
-| Circular import avoidance with TYPE_CHECKING | [`models.py`](src/auth/models.py)                                              |
-| Integration tests for authentication flow    | [`tests/auth/test_router.py`](tests/v1/auth/test_router.py)                    |
+| Concept                                      | Where                                                                                         |
+|:---------------------------------------------|:----------------------------------------------------------------------------------------------|
+| JWT authentication with refresh tokens       | [`service.py`](src/auth/service.py), [`utils.py`](src/auth/utils.py)                          |
+| Password hashing with Argon2                 | [`utils.py`](src/auth/utils.py)                                                               |
+| OAuth2 Password Flow with Bearer tokens      | [`dependencies.py`](src/auth/dependencies.py)                                                 |
+| Repository + Service pattern                 | [`repository.py`](src/auth/infrastructure/repository.py), [`service.py`](src/auth/service.py) |
+| CSRF token protection                        | [`service.py`](src/auth/service.py), [`router.py`](src/auth/presentation/router.py)           |
+| Refresh token rotation with expiration       | [`service.py`](src/auth/service.py), [`models.py`](src/auth/models.py)                        |
+| Secure HTTP-only cookie handling             | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)                            |
+| Custom exceptions for auth errors            | [`exceptions.py`](src/auth/presentation/exceptions.py)                                        |
+| RefreshToken model with SQLAlchemy ORM       | [`models.py`](src/auth/models.py)                                                             |
+| Circular import avoidance with TYPE_CHECKING | [`models.py`](src/auth/models.py)                                                             |
+| Integration tests for authentication flow    | [`tests/auth/test_router.py`](tests/v1/auth/test_router.py)                                   |
 
 #### `auth` Endpoints (Authentication flows only)
 

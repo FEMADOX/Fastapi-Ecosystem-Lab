@@ -17,7 +17,7 @@ from learn_fastapi.src.users.application.use_cases import (
     GetUserByIdUseCase,
 )
 from learn_fastapi.src.users.domain.errors import UserDoesntExistError
-from learn_fastapi.src.users.infrastructure.mappers import user_domain_to_schema
+from learn_fastapi.src.users.infrastructure.mappers import persisted_user_to_schema
 from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
 from learn_fastapi.src.users.presentation.exceptions import (
     incorrect_password_exception,
@@ -74,7 +74,7 @@ class UsersService(BaseService):
         query = GetUserByIdQuery(user_id)
         try:
             user_from_user_id = await self.get_user_by_id_use_case.execute(query)
-            schema = user_domain_to_schema(user_from_user_id)
+            schema = persisted_user_to_schema(user_from_user_id)
         except UserDoesntExistError as exc:
             raise user_doesnt_exist_exception() from exc
 

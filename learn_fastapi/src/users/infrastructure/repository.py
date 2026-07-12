@@ -1,10 +1,18 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from learn_fastapi.src.auth.models import RefreshToken as RefreshTokenORM
+from learn_fastapi.src.auth.utils import verify_refresh_token
 from learn_fastapi.src.shared.domain.value_object import UserId
 from learn_fastapi.src.shared.infrastructure.repository import BaseSQLAlchemyRepository
-from learn_fastapi.src.users.domain.entities import User as UserDomain
-from learn_fastapi.src.users.infrastructure.mappers import user_from_orm
+from learn_fastapi.src.users.domain.entities import (
+    PersistedUser,
+)
+from learn_fastapi.src.users.infrastructure.mappers import (
+    persisted_user_from_orm,
+)
 from learn_fastapi.src.users.models import User as UserORM
 from learn_fastapi.src.utils.repository import bool_to_column
 
@@ -12,7 +20,7 @@ from learn_fastapi.src.utils.repository import bool_to_column
 class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
     """Repository for managing items using SQLAlchemy."""
 
-    async def get_user_by_id(self, user_id: UserId) -> UserDomain | None:
+    async def get_user_by_id(self, user_id: UserId) -> PersistedUser | None:
         """Fetch a user by ID.
 
         Args:
@@ -33,9 +41,9 @@ class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
         orm_user = result.scalar_one_or_none()
         if not orm_user:
             return None
-        return user_from_orm(orm_user)
+        return persisted_user_from_orm(orm_user)
 
-    async def get_user_by_email(self, user_email: str) -> UserDomain | None:
+    async def get_user_by_email(self, user_email: str) -> PersistedUser | None:
         """Fetch a user by email address.
 
         Args:
@@ -56,4 +64,52 @@ class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
         orm_user = result.scalar_one_or_none()
         if not orm_user:
             return None
-        return user_from_orm(orm_user)
+        return persisted_user_from_orm(orm_user)
+
+    async def get_user_by_refresh_token(
+        self, refresh_token: str
+    ) -> PersistedUser | None:
+        """Get the user associated with a valid refresh token.
+
+        Args:
+            refresh_token: The raw refresh token string to validate and search for.
+
+        Returns:
+            The associated user if the token is valid, or None if invalid.
+
+        """
+        statement = (
+            select(RefreshTokenORM)
+            .join(RefreshTokenORM.user)
+            .where(RefreshTokenORM.__table__.c.revoked_at.is_(None))
+            .where(bool_to_column(RefreshTokenORM.expires_at > datetime.now(tz=UTC)))
+            .options(
+                selectinload(RefreshTokenORM.user).selectinload(UserORM.items),
+                selectinload(RefreshTokenORM.user).selectinload(UserORM.refresh_tokens),
+            )
+        )
+        result = await self.session.scalars(statement)
+        for token_record in result.all():
+            if verify_refresh_token(refresh_token, token_record.token_hash):
+                return persisted_user_from_orm(token_record.user)
+
+        return None
+
+    async def create_user(self, email: str, password_hash: str) -> PersistedUser:
+        """Persist a new user.
+
+        Args:
+            email: The user's email address.
+            password_hash: The Argon2 password hash to store.
+
+        Returns:
+            The newly created and refreshed user instance.
+
+        """
+        orm_user = UserORM(email=email, password_hash=password_hash)
+
+        self.session.add(orm_user)
+        await self.commit()
+        await self.session.refresh(orm_user)
+
+        return persisted_user_from_orm(orm_user, False)
