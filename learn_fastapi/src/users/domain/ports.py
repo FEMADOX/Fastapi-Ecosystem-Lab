@@ -4,7 +4,7 @@ from learn_fastapi.src.shared.domain.value_object import UserId
 from learn_fastapi.src.users.domain.entities import User as UserDomain
 
 
-class UserRepository(Protocol):
+class UsersRepository(Protocol):
     """Protocol for user repository operations."""
 
     async def get_user_by_id(self, user_id: UserId) -> UserDomain | None: ...

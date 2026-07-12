@@ -1,9 +1,14 @@
-from learn_fastapi.src.auth.application.commands import LoginCommand
+from learn_fastapi.src.auth.application.commands import (
+    CreateRefreshTokenCommand,
+    LoginCommand,
+    RevokeRefreshTokenCommand,
+    RevokeRefreshTokensCommand,
+)
 from learn_fastapi.src.auth.application.queries import (
     GetRefreshTokenQuery,
     GetUserFromRefreshTokenQuery,
 )
-from learn_fastapi.src.auth.domain.entities import RefreshToken
+from learn_fastapi.src.auth.domain.entities import RefreshToken as RefreshTokenDomain
 from learn_fastapi.src.auth.domain.errors import (
     CredentialsError,
     DoesntExistRefreshTokenError,
@@ -18,7 +23,7 @@ from learn_fastapi.src.users.domain.entities import (
     User as UserDomain,
 )
 from learn_fastapi.src.users.domain.errors import UserInactiveError
-from learn_fastapi.src.users.domain.ports import UserRepository
+from learn_fastapi.src.users.domain.ports import UsersRepository
 
 
 class BaseUseCase:
@@ -32,11 +37,11 @@ class BaseUseCase:
 class GetRefreshTokenUseCase(BaseUseCase):
     """Use case for retrieving a refresh token by Owner ID."""
 
-    async def execute(self, query: GetRefreshTokenQuery) -> RefreshToken:
+    async def execute(self, query: GetRefreshTokenQuery) -> RefreshTokenDomain:
         """Execute the use case.
 
         Returns:
-            The requested refresh token.
+            RefreshToken: The requested refresh token.
 
         Raises:
             DoesntExistRefreshTokenError: If the refresh token doesn't exist.
@@ -55,7 +60,7 @@ class GetUserFromRefreshTokenUseCase(BaseUseCase):
         """Execute the use case.
 
         Returns:
-            The requested user.
+            UserDomain: The requested user.
 
         Raises:
             DoesntExistUserError: If the user doesn't exist.
@@ -72,15 +77,15 @@ class GetUserFromRefreshTokenUseCase(BaseUseCase):
 class LoginUseCase:
     """Use case for logging in a user."""
 
-    def __init__(self, user_repository: UserRepository) -> None:
+    def __init__(self, users_repository: UsersRepository) -> None:
         """Initialize the use case with the user repository."""
-        self.user_repository = user_repository
+        self.users_repository = users_repository
 
     async def execute(self, command: LoginCommand) -> AuthenticatedUser:
         """Execute the use case.
 
         Returns:
-            The requested user.
+            AuthenticatedUser: The requested user.
 
         Raises:
             DoesntExistUserError: If the user doesn't exist.
@@ -88,7 +93,7 @@ class LoginUseCase:
             UserInactiveError: If the user account is inactive.
 
         """
-        user = await self.user_repository.get_user_by_email(command.email)
+        user = await self.users_repository.get_user_by_email(command.email)
 
         if not user:
             raise DoesntExistUserError
@@ -111,4 +116,37 @@ class LoginUseCase:
             password_hash=user.password_hash,
             is_active=user.is_active,
             is_superuser=user.is_superuser,
+        )
+
+
+class CreateRefreshTokenUseCase(BaseUseCase):
+    """Use case for creating a refresh token."""
+
+    async def execute(self, command: CreateRefreshTokenCommand) -> RefreshTokenDomain:
+        """Execute the use case.
+
+        Returns:
+            RefreshToken: The created refresh token.
+
+        """
+        return await self.auth_repository.create_refresh_token(
+            command.owner_id, command.token_hash, command.expires_in
+        )
+
+
+class RevokeRefreshTokensUseCase(BaseUseCase):
+    """Use case for revoking refresh tokens."""
+
+    async def execute(self, command: RevokeRefreshTokensCommand) -> None:
+        """Execute the use case."""
+        await self.auth_repository.revoke_refresh_tokens(command.owner_id)
+
+
+class RevokeRefreshTokenUseCase(BaseUseCase):
+    """Use case for revoking a refresh token."""
+
+    async def execute(self, command: RevokeRefreshTokenCommand) -> None:
+        """Execute the use case."""
+        await self.auth_repository.revoke_refresh_token(
+            command.token, command.token_raw
         )

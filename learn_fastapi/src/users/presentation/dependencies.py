@@ -3,8 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from learn_fastapi.src.database import AsyncSessionDep
-
-from .service import UsersService
+from learn_fastapi.src.users.service import UsersService
 
 
 def get_users_service(session: AsyncSessionDep) -> UsersService:

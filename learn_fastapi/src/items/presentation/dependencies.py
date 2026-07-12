@@ -3,8 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from learn_fastapi.src.database import AsyncSessionDep
-
-from .service import ItemService
+from learn_fastapi.src.items.service import ItemService
 
 
 def get_item_service(session: AsyncSessionDep) -> ItemService:

@@ -4,10 +4,7 @@ from fastapi import APIRouter, BackgroundTasks
 from fastapi_versionizer.versionizer import api_version
 from starlette.status import HTTP_204_NO_CONTENT
 
-from learn_fastapi.src.items.cache import invalidate_items_namespace
-from learn_fastapi.src.utils.dependencies import CurrentUserDep
-
-from .annotations import (
+from learn_fastapi.src.items.annotations import (
     AnnotatedOwnerId,
     ImageCaption,
     ImageFile,
@@ -17,12 +14,14 @@ from .annotations import (
     ItemPrice,
     ItemTax,
 )
-from .dependencies import ItemServiceDep
-from .schema import (
+from learn_fastapi.src.items.cache import invalidate_items_namespace
+from learn_fastapi.src.items.presentation.dependencies import ItemServiceDep
+from learn_fastapi.src.items.schema import (
     ItemPatchSchema,
     ItemSchema,
     ItemUpdateSchema,
 )
+from learn_fastapi.src.shared.presentation.dependencies import CurrentUserDep
 
 router = APIRouter(prefix="/items", tags=["items"])
 

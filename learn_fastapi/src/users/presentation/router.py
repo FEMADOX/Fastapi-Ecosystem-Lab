@@ -5,11 +5,10 @@ from fastapi_versionizer.versionizer import api_version
 from starlette.responses import Response
 from starlette.status import HTTP_200_OK, HTTP_204_NO_CONTENT
 
-from learn_fastapi.src.utils.dependencies import CurrentUserDep
-
-from .dependencies import UsersServiceDep
-from .models import User
-from .schema import DeleteAccount, UserResponse, UserUpdate
+from learn_fastapi.src.shared.presentation.dependencies import CurrentUserDep
+from learn_fastapi.src.users.models import User
+from learn_fastapi.src.users.presentation.dependencies import UsersServiceDep
+from learn_fastapi.src.users.schema import DeleteAccount, UserResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 

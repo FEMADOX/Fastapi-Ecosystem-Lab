@@ -6,20 +6,23 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.status import HTTP_201_CREATED
 
-from learn_fastapi.src.users.models import User
+from learn_fastapi.src.auth.annotations import X_CSRF_TOKEN
+from learn_fastapi.src.auth.schema import Token, TokenV2
+from learn_fastapi.src.shared.presentation.dependencies import CurrentUserDep
 from learn_fastapi.src.users.schema import UserCreate, UserResponse
-from learn_fastapi.src.utils.dependencies import CurrentUserDep
 
-from .annotations import X_CSRF_TOKEN
-from .dependencies import AuthServiceDep, AuthServiceV2Dep, OAuth2PRFDep
-from .schema import Token, TokenV2
+from .dependencies import (
+    AuthServiceDep,
+    AuthServiceV2Dep,
+    OAuth2PRFDep,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @api_version(1)
-@router.post("/register", response_model=UserResponse, status_code=HTTP_201_CREATED)
-async def register(service: AuthServiceDep, user_data: UserCreate) -> User:
+@router.post("/register", status_code=HTTP_201_CREATED)
+async def register(service: AuthServiceDep, user_data: UserCreate) -> UserResponse:
     """Register a new user account.
 
     Args:

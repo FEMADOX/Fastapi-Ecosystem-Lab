@@ -10,7 +10,7 @@ class OnlyOwnerIsAuthorizedError(UserDomainError):
     """Raised when the action performed is only authorized by the owner."""
 
 
-class DoesntExistError(UserDomainError):
+class UserDoesntExistError(UserDomainError):
     """Raised when the user requested doesn't exist."""
 
 

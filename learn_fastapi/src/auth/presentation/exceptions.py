@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from learn_fastapi.src.utils.exceptions import build_http_exception
+from learn_fastapi.src.shared.presentation.exceptions import build_http_exception
 
 if TYPE_CHECKING:
     from fastapi import HTTPException
