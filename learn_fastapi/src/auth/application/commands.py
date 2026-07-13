@@ -12,12 +12,6 @@ class LoginCommand:
 
 
 @dataclass(frozen=True, slots=True)
-class RegisterNewUserCommand:
-    email: str
-    password: str
-
-
-@dataclass(frozen=True, slots=True)
 class CreateRefreshTokenCommand:
     owner_id: UserId
     token_hash: str

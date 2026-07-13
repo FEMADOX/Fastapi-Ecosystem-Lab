@@ -10,10 +10,11 @@ from learn_fastapi.src.shared.infrastructure.repository import BaseSQLAlchemyRep
 from learn_fastapi.src.users.domain.entities import (
     PersistedUser,
 )
+from learn_fastapi.src.users.domain.errors import UserDoesntExistError
 from learn_fastapi.src.users.infrastructure.mappers import (
     persisted_user_from_orm,
 )
-from learn_fastapi.src.users.models import User as UserORM
+from learn_fastapi.src.users.models import User as UserModel
 from learn_fastapi.src.utils.repository import bool_to_column
 
 
@@ -31,12 +32,12 @@ class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
 
         """
         result = await self.session.execute(
-            select(UserORM)
+            select(UserModel)
             .options(
-                selectinload(UserORM.items),
-                selectinload(UserORM.refresh_tokens),
+                selectinload(UserModel.items),
+                selectinload(UserModel.refresh_tokens),
             )
-            .where(bool_to_column(UserORM.id == user_id))
+            .where(bool_to_column(UserModel.id == user_id))
         )
         orm_user = result.scalar_one_or_none()
         if not orm_user:
@@ -54,12 +55,12 @@ class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
 
         """
         result = await self.session.execute(
-            select(UserORM)
+            select(UserModel)
             .options(
-                selectinload(UserORM.items),
-                selectinload(UserORM.refresh_tokens),
+                selectinload(UserModel.items),
+                selectinload(UserModel.refresh_tokens),
             )
-            .where(bool_to_column(UserORM.email == user_email))
+            .where(bool_to_column(UserModel.email == user_email))
         )
         orm_user = result.scalar_one_or_none()
         if not orm_user:
@@ -84,8 +85,10 @@ class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
             .where(RefreshTokenORM.__table__.c.revoked_at.is_(None))
             .where(bool_to_column(RefreshTokenORM.expires_at > datetime.now(tz=UTC)))
             .options(
-                selectinload(RefreshTokenORM.user).selectinload(UserORM.items),
-                selectinload(RefreshTokenORM.user).selectinload(UserORM.refresh_tokens),
+                selectinload(RefreshTokenORM.user).selectinload(UserModel.items),
+                selectinload(RefreshTokenORM.user).selectinload(
+                    UserModel.refresh_tokens
+                ),
             )
         )
         result = await self.session.scalars(statement)
@@ -106,10 +109,66 @@ class SQLAlchemyUsersRepository(BaseSQLAlchemyRepository):
             The newly created and refreshed user instance.
 
         """
-        orm_user = UserORM(email=email, password_hash=password_hash)
+        orm_user = UserModel(email=email, password_hash=password_hash)
 
         self.session.add(orm_user)
         await self.commit()
         await self.session.refresh(orm_user)
 
-        return persisted_user_from_orm(orm_user, False)
+        return persisted_user_from_orm(orm_user, False)  # noqa: FBT003
+
+    async def update_user(
+        self, user_id: UserId, new_email: str | None, new_password_hash: str | None
+    ) -> PersistedUser:
+        """Persist user changes and return the refreshed domain instance.
+
+        Args:
+            user_id: The user id of the user to update.
+            new_email: The new email to persist, if provided.
+            new_password_hash: The new password hash to persist, if provided.
+
+        Returns:
+            The refreshed user instance after the commit.
+
+        Raises:
+            UserDoesntExistError: Raise if user doesn't exist.
+
+        """
+        result = await self.session.execute(
+            select(UserModel).where(bool_to_column(UserModel.id == user_id))
+        )
+        orm_user = result.scalar_one_or_none()
+        if not orm_user:
+            raise UserDoesntExistError
+
+        if new_email:
+            orm_user.email = new_email
+
+        if new_password_hash:
+            orm_user.password_hash = new_password_hash
+
+        await self.commit()
+        await self.session.refresh(orm_user)
+
+        return persisted_user_from_orm(orm_user, False)  # noqa: FBT003
+
+    async def delete_user(self, user_id: UserId) -> bool:
+        """Delete a user and all related records via cascade.
+
+        Args:
+            user_id: The user id of the user to delete.
+
+        Returns:
+            bool: True if user deleted successfully else False.
+
+        """
+        result = await self.session.execute(
+            select(UserModel).where(bool_to_column(UserModel.id == user_id))
+        )
+        orm_user = result.scalar_one_or_none()
+        if not orm_user:
+            return False
+
+        await self.session.delete(orm_user)
+        await self.commit()
+        return True

@@ -3,6 +3,13 @@ from typing import Annotated
 from fastapi import Depends
 
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.users.application.use_cases import (
+    DeleteUserUseCase,
+    GetUserByIdUseCase,
+    UpdateUserUseCase,
+)
+from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
+from learn_fastapi.src.users.repository import UsersRepository
 from learn_fastapi.src.users.service import UsersService
 
 
@@ -16,7 +23,16 @@ def get_users_service(session: AsyncSessionDep) -> UsersService:
         A configured ``UsersService`` instance.
 
     """
-    return UsersService(session)
+    users_repository = UsersRepository(session)
+
+    clean_user_repository = SQLAlchemyUsersRepository(session)
+
+    return UsersService(
+        users_repository,
+        GetUserByIdUseCase(clean_user_repository),
+        UpdateUserUseCase(clean_user_repository),
+        DeleteUserUseCase(clean_user_repository),
+    )
 
 
 UsersServiceDep = Annotated[UsersService, Depends(get_users_service)]

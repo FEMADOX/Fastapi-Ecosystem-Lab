@@ -9,7 +9,6 @@ from starlette.responses import Response
 from learn_fastapi.src.auth.application.commands import (
     CreateRefreshTokenCommand,
     LoginCommand,
-    RegisterNewUserCommand,
     RevokeRefreshTokenCommand,
     RevokeRefreshTokensCommand,
 )
@@ -38,6 +37,7 @@ from learn_fastapi.src.shared.presentation.exceptions import (
     email_already_registered_exception,
     user_inactive_exception,
 )
+from learn_fastapi.src.users.application.commands import RegisterNewUserCommand
 from learn_fastapi.src.users.application.use_cases import (
     GetUserByEmailUseCase,
     GetUserByRefreshTokenUseCase,
