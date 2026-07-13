@@ -3,7 +3,7 @@ class UserDomainError(Exception):
 
 
 class IncorrectPasswordError(UserDomainError):
-    """Raised when the password submited is incorrect."""
+    """Raised when the password submitted is incorrect."""
 
 
 class OnlyOwnerIsAuthorizedError(UserDomainError):
@@ -16,3 +16,7 @@ class UserDoesntExistError(UserDomainError):
 
 class UserInactiveError(UserDomainError):
     """Raised when the user account is inactive."""
+
+
+class UserAlreadyExistsError(UserDomainError):
+    """Raised when the user already exists."""

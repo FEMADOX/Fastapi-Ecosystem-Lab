@@ -9,17 +9,17 @@ from starlette.responses import Response
 from learn_fastapi.src.auth.application.commands import (
     CreateRefreshTokenCommand,
     LoginCommand,
+    RegisterNewUserCommand,
     RevokeRefreshTokenCommand,
     RevokeRefreshTokensCommand,
 )
 from learn_fastapi.src.auth.application.queries import (
     GetRefreshTokenQuery,
-    GetUserFromRefreshTokenQuery,
+    GetUserByRefreshTokenQuery,
 )
 from learn_fastapi.src.auth.application.use_cases import (
     CreateRefreshTokenUseCase,
     GetRefreshTokenUseCase,
-    GetUserFromRefreshTokenUseCase,
     LoginUseCase,
     RevokeRefreshTokensUseCase,
     RevokeRefreshTokenUseCase,
@@ -38,14 +38,17 @@ from learn_fastapi.src.shared.presentation.exceptions import (
     email_already_registered_exception,
     user_inactive_exception,
 )
-from learn_fastapi.src.users.application.queries import GetUserByEmailQuery
-from learn_fastapi.src.users.application.use_cases import GetUserByEmailUseCase
+from learn_fastapi.src.users.application.use_cases import (
+    GetUserByEmailUseCase,
+    GetUserByRefreshTokenUseCase,
+    RegisterUserUseCase,
+)
 from learn_fastapi.src.users.domain.errors import (
-    UserDoesntExistError,
+    UserAlreadyExistsError,
     UserInactiveError,
 )
+from learn_fastapi.src.users.infrastructure.mappers import persisted_user_to_schema
 from learn_fastapi.src.users.models import User
-from learn_fastapi.src.users.repository import UsersRepository
 from learn_fastapi.src.users.schema import UserCreate, UserResponse
 from learn_fastapi.src.utils.service import BaseService
 
@@ -56,7 +59,6 @@ from .utils import (
     create_access_token,
     generate_refresh_token,
     get_refresh_token_expiration,
-    hash_password,
     hash_refresh_token,
     set_auth_cookies,
 )
@@ -136,22 +138,21 @@ class BaseAuthService(BaseService):
 
     def __init__(
         self,
-        users_repository: UsersRepository,
         get_refresh_token_use_case: GetRefreshTokenUseCase,
         get_user_by_email_use_case: GetUserByEmailUseCase,
-        get_user_from_refresh_token_use_case: GetUserFromRefreshTokenUseCase,
+        get_user_by_refresh_token_use_case: GetUserByRefreshTokenUseCase,
         login_use_case: LoginUseCase,
+        register_user_use_case: RegisterUserUseCase,
         create_refresh_token_use_case: CreateRefreshTokenUseCase,
         revoke_refresh_tokens_use_case: RevokeRefreshTokensUseCase,
         revoke_refresh_token_use_case: RevokeRefreshTokenUseCase,
     ) -> None:
         """Initialize the service with an async database session."""
-        self.users_repository = users_repository
-
         self.get_refresh_token_use_case = get_refresh_token_use_case
         self.get_user_by_email_use_case = get_user_by_email_use_case
-        self.get_user_from_refresh_token_use_case = get_user_from_refresh_token_use_case
+        self.get_user_by_refresh_token_use_case = get_user_by_refresh_token_use_case
         self.login_use_case = login_use_case
+        self.register_user_use_case = register_user_use_case
         self.create_refresh_token_use_case = create_refresh_token_use_case
         self.revoke_refresh_tokens_use_case = revoke_refresh_tokens_use_case
         self.revoke_refresh_token_use_case = revoke_refresh_token_use_case
@@ -173,27 +174,21 @@ class AuthService(BaseAuthService):
             email_already_registered_exception: If the email already exists.
 
         """
-        query = GetUserByEmailQuery(str(user_data.email))
         try:
-            await self.get_user_by_email_use_case.execute(query)
-            raise email_already_registered_exception()
-        except UserDoesntExistError:
-            pass
+            new_user = await self.register_user_use_case.execute(
+                RegisterNewUserCommand(
+                    user_data.email,
+                    user_data.password,
+                )
+            )
+        except UserAlreadyExistsError as exc:
+            raise email_already_registered_exception() from exc
 
-        user = await self.users_repository.create_user(
-            email=str(user_data.email),
-            password_hash=hash_password(user_data.password),
-        )
-        schema = UserResponse(
-            id=user.id,
-            email=user.email,
-            is_active=user.is_active,
-            is_superuser=user.is_superuser,
-        )
+        schema = persisted_user_to_schema(new_user)
 
         await self._broadcast_sse_event(
             "auth.registered",
-            {"user_id": str(user.id), "email": user.email},
+            {"user_id": str(new_user.id), "email": new_user.email},
         )
 
         return schema
@@ -264,9 +259,9 @@ class AuthService(BaseAuthService):
         ):
             raise invalid_refresh_or_csrf_token_exception()
 
-        query = GetUserFromRefreshTokenQuery(refresh_token_raw)
+        query = GetUserByRefreshTokenQuery(refresh_token_raw)
         try:
-            user = await self.get_user_from_refresh_token_use_case.execute(query)
+            user = await self.get_user_by_refresh_token_use_case.execute(query)
         except DoesntExistUserError as exc:
             raise invalid_refresh_token_exception() from exc
 

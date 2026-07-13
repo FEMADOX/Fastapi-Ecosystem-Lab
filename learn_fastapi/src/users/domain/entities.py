@@ -6,7 +6,7 @@ from learn_fastapi.src.shared.domain.value_object import ItemId, RefreshTokenId,
 
 @dataclass(slots=True)
 class User:
-    """Domain entity representing an user."""
+    """Domain entity representing a user."""
 
     id: UserId | None
     items_ids: list[ItemId]
@@ -17,6 +17,32 @@ class User:
     is_superuser: bool
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AuthenticatedUser:
+    """Domain entity representing an existing user."""
+
+    id: UserId
+    items_ids: list[ItemId]
+    refresh_tokens_ids: list[RefreshTokenId]
+    email: str
+    password_hash: str
+    is_active: bool
+    is_superuser: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PersistedUser:
+    """Domain entity representing a persistent user."""
+
+    id: UserId
+    items_ids: list[ItemId]
+    refresh_tokens_ids: list[RefreshTokenId]
+    email: str
+    password_hash: str
+    is_active: bool
+    is_superuser: bool
 
     def is_owner_of_item(self, item_id: ItemId) -> bool:
         """Check if the user is the owner of a specific item.
@@ -55,16 +81,3 @@ class User:
 
         """
         return self.id == other_id
-
-
-@dataclass(frozen=True, slots=True)
-class AuthenticatedUser:
-    """Domain entity representing an authenticated user."""
-
-    id: UserId
-    items_ids: list[ItemId]
-    refresh_tokens_ids: list[RefreshTokenId]
-    email: str
-    password_hash: str
-    is_active: bool
-    is_superuser: bool
