@@ -4,7 +4,7 @@ from learn_fastapi.src.items.domain.entities import Item
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 
 
-class ItemRepository(Protocol):
+class ItemsRepository(Protocol):
     """Protocol for item repository operations."""
 
     async def list_items(self) -> list[Item]: ...
