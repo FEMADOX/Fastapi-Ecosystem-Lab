@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from learn_fastapi.src.items.application.queries import (
     GetItemQuery,
     GetOwnerItemQuery,
@@ -9,18 +11,17 @@ from learn_fastapi.src.items.domain.errors import (
     ItemNotFoundForUserError,
     ItemsNotFoundForUserError,
 )
-from learn_fastapi.src.items.domain.ports import ItemRepository
+from learn_fastapi.src.items.domain.ports import ItemsRepository
 
 
-class BaseUseCase:
-    """Base class for all use cases."""
+@dataclass(slots=True)
+class BaseItemsUseCase:
+    """Base class for all `items` app use cases."""
 
-    def __init__(self, item_repository: ItemRepository) -> None:
-        """Initialize the use case with the item repository."""
-        self.item_repository = item_repository
+    items_repository: ItemsRepository
 
 
-class ListItemsUseCase(BaseUseCase):
+class ListItemsUseCase(BaseItemsUseCase):
     """Use case for retrieving all items."""
 
     async def execute(self) -> list[Item]:
@@ -30,10 +31,10 @@ class ListItemsUseCase(BaseUseCase):
             A list of all items.
 
         """
-        return await self.item_repository.list_items()
+        return await self.items_repository.list_items()
 
 
-class GetItemUseCase(BaseUseCase):
+class GetItemUseCase(BaseItemsUseCase):
     """Use case for retrieving an item by its ID."""
 
     async def execute(self, query: GetItemQuery) -> Item:
@@ -46,13 +47,13 @@ class GetItemUseCase(BaseUseCase):
             ItemNotFoundError: If the item is not found.
 
         """
-        item = await self.item_repository.get_item_by_id(query.item_id)
+        item = await self.items_repository.get_item_by_id(query.item_id)
         if not item:
             raise ItemNotFoundError
         return item
 
 
-class ListOwnerItemsUseCase(BaseUseCase):
+class ListOwnerItemsUseCase(BaseItemsUseCase):
     """Use case for retrieving all items belonging to a specific owner."""
 
     async def execute(self, query: ListOwnerItemsQuery) -> list[Item]:
@@ -65,13 +66,13 @@ class ListOwnerItemsUseCase(BaseUseCase):
             ItemsNotFoundForUserError: If no items are found for the user.
 
         """
-        items = await self.item_repository.list_owner_items(query.owner_id)
+        items = await self.items_repository.list_owner_items(query.owner_id)
         if not len(items) > 0:
             raise ItemsNotFoundForUserError
         return items
 
 
-class GetOwnerItemUseCase(BaseUseCase):
+class GetOwnerItemUseCase(BaseItemsUseCase):
     """Use case for retrieving an item belonging to a specific owner."""
 
     async def execute(self, query: GetOwnerItemQuery) -> Item:
@@ -84,7 +85,7 @@ class GetOwnerItemUseCase(BaseUseCase):
             ItemNotFoundForUserError: If the item is not found for the user.
 
         """
-        item = await self.item_repository.get_owner_item(query.item_id, query.owner_id)
+        item = await self.items_repository.get_owner_item(query.item_id, query.owner_id)
         if not item:
             raise ItemNotFoundForUserError
         return item

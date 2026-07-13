@@ -1,7 +1,7 @@
 from sqlalchemy import and_, desc, select
 
 from learn_fastapi.src.items.domain.entities import Item as ItemDomain
-from learn_fastapi.src.items.models import Item as ItemORM
+from learn_fastapi.src.items.models import Item as ItemModel
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 from learn_fastapi.src.shared.infrastructure.repository import BaseSQLAlchemyRepository
 from learn_fastapi.src.utils.repository import bool_to_column
@@ -19,7 +19,7 @@ class SQLAlchemyItemRepository(BaseSQLAlchemyRepository):
             A list of all items.
 
         """
-        result = await self.session.execute(select(ItemORM))
+        result = await self.session.execute(select(ItemModel))
         orm_items = list(result.scalars().all())
         return items_from_orm(orm_items)
 
@@ -34,7 +34,7 @@ class SQLAlchemyItemRepository(BaseSQLAlchemyRepository):
 
         """
         result = await self.session.execute(
-            select(ItemORM).where(bool_to_column(ItemORM.id == item_id))
+            select(ItemModel).where(bool_to_column(ItemModel.id == item_id))
         )
         orm_item = result.scalar_one_or_none()
         if not orm_item:
@@ -52,9 +52,9 @@ class SQLAlchemyItemRepository(BaseSQLAlchemyRepository):
 
         """
         result = await self.session.execute(
-            select(ItemORM)
-            .where(ItemORM.user_id == owner_id)
-            .order_by(desc(ItemORM.created_at))
+            select(ItemModel)
+            .where(ItemModel.user_id == owner_id)
+            .order_by(desc(ItemModel.created_at))
         )
         orm_items = list(result.scalars().all())
         return items_from_orm(orm_items)
@@ -73,9 +73,9 @@ class SQLAlchemyItemRepository(BaseSQLAlchemyRepository):
 
         """
         condition = and_(
-            bool_to_column(ItemORM.id == item_id), ItemORM.user_id == owner_id
+            bool_to_column(ItemModel.id == item_id), ItemModel.user_id == owner_id
         )
-        result = await self.session.execute(select(ItemORM).where(condition))
+        result = await self.session.execute(select(ItemModel).where(condition))
         orm_item = result.scalar_one_or_none()
         if not orm_item:
             return None

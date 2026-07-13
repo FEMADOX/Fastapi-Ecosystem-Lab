@@ -1,14 +1,14 @@
 from learn_fastapi.src.items.application.dto import ItemDTO
 from learn_fastapi.src.items.domain.entities import Item as ItemDomain
-from learn_fastapi.src.items.models import Item as ItemORM
+from learn_fastapi.src.items.models import Item as ItemModel
 from learn_fastapi.src.items.schema import ItemSchema
 
 
-def item_from_orm(orm_item: ItemORM) -> ItemDomain:
+def item_from_orm(orm_item: ItemModel) -> ItemDomain:
     """Convert an ORM item to a domain item.
 
     Args:
-        orm_item (ItemORM): The ORM item to convert.
+        orm_item (ItemModel): The ORM item to convert.
 
     Returns:
         ItemDomain: The corresponding domain item.
@@ -49,11 +49,11 @@ def item_domain_to_schema(domain_item: ItemDomain) -> ItemSchema:
     )
 
 
-def items_from_orm(orm_items: list[ItemORM]) -> list[ItemDomain]:
+def items_from_orm(orm_items: list[ItemModel]) -> list[ItemDomain]:
     """Convert a list of ORM items to a list of domain items.
 
     Args:
-        orm_items (list[ItemORM]): The list of ORM items to convert.
+        orm_items (list[ItemModel]): The list of ORM items to convert.
 
     Returns:
         list[ItemDomain]: The corresponding list of domain items.
