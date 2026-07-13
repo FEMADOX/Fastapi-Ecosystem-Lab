@@ -8,7 +8,7 @@ from learn_fastapi.src.items.domain.value_objects import (
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class Item:
     """Domain entity representing an item."""
 
@@ -33,6 +33,17 @@ class Item:
     @property
     def has_image(self) -> bool:
         return self.image_url is not None and self.image_public_id is not None
+
+
+class PersistedItem:
+    """Domain entity representing a persistent item."""
+
+    id: ItemId
+    owner_id: UserId
+    name: str
+    description: str
+    price: float
+    tax: float
 
 
 @dataclass(slots=True)
