@@ -1,7 +1,13 @@
-from learn_fastapi.src.auth.application.commands import RegisterNewUserCommand
+from dataclasses import dataclass
+
 from learn_fastapi.src.auth.application.queries import GetUserByRefreshTokenQuery
 from learn_fastapi.src.auth.domain.errors import DoesntExistUserError
 from learn_fastapi.src.auth.utils import hash_password
+from learn_fastapi.src.shared.domain.value_object import UserId
+from learn_fastapi.src.users.application.commands import (
+    RegisterNewUserCommand,
+    UpdateUserCommand,
+)
 from learn_fastapi.src.users.application.queries import (
     GetUserByEmailQuery,
     GetUserByIdQuery,
@@ -11,18 +17,17 @@ from learn_fastapi.src.users.domain.errors import (
     UserAlreadyExistsError,
     UserDoesntExistError,
 )
-from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
+from learn_fastapi.src.users.domain.ports import UsersRepository
 
 
-class BaseUseCase:
-    """Base class for all use cases."""
+@dataclass(slots=True)
+class BaseUsersUseCase:
+    """Base class for all `users` app use cases."""
 
-    def __init__(self, users_repository: SQLAlchemyUsersRepository) -> None:
-        """Initialize the use case with the user repository."""
-        self.users_repository = users_repository
+    users_repository: UsersRepository
 
 
-class GetUserByIdUseCase(BaseUseCase):
+class GetUserByIdUseCase(BaseUsersUseCase):
     """Use case for retrieving a user by its ID."""
 
     async def execute(self, query: GetUserByIdQuery) -> PersistedUser:
@@ -41,7 +46,7 @@ class GetUserByIdUseCase(BaseUseCase):
         return user
 
 
-class GetUserByEmailUseCase(BaseUseCase):
+class GetUserByEmailUseCase(BaseUsersUseCase):
     """Use case for retrieving a user by its email."""
 
     async def execute(self, query: GetUserByEmailQuery) -> PersistedUser:
@@ -60,7 +65,7 @@ class GetUserByEmailUseCase(BaseUseCase):
         return user
 
 
-class GetUserByRefreshTokenUseCase(BaseUseCase):
+class GetUserByRefreshTokenUseCase(BaseUsersUseCase):
     """Use case for retrieving a User through the refresh token."""
 
     async def execute(self, query: GetUserByRefreshTokenQuery) -> PersistedUser:
@@ -81,7 +86,7 @@ class GetUserByRefreshTokenUseCase(BaseUseCase):
         return user
 
 
-class RegisterUserUseCase(BaseUseCase):
+class RegisterUserUseCase(BaseUsersUseCase):
     """Use case for registering a user."""
 
     async def execute(self, command: RegisterNewUserCommand) -> PersistedUser:
@@ -104,3 +109,61 @@ class RegisterUserUseCase(BaseUseCase):
             command.email,
             password_hash,
         )
+
+
+class UpdateUserUseCase(BaseUsersUseCase):
+    """Use case for updating a user."""
+
+    async def execute(
+        self, command: UpdateUserCommand
+    ) -> tuple[PersistedUser, list[str]]:
+        """Execute the use case.
+
+        Args:
+            command: An instance of `UpdateUserCommand`.
+
+        Returns:
+            PersistedUser: The persisted user.
+            changed_fields: A list of the fields to update.
+
+        """
+        user = await self.users_repository.get_user_by_id(command.user_id)
+        if not user:
+            raise UserDoesntExistError
+
+        changed_fields = []
+
+        if command.new_email:
+            existing_user = await self.users_repository.get_user_by_email(
+                command.new_email
+            )
+            if existing_user and existing_user.id != command.user_id:
+                raise UserAlreadyExistsError
+
+            changed_fields.append("email")
+
+        password_hash = None
+        if command.new_password:
+            password_hash = hash_password(command.new_password)
+            changed_fields.append("password")
+
+        updated_user = await self.users_repository.update_user(
+            command.user_id, command.new_email, password_hash
+        )
+
+        return updated_user, changed_fields
+
+
+class DeleteUserUseCase(BaseUsersUseCase):
+    """Use case for deleting a user."""
+
+    # async def execute(self, command: DeleteUserCommand, authorized_user: UserModel) -> None:
+    async def execute(self, user_id: UserId) -> None:
+        """Execute the use case.
+
+        Args:
+            user_id: The user id of the user to delete.
+
+        """
+        if not await self.users_repository.delete_user(user_id):
+            raise UserDoesntExistError

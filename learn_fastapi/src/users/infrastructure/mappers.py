@@ -3,7 +3,7 @@ from learn_fastapi.src.items.models import Item
 from learn_fastapi.src.shared.domain.value_object import ItemId, RefreshTokenId
 from learn_fastapi.src.users.domain.entities import PersistedUser
 from learn_fastapi.src.users.domain.entities import User as UserDomain
-from learn_fastapi.src.users.models import User as UserORM
+from learn_fastapi.src.users.models import User as UserModel
 from learn_fastapi.src.users.schema import UserResponse
 
 
@@ -32,7 +32,7 @@ def obtain_items_and_refresh_tokens_ids(
 
 
 def domain_user_from_orm(
-    orm_user: UserORM, include_relationships: bool = True
+    orm_user: UserModel, include_relationships: bool = True
 ) -> UserDomain:
     """Convert an ORM item to a domain item.
 
@@ -63,7 +63,7 @@ def domain_user_from_orm(
 
 
 def persisted_user_from_orm(
-    orm_user: UserORM, include_relationships: bool = True
+    orm_user: UserModel, include_relationships: bool = True
 ) -> PersistedUser:
     """Convert an ORM user to a persisted user.
 

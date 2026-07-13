@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from learn_fastapi.src.auth.application.commands import (
     CreateRefreshTokenCommand,
     LoginCommand,
@@ -17,24 +19,23 @@ from learn_fastapi.src.auth.domain.errors import (
 )
 from learn_fastapi.src.auth.domain.ports import AuthRepository
 from learn_fastapi.src.auth.utils import verify_password
+from learn_fastapi.src.users.application.use_cases import BaseUsersUseCase
 from learn_fastapi.src.users.domain.entities import (
     AuthenticatedUser,
 )
 from learn_fastapi.src.users.domain.errors import (
     UserInactiveError,
 )
-from learn_fastapi.src.users.domain.ports import UsersRepository
 
 
-class BaseUseCase:
-    """Base class for all use cases."""
+@dataclass(slots=True)
+class BaseAuthUseCase:
+    """Base class for all `auth` app use cases."""
 
-    def __init__(self, auth_repository: AuthRepository) -> None:
-        """Initialize the use case with the item repository."""
-        self.auth_repository = auth_repository
+    auth_repository: AuthRepository
 
 
-class GetRefreshTokenUseCase(BaseUseCase):
+class GetRefreshTokenUseCase(BaseAuthUseCase):
     """Use case for retrieving a refresh token by Owner ID."""
 
     async def execute(self, query: GetRefreshTokenQuery) -> PersistedRefreshToken:
@@ -53,12 +54,8 @@ class GetRefreshTokenUseCase(BaseUseCase):
         return refresh_token
 
 
-class LoginUseCase:
+class LoginUseCase(BaseUsersUseCase):
     """Use case for logging in a user."""
-
-    def __init__(self, users_repository: UsersRepository) -> None:
-        """Initialize the use case with the user repository."""
-        self.users_repository = users_repository
 
     async def execute(self, command: LoginCommand) -> AuthenticatedUser:
         """Execute the use case.
@@ -98,7 +95,7 @@ class LoginUseCase:
         )
 
 
-class CreateRefreshTokenUseCase(BaseUseCase):
+class CreateRefreshTokenUseCase(BaseAuthUseCase):
     """Use case for creating a refresh token."""
 
     async def execute(
@@ -115,7 +112,7 @@ class CreateRefreshTokenUseCase(BaseUseCase):
         )
 
 
-class RevokeRefreshTokensUseCase(BaseUseCase):
+class RevokeRefreshTokensUseCase(BaseAuthUseCase):
     """Use case for revoking refresh tokens."""
 
     async def execute(self, command: RevokeRefreshTokensCommand) -> None:
@@ -123,7 +120,7 @@ class RevokeRefreshTokensUseCase(BaseUseCase):
         await self.auth_repository.revoke_refresh_tokens(command.owner_id)
 
 
-class RevokeRefreshTokenUseCase(BaseUseCase):
+class RevokeRefreshTokenUseCase(BaseAuthUseCase):
     """Use case for revoking a refresh token."""
 
     async def execute(self, command: RevokeRefreshTokenCommand) -> None:

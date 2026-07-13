@@ -4,28 +4,27 @@ from starlette.responses import Response
 
 from learn_fastapi.src.auth.utils import (
     clear_auth_cookies,
-    hash_password,
     verify_password,
 )
-from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.shared.presentation.exceptions import (
-    email_already_registered_exception,
     user_doesnt_exist_exception,
 )
+from learn_fastapi.src.users.application.commands import UpdateUserCommand
 from learn_fastapi.src.users.application.queries import GetUserByIdQuery
 from learn_fastapi.src.users.application.use_cases import (
+    DeleteUserUseCase,
     GetUserByIdUseCase,
+    UpdateUserUseCase,
 )
 from learn_fastapi.src.users.domain.errors import UserDoesntExistError
 from learn_fastapi.src.users.infrastructure.mappers import persisted_user_to_schema
-from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
 from learn_fastapi.src.users.presentation.exceptions import (
     incorrect_password_exception,
     only_user_owner_is_authorized,
 )
 from learn_fastapi.src.utils.service import BaseService
 
-from .models import User as UserORM
+from .models import User as UserModel
 from .repository import UsersRepository
 from .schema import DeleteAccount, UserResponse, UserUpdate
 
@@ -33,18 +32,23 @@ from .schema import DeleteAccount, UserResponse, UserUpdate
 class UsersService(BaseService):
     """Service class for user account business logic."""
 
-    def __init__(self, session: AsyncSessionDep) -> None:
+    def __init__(
+        self,
+        users_repository: UsersRepository,
+        get_user_by_id_use_case: GetUserByIdUseCase,
+        update_user_use_case: UpdateUserUseCase,
+        delete_user_use_case: DeleteUserUseCase,
+    ) -> None:
         """Initialize the service with an async database session."""
-        self.repository: UsersRepository = UsersRepository(session)
-
-        clean_user_repository = SQLAlchemyUsersRepository(session)
-
-        self.get_user_by_id_use_case = GetUserByIdUseCase(clean_user_repository)
+        self.users_repository = users_repository
+        self.get_user_by_id_use_case = get_user_by_id_use_case
+        self.update_user_use_case = update_user_use_case
+        self.delete_user_use_case = delete_user_use_case
 
     async def verify_userid_and_auth_user(
         self,
         user_id: UUID,
-        authorized_user: UserORM,
+        authorized_user: UserModel,
         user_password: str | None,
     ) -> UserResponse:
         """Verify if the authorized user is the owner.
@@ -71,9 +75,10 @@ class UsersService(BaseService):
             incorrect_password_exception: If `current_password` is wrong.
 
         """
-        query = GetUserByIdQuery(user_id)
         try:
-            user_from_user_id = await self.get_user_by_id_use_case.execute(query)
+            user_from_user_id = await self.get_user_by_id_use_case.execute(
+                GetUserByIdQuery(user_id)
+            )
             schema = persisted_user_to_schema(user_from_user_id)
         except UserDoesntExistError as exc:
             raise user_doesnt_exist_exception() from exc
@@ -92,7 +97,7 @@ class UsersService(BaseService):
         return schema
 
     async def get_account(
-        self, user_id: UUID, authorized_user: UserORM
+        self, user_id: UUID, authorized_user: UserModel
     ) -> UserResponse:
         """Return account details for an allowed user.
 
@@ -107,8 +112,8 @@ class UsersService(BaseService):
         return await self.verify_userid_and_auth_user(user_id, authorized_user, None)
 
     async def update_account(
-        self, user_id: UUID, authorized_user: UserORM, data: UserUpdate
-    ) -> UserORM:
+        self, user_id: UUID, authorized_user: UserModel, data: UserUpdate
+    ) -> UserResponse:
         """Update the authenticated user's email and/or password.
 
         Args:
@@ -128,33 +133,22 @@ class UsersService(BaseService):
             user_id, authorized_user, data.current_password
         )
 
-        changed_fields: list[str] = []
-
-        if data.new_email:
-            existing = await self.repository.get_user_by_email(data.new_email)
-            if existing:
-                raise email_already_registered_exception()
-            authorized_user.email = data.new_email
-            changed_fields.append("email")
-
-        if data.new_password:
-            authorized_user.password_hash = hash_password(data.new_password)
-            changed_fields.append("password")
-
-        user = await self.repository.update_user(authorized_user)
+        updated_user, changed_fields = await self.update_user_use_case.execute(
+            UpdateUserCommand(authorized_user.id, data.new_email, data.new_password)
+        )
 
         await self._broadcast_sse_event(
             "user.account_updated",
-            {"user_id": str(user.id), "changed_fields": changed_fields},
-            user_id=user.id,
+            {"user_id": str(updated_user.id), "changed_fields": changed_fields},
+            user_id=updated_user.id,
         )
 
-        return user
+        return persisted_user_to_schema(updated_user)
 
     async def delete_account(
         self,
         user_id: UUID,
-        authorized_user: UserORM,
+        authorized_user: UserModel,
         data: DeleteAccount,
         response: Response,
     ) -> None:
@@ -166,9 +160,16 @@ class UsersService(BaseService):
             data: The deletion confirmation payload containing the user's password.
             response: Response used to clear auth cookies after deletion.
 
+        Raises:
+            user_doesnt_exist_exception: If the user does not exist.
+
         """
         await self.verify_userid_and_auth_user(user_id, authorized_user, data.password)
-        await self.repository.delete_user(authorized_user)
+
+        try:
+            await self.delete_user_use_case.execute(authorized_user.id)
+        except UserDoesntExistError as exc:
+            raise user_doesnt_exist_exception() from exc
 
         await self._broadcast_sse_event(
             "user.account_deleted",
