@@ -1,5 +1,6 @@
 import contextlib
 import secrets
+from dataclasses import dataclass
 from uuid import UUID
 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -64,98 +65,88 @@ from .utils import (
 )
 
 
-async def _login(
-    login_use_case: LoginUseCase,
-    get_refresh_token_use_case: GetRefreshTokenUseCase,
-    create_refresh_token_use_case: CreateRefreshTokenUseCase,
-    revoke_refresh_tokens_use_case: RevokeRefreshTokensUseCase,
-    form_data: OAuth2PasswordRequestForm,
-    response: Response,
-) -> tuple[str, str, str, UUID]:
-    """Authenticate a user and mint new access/refresh/csrf tokens.
+@dataclass(frozen=True, slots=True)
+class AuthUseCases:
+    """Application use cases required by ``BaseAuthService``."""
 
-    Args:
-        login_use_case: The use case for logging in a user.
-        get_refresh_token_use_case:
-            The use case for retrieving a refresh token by the owner id.
-        create_refresh_token_use_case:
-            The use case for creating a refresh token.
-        revoke_refresh_tokens_use_case:
-            The use case for revoking all the active refresh token.
-        form_data: OAuth2 login form data.
-        response: Response object used to set auth cookies.
-
-    Returns:
-        (access_token, refresh_token_raw, csrf_token, user_id):
-            access_token: JWT access token string
-            refresh_token_raw: The raw (unhashed) refresh token string
-            csrf_token: CSRF token string
-            user_id: UUID of the authenticated user
-
-    Raises:
-        credentials_exception: If the credentials are invalid.
-        user_inactive_exception: If the user account is inactive.
-
-    """
-    try:
-        user = await login_use_case.execute(
-            LoginCommand(email=form_data.username.lower(), password=form_data.password)
-        )
-    except DoesntExistUserError as exc:
-        raise credentials_exception() from exc
-    except CredentialsError as exc:
-        raise credentials_exception() from exc
-    except UserInactiveError as exc:
-        raise user_inactive_exception() from exc
-
-    user_id = user.id
-
-    access_token = create_access_token(TokenData(sub=str(user_id)))
-    refresh_token_raw = generate_refresh_token()
-    refresh_token_hashed = hash_refresh_token(refresh_token_raw)
-
-    with contextlib.suppress(DoesntExistRefreshTokenError):
-        await get_refresh_token_use_case.execute(GetRefreshTokenQuery(user_id))
-        await revoke_refresh_tokens_use_case.execute(
-            RevokeRefreshTokensCommand(user_id)
-        )
-
-    csrf_token = secrets.token_urlsafe(24)
-
-    await create_refresh_token_use_case.execute(
-        CreateRefreshTokenCommand(
-            user_id, refresh_token_hashed, get_refresh_token_expiration()
-        )
-    )
-
-    set_auth_cookies(response, refresh_token_raw, csrf_token)
-
-    return access_token, refresh_token_raw, csrf_token, user_id
+    get_refresh_token: GetRefreshTokenUseCase
+    get_user_by_email: GetUserByEmailUseCase
+    get_user_by_refresh_token: GetUserByRefreshTokenUseCase
+    login: LoginUseCase
+    register_user: RegisterUserUseCase
+    create_refresh_token: CreateRefreshTokenUseCase
+    revoke_refresh_tokens: RevokeRefreshTokensUseCase
+    revoke_refresh_token: RevokeRefreshTokenUseCase
 
 
 class BaseAuthService(BaseService):
     """Base service class for auth business logic."""
 
-    def __init__(
-        self,
-        get_refresh_token_use_case: GetRefreshTokenUseCase,
-        get_user_by_email_use_case: GetUserByEmailUseCase,
-        get_user_by_refresh_token_use_case: GetUserByRefreshTokenUseCase,
-        login_use_case: LoginUseCase,
-        register_user_use_case: RegisterUserUseCase,
-        create_refresh_token_use_case: CreateRefreshTokenUseCase,
-        revoke_refresh_tokens_use_case: RevokeRefreshTokensUseCase,
-        revoke_refresh_token_use_case: RevokeRefreshTokenUseCase,
-    ) -> None:
+    def __init__(self, use_cases: AuthUseCases) -> None:
         """Initialize the service with an async database session."""
-        self.get_refresh_token_use_case = get_refresh_token_use_case
-        self.get_user_by_email_use_case = get_user_by_email_use_case
-        self.get_user_by_refresh_token_use_case = get_user_by_refresh_token_use_case
-        self.login_use_case = login_use_case
-        self.register_user_use_case = register_user_use_case
-        self.create_refresh_token_use_case = create_refresh_token_use_case
-        self.revoke_refresh_tokens_use_case = revoke_refresh_tokens_use_case
-        self.revoke_refresh_token_use_case = revoke_refresh_token_use_case
+        self.use_cases = use_cases
+
+    async def _login(
+        self,
+        form_data: OAuth2PasswordRequestForm,
+        response: Response,
+    ) -> tuple[str, str, str, UUID]:
+        """Authenticate a user and mint new access/refresh/csrf tokens.
+
+        Args:
+            form_data: OAuth2 login form data.
+            response: Response object used to set auth cookies.
+
+        Returns:
+            (access_token, refresh_token_raw, csrf_token, user_id):
+                access_token: JWT access token string
+                refresh_token_raw: The raw (unhashed) refresh token string
+                csrf_token: CSRF token string
+                user_id: UUID of the authenticated user
+
+        Raises:
+            credentials_exception: If the credentials are invalid.
+            user_inactive_exception: If the user account is inactive.
+
+        """
+        try:
+            user = await self.use_cases.login.execute(
+                LoginCommand(
+                    email=form_data.username.lower(), password=form_data.password
+                )
+            )
+        except DoesntExistUserError as exc:
+            raise credentials_exception() from exc
+        except CredentialsError as exc:
+            raise credentials_exception() from exc
+        except UserInactiveError as exc:
+            raise user_inactive_exception() from exc
+
+        user_id = user.id
+
+        access_token = create_access_token(TokenData(sub=str(user_id)))
+        refresh_token_raw = generate_refresh_token()
+        refresh_token_hashed = hash_refresh_token(refresh_token_raw)
+
+        with contextlib.suppress(DoesntExistRefreshTokenError):
+            await self.use_cases.get_refresh_token.execute(
+                GetRefreshTokenQuery(user_id)
+            )
+            await self.use_cases.revoke_refresh_tokens.execute(
+                RevokeRefreshTokensCommand(user_id)
+            )
+
+        csrf_token = secrets.token_urlsafe(24)
+
+        await self.use_cases.create_refresh_token.execute(
+            CreateRefreshTokenCommand(
+                user_id, refresh_token_hashed, get_refresh_token_expiration()
+            )
+        )
+
+        set_auth_cookies(response, refresh_token_raw, csrf_token)
+
+        return access_token, refresh_token_raw, csrf_token, user_id
 
 
 class AuthService(BaseAuthService):
@@ -175,7 +166,7 @@ class AuthService(BaseAuthService):
 
         """
         try:
-            new_user = await self.register_user_use_case.execute(
+            new_user = await self.use_cases.register_user.execute(
                 RegisterNewUserCommand(
                     user_data.email,
                     user_data.password,
@@ -208,11 +199,7 @@ class AuthService(BaseAuthService):
             A token response with access and CSRF tokens.
 
         """
-        access_token, _, csrf_token, user_id = await _login(
-            self.login_use_case,
-            self.get_refresh_token_use_case,
-            self.create_refresh_token_use_case,
-            self.revoke_refresh_tokens_use_case,
+        access_token, _, csrf_token, user_id = await self._login(
             form_data,
             response,
         )
@@ -261,7 +248,7 @@ class AuthService(BaseAuthService):
 
         query = GetUserByRefreshTokenQuery(refresh_token_raw)
         try:
-            user = await self.get_user_by_refresh_token_use_case.execute(query)
+            user = await self.use_cases.get_user_by_refresh_token.execute(query)
         except DoesntExistUserError as exc:
             raise invalid_refresh_token_exception() from exc
 
@@ -302,10 +289,10 @@ class AuthService(BaseAuthService):
             and csrf_token == x_csrf_token
         ):
             try:
-                token_record = await self.get_refresh_token_use_case.execute(
+                token_record = await self.use_cases.get_refresh_token.execute(
                     GetRefreshTokenQuery(user.id)
                 )
-                await self.revoke_refresh_token_use_case.execute(
+                await self.use_cases.revoke_refresh_token.execute(
                     RevokeRefreshTokenCommand(token_record, refresh_token_raw)
                 )
             except DoesntExistRefreshTokenError:
@@ -342,11 +329,7 @@ class AuthServiceV2(BaseAuthService):
                 - CSRF
 
         """
-        access_token, refresh_token_raw, csrf_token, user_id = await _login(
-            self.login_use_case,
-            self.get_refresh_token_use_case,
-            self.create_refresh_token_use_case,
-            self.revoke_refresh_tokens_use_case,
+        access_token, refresh_token_raw, csrf_token, user_id = await self._login(
             form_data,
             response,
         )
