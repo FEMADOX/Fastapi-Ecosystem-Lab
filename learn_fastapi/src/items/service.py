@@ -1,28 +1,43 @@
+from dataclasses import dataclass
+
 from fastapi import UploadFile
 
-from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.items.application.commands import (
+    CreateItemCommand,
+    CreateItemWithImageCommand,
+    DeleteItemCommand,
+    PatchItemCommand,
+    UpdateItemCommand,
+    UpdateItemImageCommand,
+)
 from learn_fastapi.src.items.application.queries import (
     GetItemQuery,
     GetOwnerItemQuery,
     ListOwnerItemsQuery,
 )
 from learn_fastapi.src.items.application.use_cases import (
+    CreateItemUseCase,
+    CreateItemWithImageUseCase,
+    DeleteItemUseCase,
     GetItemUseCase,
     GetOwnerItemUseCase,
     ListItemsUseCase,
     ListOwnerItemsUseCase,
+    PatchItemUseCase,
+    UpdateItemImageUseCase,
+    UpdateItemUseCase,
 )
+from learn_fastapi.src.items.domain.entities import Item as ItemDomain
 from learn_fastapi.src.items.domain.errors import (
+    ItemDuplicatedNameError,
     ItemNotFoundError,
     ItemNotFoundForUserError,
     ItemsNotFoundForUserError,
 )
 from learn_fastapi.src.items.infrastructure.mappers import (
-    item_domain_to_schema,
-    items_domain_to_schema,
-)
-from learn_fastapi.src.items.infrastructure.repository import (
-    SQLAlchemyItemRepository,
+    persisted_item_to_schema,
+    persisted_item_with_image_to_schema,
+    persisted_items_to_schema,
 )
 from learn_fastapi.src.items.presentation.exceptions import (
     duplicate_item_name_exception,
@@ -31,11 +46,13 @@ from learn_fastapi.src.items.presentation.exceptions import (
 )
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 from learn_fastapi.src.shared.presentation.exceptions import user_doesnt_exist_exception
+from learn_fastapi.src.users.application.queries import GetUserByIdQuery
+from learn_fastapi.src.users.application.use_cases import GetUserByIdUseCase
+from learn_fastapi.src.users.domain.errors import UserDoesntExistError
 from learn_fastapi.src.users.models import User
 from learn_fastapi.src.users.presentation.exceptions import (
     only_user_owner_is_authorized,
 )
-from learn_fastapi.src.users.repository import UsersRepository
 from learn_fastapi.src.utils.service import BaseService
 
 from .cache import (
@@ -48,24 +65,32 @@ from .cache import (
     get_cached_user_item,
     get_cached_user_items,
 )
-from .repository import ItemRepository
 from .schema import ItemPatchSchema, ItemSchema, ItemUpdateSchema
-from .utils import delete_image_file, save_image_file
 
 
-class ItemService(BaseService):
+@dataclass(frozen=True, slots=True)
+class ItemsUseCases:
+    """Application use cases required by ``ItemsService``."""
+
+    get_user_by_id: GetUserByIdUseCase
+    list_items: ListItemsUseCase
+    get_item: GetItemUseCase
+    list_owner_items: ListOwnerItemsUseCase
+    get_owner_item: GetOwnerItemUseCase
+    create_item: CreateItemUseCase
+    update_item: UpdateItemUseCase
+    patch_item: PatchItemUseCase
+    delete_item: DeleteItemUseCase
+    create_item_with_image: CreateItemWithImageUseCase
+    update_item_image: UpdateItemImageUseCase
+
+
+class ItemsService(BaseService):
     """Service class for Item business logic."""
 
-    def __init__(self, session: AsyncSessionDep) -> None:
+    def __init__(self, use_cases: ItemsUseCases) -> None:
         """Initialize the service with an async database session."""
-        self.repository = ItemRepository(session)
-        self.users_repository = UsersRepository(session)
-
-        clean_item_repository = SQLAlchemyItemRepository(session)
-        self.list_item_use_case = ListItemsUseCase(clean_item_repository)
-        self.get_item_use_case = GetItemUseCase(clean_item_repository)
-        self.list_owner_items_use_case = ListOwnerItemsUseCase(clean_item_repository)
-        self.get_owner_item_use_case = GetOwnerItemUseCase(clean_item_repository)
+        self.use_cases = use_cases
 
     async def _resolve_owner(self, current_user: User, owner_id: UserId | None) -> User:
         """Resolve the owner for user-scoped item reads.
@@ -86,19 +111,49 @@ class ItemService(BaseService):
             user_doesnt_exist_exception: When the specified owner does not exist.
 
         """
-        if not owner_id or owner_id == current_user.id:
+        if owner_id is None or owner_id == current_user.id:
             return current_user
 
         if not current_user.is_superuser:
             raise only_user_owner_is_authorized()
 
-        owner = await self.users_repository.get_user_by_id(owner_id)
-        if owner is None:
-            raise user_doesnt_exist_exception()
+        try:
+            owner = await self.use_cases.get_user_by_id.execute(
+                GetUserByIdQuery(owner_id)
+            )
+            owner = User(
+                id=owner.id,
+                email=owner.email,
+                password_hash=owner.password_hash,
+                is_active=owner.is_active,
+                is_superuser=owner.is_superuser,
+            )
+        except UserDoesntExistError as exc:
+            raise user_doesnt_exist_exception() from exc
         return owner
 
     async def resolve_owner(self, current_user: User, owner_id: UserId | None) -> User:
+        """Resolve the owner for user-scoped item reads."""  # noqa: DOC201
         return await self._resolve_owner(current_user, owner_id)
+
+    @staticmethod
+    def _item_from_update_schema(
+        item_data: ItemUpdateSchema, owner_id: UserId | None
+    ) -> ItemDomain:
+        item_owner_id = item_data.user_id or owner_id
+        if item_owner_id is None:
+            msg = "owner_id is required to build an item domain entity"
+            raise ValueError(msg)
+
+        return ItemDomain(
+            id=None,
+            owner_id=item_owner_id,
+            name=item_data.name,
+            description=item_data.description or "No description provided",
+            price=item_data.price,
+            tax=item_data.tax,
+            image_url=item_data.image_url or "",
+        )
 
     async def list_all_items(self) -> list[ItemSchema]:
         """Return all items in the database as serialized schemas.
@@ -111,8 +166,8 @@ class ItemService(BaseService):
         if cached:
             return [ItemSchema.model_validate(item) for item in cached]
 
-        items = await self.list_item_use_case.execute()
-        schemas = items_domain_to_schema(items)
+        items = await self.use_cases.list_items.execute()
+        schemas = persisted_items_to_schema(items)
         await cache_items([schema.model_dump(mode="json") for schema in schemas])
 
         return schemas
@@ -134,10 +189,9 @@ class ItemService(BaseService):
         if cached:
             return ItemSchema.model_validate(cached)
 
-        query = GetItemQuery(id_param)
         try:
-            item = await self.get_item_use_case.execute(query)
-            schema = item_domain_to_schema(item)
+            item = await self.use_cases.get_item.execute(GetItemQuery(id_param))
+            schema = persisted_item_to_schema(item)
             await cache_item(id_param, schema.model_dump(mode="json"))
 
         except ItemNotFoundError as exception:
@@ -162,10 +216,11 @@ class ItemService(BaseService):
         if cached:
             return [ItemSchema.model_validate(item) for item in cached]
 
-        query = ListOwnerItemsQuery(owner.id)
         try:
-            items = await self.list_owner_items_use_case.execute(query)
-            schemas = items_domain_to_schema(items)
+            items = await self.use_cases.list_owner_items.execute(
+                ListOwnerItemsQuery(owner.id)
+            )
+            schemas = persisted_items_to_schema(items)
             await cache_user_items(
                 [schema.model_dump(mode="json") for schema in schemas], owner
             )
@@ -195,28 +250,34 @@ class ItemService(BaseService):
             return ItemSchema.model_validate(cached)
 
         try:
-            query = GetOwnerItemQuery(item_id, owner.id)
-            item = await self.get_owner_item_use_case.execute(query)
-            schema = item_domain_to_schema(item)
+            item = await self.use_cases.get_owner_item.execute(
+                GetOwnerItemQuery(item_id, owner.id)
+            )
+            schema = persisted_item_to_schema(item)
             await cache_user_item(item_id, schema.model_dump(mode="json"), owner)
         except ItemNotFoundForUserError as exception:
             raise item_not_found_or_not_belong_to_user_exception() from exception
 
         return schema
 
-    async def create_item(self, item_data: ItemUpdateSchema, owner: User) -> ItemSchema:
+    async def create_item(
+        self, item_data: ItemUpdateSchema, owner_id: UserId
+    ) -> ItemSchema:
         """Create a new item owned by a user.
 
         Args:
             item_data: Validated payload containing the item's field values.
-            owner: The authenticated user who will own the item.
+            owner_id: The authenticated user who will own the item.
 
         Returns:
             The newly created ItemSchema.
 
         """
-        item = await self.repository.create_item(item_data, owner)
-        schema = ItemSchema.model_validate(item, from_attributes=True)
+        domain_item = self._item_from_update_schema(item_data, owner_id)
+        item = await self.use_cases.create_item.execute(
+            CreateItemCommand(domain_item, owner_id)
+        )
+        schema = persisted_item_to_schema(item)
 
         await self._broadcast_sse_event(
             "item.created",
@@ -225,7 +286,7 @@ class ItemService(BaseService):
         await self._broadcast_sse_event(
             "item.created",
             schema.model_dump(mode="json"),
-            item.user_id,
+            item.owner_id,
         )
 
         return schema
@@ -236,8 +297,8 @@ class ItemService(BaseService):
         description: str,
         price: float,
         tax: float,
-        owner: User,
-        image_file: UploadFile | None,
+        owner_id: UserId,
+        image_file: UploadFile,
         caption: str,
     ) -> ItemSchema:
         """Create a new item and optionally attach an uploaded image.
@@ -251,7 +312,7 @@ class ItemService(BaseService):
             description: Human-readable description.
             price: Base price of the item.
             tax: Tax rate applied to the item.
-            owner: The authenticated user who will own the item.
+            owner_id: The authenticated user Id, who will own the item.
             image_file: Optional image file to attach to the item.
             caption: Alt-text or description for the image.
 
@@ -263,20 +324,16 @@ class ItemService(BaseService):
             duplicate_item_name_exception: Item duplicated.
 
         """
-        existing = await self.repository.get_item_by_name(name)
-        if existing:
-            raise duplicate_item_name_exception()
+        try:
+            new_item = await self.use_cases.create_item_with_image.execute(
+                CreateItemWithImageCommand(
+                    owner_id, name, price, tax, image_file, caption, description
+                )
+            )
+        except ItemDuplicatedNameError as exc:
+            raise duplicate_item_name_exception() from exc
 
-        item_data = ItemUpdateSchema(
-            name=name, description=description, price=price, tax=tax
-        )
-        item = await self.repository.create_item(item_data, owner)
-
-        if image_file:
-            image = await save_image_file(image_file, caption)
-            await self.repository.update_item_image(item.id, image.url, image.public_id)
-
-        schema = ItemSchema.model_validate(item, from_attributes=True)
+        schema = persisted_item_with_image_to_schema(new_item)
 
         await self._broadcast_sse_event(
             "item.created",
@@ -285,13 +342,17 @@ class ItemService(BaseService):
         await self._broadcast_sse_event(
             "item.created",
             schema.model_dump(mode="json"),
-            item.user_id,
+            new_item.owner_id,
         )
 
         return schema
 
     async def update_item(
-        self, item_id: ItemId, item_data: ItemUpdateSchema, owner: User | None = None
+        self,
+        item_id: ItemId,
+        item_data: ItemUpdateSchema,
+        is_superuser: bool,
+        owner_id: UserId | None = None,
     ) -> ItemSchema:
         """Replace all fields of an item (PUT semantics).
 
@@ -302,7 +363,8 @@ class ItemService(BaseService):
         Args:
             item_id: The ItemId of the item to update.
             item_data: Field values to write — all fields are applied.
-            owner: If provided, restricts the update to items owned by this user.
+            owner_id: If provided, restricts the update to items owned by this user.
+            is_superuser: Is the user modifier a superuser.
 
         Returns:
             The updated ItemSchema.
@@ -312,22 +374,29 @@ class ItemService(BaseService):
                 or does not belong to the given owner.
 
         """
-        owner_scope = None if owner and owner.is_superuser else owner
-        item = await self.repository.update_item(item_id, item_data, owner_scope)
-        if not item:
-            raise item_not_found_or_not_belong_to_user_exception()
+        domain_item = self._item_from_update_schema(item_data, owner_id)
+        try:
+            item = await self.use_cases.update_item.execute(
+                UpdateItemCommand(item_id, owner_id, is_superuser, domain_item)
+            )
+        except ItemNotFoundError as exc:
+            raise item_not_found_or_not_belong_to_user_exception() from exc
 
-        schema = ItemSchema.model_validate(item, from_attributes=True)
+        schema = persisted_item_to_schema(item)
         await self._broadcast_sse_event(
             "item.updated",
             schema.model_dump(mode="json"),
-            user_id=item.user_id,
+            user_id=item.owner_id,
         )
 
         return schema
 
     async def patch_item(
-        self, item_id: ItemId, item_data: ItemPatchSchema, owner: User | None = None
+        self,
+        item_id: ItemId,
+        item_data: ItemPatchSchema,
+        is_superuser: bool,
+        owner_id: UserId | None = None,
     ) -> ItemSchema:
         """Apply a partial update to an item (PATCH semantics).
 
@@ -338,7 +407,8 @@ class ItemService(BaseService):
         Args:
             item_id: The ItemId of the item to update.
             item_data: Partial field values — only explicitly set fields are applied.
-            owner: If provided, restricts the update to items owned by this user.
+            owner_id: If provided, restricts the update to items owned by this user.
+            is_superuser: Is the user modifier a superuser.
 
         Returns:
             The updated ItemSchema.
@@ -348,17 +418,20 @@ class ItemService(BaseService):
                 or does not belong to the given owner.
 
         """
-        owner_scope = None if owner and owner.is_superuser else owner
-        item = await self.repository.patch_item(item_id, item_data, owner_scope)
-        if item is None:
-            raise item_not_found_or_not_belong_to_user_exception()
+        fields = item_data.model_dump(exclude_unset=True, exclude_none=True)
+        try:
+            item = await self.use_cases.patch_item.execute(
+                PatchItemCommand(item_id, owner_id, is_superuser, fields)
+            )
+        except ItemNotFoundError as exc:
+            raise item_not_found_or_not_belong_to_user_exception() from exc
 
-        schema = ItemSchema.model_validate(item, from_attributes=True)
+        schema = persisted_item_to_schema(item)
 
         await self._broadcast_sse_event(
             "item.updated",
             schema.model_dump(mode="json"),
-            user_id=item.user_id,
+            user_id=item.owner_id,
         )
 
         return schema
@@ -375,21 +448,18 @@ class ItemService(BaseService):
                 or does not belong to the owner.
 
         """
-        if owner.is_superuser:
-            item = await self.repository.get_item(item_id)
-        else:
-            item = await self.repository.get_user_item(item_id, owner)
+        try:
+            item_deleted = await self.use_cases.delete_item.execute(
+                DeleteItemCommand(item_id, owner.id, owner.is_superuser)
+            )
+        except ItemNotFoundError as exc:
+            raise item_not_found_or_not_belong_to_user_exception() from exc
 
-        if item is None:
-            raise item_not_found_or_not_belong_to_user_exception()
-
-        await self.repository.delete_item(item)
-
-        schema = ItemSchema.model_validate(item, from_attributes=True)
+        schema = persisted_item_to_schema(item_deleted)
         await self._broadcast_sse_event(
             "item.deleted",
             schema.model_dump(mode="json"),
-            user_id=item.user_id,
+            user_id=item_deleted.owner_id,
         )
 
     async def update_item_image(
@@ -415,33 +485,21 @@ class ItemService(BaseService):
                 When the item does not exist or does not belong to the owner.
 
         """
-        if owner.is_superuser:
-            item = await self.repository.get_item(item_id)
-        else:
-            item = await self.repository.get_user_item(item_id, owner)
+        try:
+            item = await self.use_cases.update_item_image.execute(
+                UpdateItemImageCommand(
+                    item_id, owner.id, owner.is_superuser, image_file, caption
+                )
+            )
+        except ItemNotFoundError as exc:
+            raise item_not_found_or_not_belong_to_user_exception() from exc
 
-        if item is None:
-            raise item_not_found_or_not_belong_to_user_exception()
-
-        if item.image_public_id:
-            await delete_image_file(item.image_public_id)
-
-        image = await save_image_file(image_file, caption)
-        item = await self.repository.update_item_image(
-            item.id,
-            image.url,
-            image.public_id,
-        )
-
-        if item is None:
-            raise item_not_found_or_not_belong_to_user_exception()
-
-        schema = ItemSchema.model_validate(item, from_attributes=True)
+        schema = persisted_item_with_image_to_schema(item)
 
         await self._broadcast_sse_event(
             "item.image_updated",
             schema.model_dump(mode="json"),
-            user_id=item.user_id,
+            user_id=item.owner_id,
         )
 
         return schema
