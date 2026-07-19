@@ -96,7 +96,7 @@ class RegisterUserUseCase(BaseUsersUseCase):
             UserDomain: The registered user.
 
         Raises:
-            DoesntExistUserError: If the user doesn't exist.
+            UserAlreadyExistsError: Raised when account with that email already exist.
 
         """
         existing_user = await self.users_repository.get_user_by_email(command.email)
@@ -125,6 +125,10 @@ class UpdateUserUseCase(BaseUsersUseCase):
         Returns:
             PersistedUser: The persisted user.
             changed_fields: A list of the fields to update.
+
+        Raises:
+            UserDoesntExistError: Raised when the user doesn't exist.
+            UserAlreadyExistsError: Raised when account with that email already exist.
 
         """
         user = await self.users_repository.get_user_by_id(command.user_id)
@@ -157,12 +161,14 @@ class UpdateUserUseCase(BaseUsersUseCase):
 class DeleteUserUseCase(BaseUsersUseCase):
     """Use case for deleting a user."""
 
-    # async def execute(self, command: DeleteUserCommand, authorized_user: UserModel) -> None:
     async def execute(self, user_id: UserId) -> None:
         """Execute the use case.
 
         Args:
             user_id: The user id of the user to delete.
+
+        Raises:
+            UserDoesntExistError: Raised when the user doesn't exist.
 
         """
         if not await self.users_repository.delete_user(user_id):

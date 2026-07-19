@@ -9,8 +9,7 @@ from learn_fastapi.src.users.application.use_cases import (
     UpdateUserUseCase,
 )
 from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
-from learn_fastapi.src.users.repository import UsersRepository
-from learn_fastapi.src.users.service import UsersService
+from learn_fastapi.src.users.service import UsersService, UsersUseCases
 
 
 def get_users_service(session: AsyncSessionDep) -> UsersService:
@@ -23,15 +22,14 @@ def get_users_service(session: AsyncSessionDep) -> UsersService:
         A configured ``UsersService`` instance.
 
     """
-    users_repository = UsersRepository(session)
-
     clean_user_repository = SQLAlchemyUsersRepository(session)
 
     return UsersService(
-        users_repository,
-        GetUserByIdUseCase(clean_user_repository),
-        UpdateUserUseCase(clean_user_repository),
-        DeleteUserUseCase(clean_user_repository),
+        UsersUseCases(
+            GetUserByIdUseCase(clean_user_repository),
+            UpdateUserUseCase(clean_user_repository),
+            DeleteUserUseCase(clean_user_repository),
+        )
     )
 
 
