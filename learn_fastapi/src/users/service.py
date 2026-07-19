@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from uuid import UUID
 
 from starlette.responses import Response
@@ -25,25 +26,24 @@ from learn_fastapi.src.users.presentation.exceptions import (
 from learn_fastapi.src.utils.service import BaseService
 
 from .models import User as UserModel
-from .repository import UsersRepository
 from .schema import DeleteAccount, UserResponse, UserUpdate
+
+
+@dataclass(frozen=True, slots=True)
+class UsersUseCases:
+    """Application use cases required by ``UsersService``."""
+
+    get_user_by_id: GetUserByIdUseCase
+    update_user: UpdateUserUseCase
+    delete_user: DeleteUserUseCase
 
 
 class UsersService(BaseService):
     """Service class for user account business logic."""
 
-    def __init__(
-        self,
-        users_repository: UsersRepository,
-        get_user_by_id_use_case: GetUserByIdUseCase,
-        update_user_use_case: UpdateUserUseCase,
-        delete_user_use_case: DeleteUserUseCase,
-    ) -> None:
+    def __init__(self, use_cases: UsersUseCases) -> None:
         """Initialize the service with an async database session."""
-        self.users_repository = users_repository
-        self.get_user_by_id_use_case = get_user_by_id_use_case
-        self.update_user_use_case = update_user_use_case
-        self.delete_user_use_case = delete_user_use_case
+        self.use_cases = use_cases
 
     async def verify_userid_and_auth_user(
         self,
@@ -76,7 +76,7 @@ class UsersService(BaseService):
 
         """
         try:
-            user_from_user_id = await self.get_user_by_id_use_case.execute(
+            user_from_user_id = await self.use_cases.get_user_by_id.execute(
                 GetUserByIdQuery(user_id)
             )
             schema = persisted_user_to_schema(user_from_user_id)
@@ -125,15 +125,12 @@ class UsersService(BaseService):
         Returns:
             The refreshed user instance after the update.
 
-        Raises:
-            email_already_registered_exception: If ``new_email`` is already taken.
-
         """
         await self.verify_userid_and_auth_user(
             user_id, authorized_user, data.current_password
         )
 
-        updated_user, changed_fields = await self.update_user_use_case.execute(
+        updated_user, changed_fields = await self.use_cases.update_user.execute(
             UpdateUserCommand(authorized_user.id, data.new_email, data.new_password)
         )
 
@@ -167,7 +164,7 @@ class UsersService(BaseService):
         await self.verify_userid_and_auth_user(user_id, authorized_user, data.password)
 
         try:
-            await self.delete_user_use_case.execute(authorized_user.id)
+            await self.use_cases.delete_user.execute(authorized_user.id)
         except UserDoesntExistError as exc:
             raise user_doesnt_exist_exception() from exc
 
