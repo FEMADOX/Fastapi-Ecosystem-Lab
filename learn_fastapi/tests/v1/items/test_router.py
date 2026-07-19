@@ -15,8 +15,8 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_CONTENT,
 )
 
+from learn_fastapi.src.items.domain.entities import ItemImage
 from learn_fastapi.src.items.models import Item as ItemModel
-from learn_fastapi.src.items.schema import ImageSchema
 
 if TYPE_CHECKING:
     from httpx import AsyncClient
@@ -26,13 +26,14 @@ if TYPE_CHECKING:
 @pytest.fixture
 def fake_cloudinary_upload(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fake_save_image_file(
+        self: object,
         image_file: UploadFile,
         caption: str = "No description provided",
-    ) -> ImageSchema:
-        # Simulate an await
+    ) -> ItemImage:
+        # Simulate await
         await sleep(0)
-        return ImageSchema(
-            name=image_file.filename,
+        return ItemImage(
+            name=image_file.filename or "",
             description=caption,
             content_type=image_file.content_type,
             url=(
@@ -43,7 +44,7 @@ def fake_cloudinary_upload(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(
-        "learn_fastapi.src.items.service.save_image_file",
+        "learn_fastapi.src.items.infrastructure.image_storage.CloudinaryImageStorage.upload",
         fake_save_image_file,
     )
 
@@ -52,14 +53,14 @@ def fake_cloudinary_upload(monkeypatch: pytest.MonkeyPatch) -> None:
 def fake_cloudinary_delete(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     deleted_public_ids: list[str] = []
 
-    async def fake_delete_image_file(image_public_id: str) -> bool:
+    async def fake_delete_image_file(self: object, image_public_id: str) -> bool:
         # Preserve the awaited production contract while avoiding Cloudinary I/O.
         await sleep(0)
         deleted_public_ids.append(image_public_id)
         return True
 
     monkeypatch.setattr(
-        "learn_fastapi.src.items.service.delete_image_file",
+        "learn_fastapi.src.items.infrastructure.image_storage.CloudinaryImageStorage.delete",
         fake_delete_image_file,
     )
     return deleted_public_ids
@@ -547,7 +548,7 @@ class TestCreateItemWithImage:
     def use_fake_cloudinary_upload(self, fake_cloudinary_upload: None) -> None:
         return None
 
-    async def test_returns_200_without_image(self, client: AsyncClient) -> None:
+    async def test_missing_image_returns_422(self, client: AsyncClient) -> None:
         response = await client.post(
             "/items/with-image/",
             data={
@@ -557,9 +558,11 @@ class TestCreateItemWithImage:
                 "tax": "1.0",
             },
         )
-        assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
+        assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
 
-    async def test_response_fields_without_image(self, client: AsyncClient) -> None:
+    async def test_missing_image_does_not_create_item(
+        self, client: AsyncClient
+    ) -> None:
         response = await client.post(
             "/items/with-image/",
             data={
@@ -569,11 +572,11 @@ class TestCreateItemWithImage:
                 "tax": "1.0",
             },
         )
-        body = response.json()
-        body_price = 9.99
-        assert body["name"] == "Test Item"
-        assert body["price"] == body_price
-        assert not body["image_url"]
+        assert response.status_code == HTTP_422_UNPROCESSABLE_CONTENT
+
+        response = await client.get("/items/")
+        names = [item["name"] for item in response.json()]
+        assert "Test Item" not in names
 
     async def test_returns_200_with_image(self, client: AsyncClient) -> None:
         response = await client.post(
@@ -626,13 +629,17 @@ class TestCreateItemWithImage:
 
     async def test_default_values_used(self, client: AsyncClient) -> None:
         item_name = "Default Item"
-        response = await client.post("/items/with-image/", data={"name": item_name})
+        response = await client.post(
+            "/items/with-image/",
+            data={"name": item_name},
+            files={"image_file": ("product.png", self.FAKE_PNG, "image/png")},
+        )
         assert response.status_code in {HTTP_200_OK, HTTP_201_CREATED}
         body = response.json()
         body_price = 0.00
         assert body["name"] == "Default Item"
         assert body["price"] == body_price
-        assert not body["image_url"]
+        assert body["image_url"]
 
     async def test_item_persisted_in_db(self, client: AsyncClient) -> None:
         await client.post(
@@ -642,6 +649,7 @@ class TestCreateItemWithImage:
                 "description": "A long enough description",
                 "price": "3.00",
             },
+            files={"image_file": ("product.png", self.FAKE_PNG, "image/png")},
         )
         response = await client.get("/items/")
         names = [item["name"] for item in response.json()]

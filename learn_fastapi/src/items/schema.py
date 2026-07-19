@@ -50,6 +50,7 @@ class ItemUpdateSchema(BaseModel):
         default=None,
     )
     image_url: str | None = Field(description="The url of the image", default=None)
+    image_pulic_id: str | None = Field(description="The image public id", default=None)
 
 
 class ItemPatchSchema(BaseModel):
@@ -69,3 +70,4 @@ class ItemPatchSchema(BaseModel):
         default=None,
     )
     image_url: str | None = Field(description="The url of the image", default=None)
+    image_pulic_id: str | None = Field(description="The image public id", default=None)
