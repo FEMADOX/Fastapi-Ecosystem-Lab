@@ -6,7 +6,7 @@ class ItemNotFoundError(ItemDomainError):
     """Raised when an item is not found in the repository."""
 
 
-class ItemDuplicateNameError(ItemDomainError):
+class ItemDuplicatedNameError(ItemDomainError):
     """Raised when an item with the same name already exists in the repository."""
 
 

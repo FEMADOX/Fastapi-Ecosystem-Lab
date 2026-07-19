@@ -8,14 +8,13 @@ from learn_fastapi.src.items.annotations import (
     AnnotatedOwnerId,
     ImageCaption,
     ImageFile,
-    ImageFileOptional,
     ItemDescription,
     ItemName,
     ItemPrice,
     ItemTax,
 )
 from learn_fastapi.src.items.cache import invalidate_items_namespace
-from learn_fastapi.src.items.presentation.dependencies import ItemServiceDep
+from learn_fastapi.src.items.presentation.dependencies import ItemsServiceDep
 from learn_fastapi.src.items.schema import (
     ItemPatchSchema,
     ItemSchema,
@@ -28,7 +27,7 @@ router = APIRouter(prefix="/items", tags=["items"])
 
 @api_version(1)
 @router.get("/")
-async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
+async def read_items(service: ItemsServiceDep) -> list[ItemSchema]:
     """Return all items stored in the database.
 
     Args:
@@ -44,7 +43,7 @@ async def read_items(service: ItemServiceDep) -> list[ItemSchema]:
 @api_version(1)
 @router.get("/owner")
 async def read_owner_items(
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     current_user: CurrentUserDep,
     owner_id: AnnotatedOwnerId = None,
 ) -> list[ItemSchema]:
@@ -67,7 +66,7 @@ async def read_owner_items(
 @router.get("/owner/{id_param}")
 async def read_owner_item(
     id_param: UUID,
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     current_user: CurrentUserDep,
     owner_id: AnnotatedOwnerId = None,
 ) -> ItemSchema:
@@ -89,7 +88,7 @@ async def read_owner_item(
 
 @api_version(1)
 @router.get("/{id_param}")
-async def read_item(id_param: UUID, service: ItemServiceDep) -> ItemSchema:
+async def read_item(id_param: UUID, service: ItemsServiceDep) -> ItemSchema:
     """Return a single item by its UUID.
 
     Args:
@@ -107,7 +106,7 @@ async def read_item(id_param: UUID, service: ItemServiceDep) -> ItemSchema:
 @router.post("/")
 async def create_item(
     item: ItemUpdateSchema,
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,
 ) -> ItemSchema:
@@ -123,7 +122,7 @@ async def create_item(
         The newly created ItemSchema.
 
     """
-    result = await service.create_item(item, current_user)
+    result = await service.create_item(item, current_user.id)
     background_tasks.add_task(invalidate_items_namespace)
     return result
 
@@ -133,7 +132,7 @@ async def create_item(
 async def update_item(
     id_param: UUID,
     item_param: ItemUpdateSchema,
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,
 ) -> ItemSchema:
@@ -153,7 +152,9 @@ async def update_item(
         The updated ItemSchema.
 
     """
-    result = await service.update_item(id_param, item_param, current_user)
+    result = await service.update_item(
+        id_param, item_param, bool(current_user.is_superuser), current_user.id
+    )
     background_tasks.add_task(invalidate_items_namespace)
     return result
 
@@ -163,7 +164,7 @@ async def update_item(
 async def patch_item(
     id_param: UUID,
     item_param: ItemPatchSchema,
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,
 ) -> ItemSchema:
@@ -183,7 +184,9 @@ async def patch_item(
         The updated ItemSchema.
 
     """
-    result = await service.patch_item(id_param, item_param, current_user)
+    result = await service.patch_item(
+        id_param, item_param, bool(current_user.is_superuser), current_user.id
+    )
     background_tasks.add_task(invalidate_items_namespace)
     return result
 
@@ -192,7 +195,7 @@ async def patch_item(
 @router.delete("/{id_param}")
 async def delete_item(
     id_param: UUID,
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,
 ) -> dict[str, str | int]:
@@ -217,7 +220,7 @@ async def delete_item(
 @router.post("/image/{id_param}")
 async def submit_an_item_image(  # noqa: PLR0913, PLR0917
     id_param: UUID,
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     image_file: ImageFile,
     background_tasks: BackgroundTasks,
     current_user: CurrentUserDep,
@@ -247,14 +250,14 @@ async def submit_an_item_image(  # noqa: PLR0913, PLR0917
 @api_version(1)
 @router.post("/with-image/")
 async def create_item_with_image(  # noqa: PLR0913, PLR0917
-    service: ItemServiceDep,
+    service: ItemsServiceDep,
     current_user: CurrentUserDep,
     background_tasks: BackgroundTasks,
     name: ItemName,
+    image_file: ImageFile,
     description: ItemDescription = "No description provided",
     price: ItemPrice = 0.00,
     tax: ItemTax = 0.00,
-    image_file: ImageFileOptional = None,
     caption: ImageCaption = "No description provided",
 ) -> ItemSchema:
     """Create an item with an optional image in a single multipart request.
@@ -284,7 +287,7 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
         description=description,
         price=price,
         tax=tax,
-        owner=current_user,
+        owner_id=current_user.id,
         image_file=image_file,
         caption=caption,
     )
