@@ -21,7 +21,13 @@ async def get_me(current_user: CurrentUserDep) -> UserResponse:
         The current authenticated user.
 
     """
-    return UserResponse(**current_user.__dict__)
+    # AuthenticatedAccount uses slots, so serialize its public API fields directly.
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        is_active=current_user.is_active,
+        is_superuser=current_user.is_superuser,
+    )
 
 
 @api_version(1)
