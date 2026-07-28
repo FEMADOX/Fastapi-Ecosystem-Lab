@@ -8,9 +8,8 @@ from fastapi.responses import StreamingResponse
 from fastapi_versionizer.versionizer import api_version
 
 from learn_fastapi.src.shared.presentation.dependencies import CurrentUserDep
+from learn_fastapi.src.sse.manager import sse_manager
 from learn_fastapi.src.utils.alembic import app_logger as logger
-
-from .manager import sse_manager
 
 router = APIRouter(prefix="/events", tags=["events"])
 

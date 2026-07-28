@@ -2,7 +2,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from learn_fastapi.src.auth.utils import hash_password
+from learn_fastapi.src.shared.infrastructure.argon2_password_hasher import (
+    Argon2PasswordHasher,
+)
 from learn_fastapi.src.users.models import User
 
 if TYPE_CHECKING:
@@ -24,7 +26,7 @@ async def seeded_user(test_session: AsyncSession, client: AsyncClient) -> User:
     """
     user = User(
         email="repeatedemail@gmail.com",
-        password_hash=hash_password("mysupersecurepass"),
+        password_hash=Argon2PasswordHasher().hash("mysupersecurepass"),
     )
     test_session.add(user)
     await test_session.commit()

@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
-from .config import auth_config
+from learn_fastapi.src.auth.config import auth_config
 
 
 class TokenData(BaseModel):
