@@ -7,7 +7,9 @@ from argon2.exceptions import InvalidHash, VerifyMismatchError
 from starlette.responses import Response
 
 from .config import auth_config
-from .schema import TokenData
+
+# Keep the legacy helpers importable while users is migrated off them.
+from .presentation.schemas import TokenData
 
 # Configuration
 SECRET_KEY = auth_config.secret_key

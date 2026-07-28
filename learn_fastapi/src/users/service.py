@@ -7,6 +7,7 @@ from learn_fastapi.src.auth.utils import (
     clear_auth_cookies,
     verify_password,
 )
+from learn_fastapi.src.shared.application.dto import AuthenticatedAccount
 from learn_fastapi.src.shared.presentation.exceptions import (
     user_doesnt_exist_exception,
 )
@@ -25,7 +26,6 @@ from learn_fastapi.src.users.presentation.exceptions import (
 )
 from learn_fastapi.src.utils.service import BaseService
 
-from .models import User as UserModel
 from .schema import DeleteAccount, UserResponse, UserUpdate
 
 
@@ -48,7 +48,7 @@ class UsersService(BaseService):
     async def verify_userid_and_auth_user(
         self,
         user_id: UUID,
-        authorized_user: UserModel,
+        authorized_user: AuthenticatedAccount,
         user_password: str | None,
     ) -> UserResponse:
         """Verify if the authorized user is the owner.
@@ -97,7 +97,7 @@ class UsersService(BaseService):
         return schema
 
     async def get_account(
-        self, user_id: UUID, authorized_user: UserModel
+        self, user_id: UUID, authorized_user: AuthenticatedAccount
     ) -> UserResponse:
         """Return account details for an allowed user.
 
@@ -112,7 +112,7 @@ class UsersService(BaseService):
         return await self.verify_userid_and_auth_user(user_id, authorized_user, None)
 
     async def update_account(
-        self, user_id: UUID, authorized_user: UserModel, data: UserUpdate
+        self, user_id: UUID, authorized_user: AuthenticatedAccount, data: UserUpdate
     ) -> UserResponse:
         """Update the authenticated user's email and/or password.
 
@@ -145,7 +145,7 @@ class UsersService(BaseService):
     async def delete_account(
         self,
         user_id: UUID,
-        authorized_user: UserModel,
+        authorized_user: AuthenticatedAccount,
         data: DeleteAccount,
         response: Response,
     ) -> None:

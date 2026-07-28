@@ -5,6 +5,7 @@ import contextlib
 import json
 from uuid import UUID
 
+from learn_fastapi.src.shared.infrastructure.json_types import JSONObject
 from learn_fastapi.src.utils.alembic import app_logger
 
 logger = app_logger
@@ -25,7 +26,7 @@ class SSEManager:
         self._global: list[asyncio.Queue[str]] = []
         self._users: dict[UUID, list[asyncio.Queue[str]]] = {}
 
-    def build_event_message(self, event: str, payload: dict) -> str:
+    def build_event_message(self, event: str, payload: JSONObject) -> str:
         """Build an SSE-formatted message string.
 
         SSE format requires:
@@ -140,7 +141,7 @@ class SSEManager:
         """
         return user_id in self._users
 
-    async def broadcast_global(self, event: str, payload: dict) -> None:
+    async def broadcast_global(self, event: str, payload: JSONObject) -> None:
         """Broadcast an event to all globally connected clients.
 
         Args:
@@ -157,7 +158,9 @@ class SSEManager:
         except Exception:
             logger.exception(f"[SSE] Error broadcasting global event: {event}")
 
-    async def broadcast_user(self, user_id: UUID, event: str, payload: dict) -> None:
+    async def broadcast_user(
+        self, user_id: UUID, event: str, payload: JSONObject
+    ) -> None:
         """Broadcast an event to all clients connected for a specific user.
 
         Args:

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 from learn_fastapi.src.auth.domain.entities import PersistedRefreshToken
 from learn_fastapi.src.shared.domain.value_object import UserId
@@ -14,8 +13,11 @@ class LoginCommand:
 @dataclass(frozen=True, slots=True)
 class CreateRefreshTokenCommand:
     owner_id: UserId
-    token_hash: str
-    expires_in: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class IssueAccessTokenCommand:
+    owner_id: UserId
 
 
 @dataclass(frozen=True, slots=True)

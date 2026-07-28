@@ -6,9 +6,10 @@ from uuid import uuid4
 import pytest
 from starlette.status import HTTP_200_OK
 
+from learn_fastapi.src.shared.application.dto import AuthenticatedAccount
 from learn_fastapi.src.sse.manager import sse_manager
-from learn_fastapi.src.sse.router import sse_global, sse_me
-from learn_fastapi.src.users.models import User
+from learn_fastapi.src.sse.presentation.router import sse_global, sse_me
+from learn_fastapi.src.users.domain.value_objects import PasswordHash
 
 EXPECTED_TWO_CONNECTIONS = 2
 
@@ -25,9 +26,12 @@ class TestSSESubscription:
         - The response content-type is text/event-stream.
 
         """
-        current_user = User(
+        current_user = AuthenticatedAccount(
+            id=uuid4(),
             email=f"sse_global_{uuid4()}@example.com",
-            password_hash="not-used",  # noqa: S106
+            password_hash=PasswordHash("not-used"),  # noqa: S106
+            is_active=True,
+            is_superuser=False,
         )
         response = await sse_global(current_user)
         assert response.status_code == HTTP_200_OK
@@ -42,9 +46,12 @@ class TestSSESubscription:
         - The response content-type is text/event-stream.
 
         """
-        current_user = User(
+        current_user = AuthenticatedAccount(
+            id=uuid4(),
             email=f"sse_user_{uuid4()}@example.com",
-            password_hash="not-used",  # noqa: S106
+            password_hash=PasswordHash("not-used"),  # noqa: S106
+            is_active=True,
+            is_superuser=False,
         )
         response = await sse_me(current_user)
         assert response.status_code == HTTP_200_OK

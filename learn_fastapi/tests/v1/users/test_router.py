@@ -4,7 +4,10 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from learn_fastapi.src.auth.utils import verify_password
+from learn_fastapi.src.shared.infrastructure.argon2_password_hasher import (
+    Argon2PasswordHasher,
+)
+from learn_fastapi.src.users.domain.value_objects import PasswordHash
 from learn_fastapi.src.users.models import User
 
 
@@ -86,9 +89,12 @@ class TestAccount:
         statement = select(User).where(User.email == "newemailtest@example.com")  # ty:ignore[invalid-argument-type]
         result = await test_session.execute(statement)
         updated_user = result.scalar_one()
-        assert verify_password("new_secure_password123", updated_user.password_hash)
-        assert not verify_password(
-            old_user_data["password"], updated_user.password_hash
+        password_hasher = Argon2PasswordHasher()
+        assert password_hasher.verify(
+            "new_secure_password123", PasswordHash(updated_user.password_hash)
+        )
+        assert not password_hasher.verify(
+            old_user_data["password"], PasswordHash(updated_user.password_hash)
         )
 
     async def test_delete_me(

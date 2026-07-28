@@ -1,3 +1,4 @@
+import secrets
 from typing import Annotated
 
 from fastapi import APIRouter, Header
@@ -6,15 +7,40 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.status import HTTP_201_CREATED
 
-from learn_fastapi.src.auth.annotations import X_CSRF_TOKEN
-from learn_fastapi.src.auth.schema import Token, TokenV2
+from learn_fastapi.src.auth.application.commands import LoginCommand
+from learn_fastapi.src.auth.application.queries import GetUserByRefreshTokenQuery
+from learn_fastapi.src.auth.domain.errors import (
+    CredentialsError,
+    DoesntExistUserError,
+)
+from learn_fastapi.src.auth.presentation.cookies import (
+    clear_auth_cookies,
+    set_auth_cookies,
+)
+from learn_fastapi.src.auth.presentation.exceptions import (
+    credentials_exception,
+    invalid_refresh_or_csrf_token_exception,
+    invalid_refresh_token_exception,
+)
+from learn_fastapi.src.auth.presentation.schemas import Token, TokenV2
 from learn_fastapi.src.shared.presentation.dependencies import CurrentUserDep
+from learn_fastapi.src.shared.presentation.exceptions import (
+    email_already_registered_exception,
+    user_inactive_exception,
+)
+from learn_fastapi.src.users.application.commands import RegisterNewUserCommand
+from learn_fastapi.src.users.domain.errors import (
+    UserAlreadyExistsError,
+    UserInactiveError,
+)
 from learn_fastapi.src.users.schema import UserCreate, UserResponse
 
 from .dependencies import (
-    AuthServiceDep,
-    AuthServiceV2Dep,
+    FullLoginUseCaseDep,
+    LogoutUseCaseDep,
     OAuth2PRFDep,
+    RefreshAccessTokenUseCaseDep,
+    RegisterAccountUseCaseDep,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,107 +48,129 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @api_version(1)
 @router.post("/register", status_code=HTTP_201_CREATED)
-async def register(service: AuthServiceDep, user_data: UserCreate) -> UserResponse:
-    """Register a new user account.
+async def register(
+    use_case: RegisterAccountUseCaseDep, user_data: UserCreate
+) -> UserResponse:
+    try:
+        new_user = await use_case.execute(
+            RegisterNewUserCommand(user_data.email, user_data.password)
+        )
+    except UserAlreadyExistsError as exc:
+        raise email_already_registered_exception() from exc
 
-    Args:
-        service: Injected AuthService dependency.
-        user_data: The user registration data (email and password).
-
-    Returns:
-        The newly created User ORM instance.
-
-    """
-    return await service.register(user_data)
+    # Users presentation has not moved yet, so map the cross-app result here.
+    return UserResponse(
+        id=new_user.id,
+        email=new_user.email,
+        is_active=new_user.is_active,
+        is_superuser=new_user.is_superuser,
+    )
 
 
 @api_version(1)
 @router.post("/token")
 async def login(
-    service: AuthServiceDep,
+    use_case: FullLoginUseCaseDep,
     form_data: OAuth2PRFDep,
     response: Response,
 ) -> Token:
-    """Authenticate a user and return a JWT access token.
+    try:
+        result = await use_case.execute(
+            LoginCommand(email=form_data.username.lower(), password=form_data.password)
+        )
+    except (DoesntExistUserError, CredentialsError) as exc:
+        raise credentials_exception() from exc
+    except UserInactiveError as exc:
+        raise user_inactive_exception() from exc
 
-    Args:
-        service: Injected AuthService dependency.
-        form_data: The OAuth2 password request form data (username and password).
-        response: The FastAPI Response object to set cookies on.
+    csrf_token = secrets.token_urlsafe(24)
+    set_auth_cookies(response, result.refresh_token_raw, csrf_token)
 
-    Returns:
-        Token: Returns the JWT access token.
-
-    """
-    return await service.login(form_data, response)
+    return Token(
+        access_token=result.access_token,
+        expires_in=result.access_expires_in,
+        csrf_token=csrf_token,
+    )
 
 
 @api_version(2)
 @router.post("/token")
 async def login(  # noqa: F811
-    service: AuthServiceV2Dep,
+    use_case: FullLoginUseCaseDep,
     form_data: OAuth2PRFDep,
     response: Response,
 ) -> TokenV2:
-    """Authenticate a user and return a TokenV2.
+    try:
+        result = await use_case.execute(
+            LoginCommand(email=form_data.username.lower(), password=form_data.password)
+        )
+    except (DoesntExistUserError, CredentialsError) as exc:
+        raise credentials_exception() from exc
+    except UserInactiveError as exc:
+        raise user_inactive_exception() from exc
 
-    Args:
-        service: Injected AuthServiceV2 dependency.
-        form_data: The OAuth2 password request form data (username and password).
-        response: The FastAPI Response object to set cookies on.
+    csrf_token = secrets.token_urlsafe(24)
+    set_auth_cookies(response, result.refresh_token_raw, csrf_token)
 
-    Returns:
-        TokenV2: Returns a new TokenV2 instance.
-        - access_token: JWT access token
-        - access_expires_in: Expiration timestamp of access token
-        - access_token_type: Token type of access token
-        - refresh_token: JWT refresh token
-        - refresh_expires_in: Expiration timestamp of refresh token
-        - csrf_token: CSRF token
-
-
-    """
-    return await service.login(form_data, response)
+    return TokenV2(
+        access_token=result.access_token,
+        access_expires_in=result.access_expires_in,
+        refresh_token=result.refresh_token_raw,
+        refresh_expires_in=result.refresh_expires_in,
+        csrf_token=csrf_token,
+    )
 
 
 @api_version(1)
 @router.post("/refresh")
 async def refresh_token(
-    service: AuthServiceDep,
+    use_case: RefreshAccessTokenUseCaseDep,
     request: Request,
-    x_csrf_token: X_CSRF_TOKEN,
+    x_csrf_token: Annotated[str, Header(alias="X-CSRF-Token")],
 ) -> Token:
-    """Refresh the JWT access token using a valid refresh token.
+    refresh_token_raw = request.cookies.get("refresh_token")
+    csrf_token = request.cookies.get("csrf_token")
 
-    Args:
-        service: Injected AuthService dependency.
-        request: The FastAPI Request object to read cookies from.
-        x_csrf_token: The CSRF token from the X-CSRF-Token header.
+    if (
+        not refresh_token_raw
+        or not csrf_token
+        or not x_csrf_token
+        or x_csrf_token != csrf_token
+    ):
+        raise invalid_refresh_or_csrf_token_exception()
 
-    Returns:
-        Token: A new access token and CSRF token if the refresh is successful.
+    try:
+        access_token = await use_case.execute(
+            GetUserByRefreshTokenQuery(refresh_token_raw)
+        )
+    except DoesntExistUserError as exc:
+        raise invalid_refresh_token_exception() from exc
 
-    """
-    return await service.refresh_token(request, x_csrf_token)
+    return Token(
+        access_token=access_token.value,
+        expires_in=access_token.expires_in,
+        csrf_token=csrf_token,
+    )
 
 
 @api_version(1)
 @router.post("/logout", status_code=204)
 async def logout(
-    service: AuthServiceDep,
+    use_case: LogoutUseCaseDep,
     current_user: CurrentUserDep,
     request: Request,
     response: Response,
     x_csrf_token: Annotated[str | None, Header(alias="X-CSRF-Token")] = None,
 ) -> None:
-    """Logout the user by revoking the refresh token and clearing cookies.
+    refresh_token_raw = request.cookies.get("refresh_token")
+    csrf_token = request.cookies.get("csrf_token")
 
-    Args:
-        service: Injected AuthService dependency.
-        current_user: The current authenticated user.
-        request: The FastAPI Request object to read cookies from.
-        response: The FastAPI Response object to clear cookies on.
-        x_csrf_token: The CSRF token from the X-CSRF-Token header.
+    has_valid_csrf = (
+        refresh_token_raw and csrf_token and x_csrf_token and csrf_token == x_csrf_token
+    )
+    await use_case.execute(
+        current_user.id,
+        refresh_token_raw if has_valid_csrf else None,
+    )
 
-    """
-    await service.logout(current_user, request, response, x_csrf_token)
+    clear_auth_cookies(response)

@@ -7,9 +7,11 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 
-from learn_fastapi.src.auth.utils import hash_password
 from learn_fastapi.src.cache import redis_client as redis_client_module
 from learn_fastapi.src.items.models import Item
+from learn_fastapi.src.shared.infrastructure.argon2_password_hasher import (
+    Argon2PasswordHasher,
+)
 from learn_fastapi.src.shared.presentation.dependencies import get_current_user
 from learn_fastapi.src.users.models import User
 from learn_fastapi.tests.v1.conftest import TEST_API_PREFIX
@@ -49,7 +51,7 @@ async def test_user(test_session: AsyncSession) -> User:
     """
     user = User(
         email="itemtest@example.com",
-        password_hash=hash_password("password123"),
+        password_hash=Argon2PasswordHasher().hash("password123"),
     )
     test_session.add(user)
     await test_session.commit()
