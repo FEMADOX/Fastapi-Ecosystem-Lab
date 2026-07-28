@@ -44,6 +44,7 @@ from learn_fastapi.src.items.presentation.exceptions import (
     item_not_found_exception,
     item_not_found_or_not_belong_to_user_exception,
 )
+from learn_fastapi.src.shared.application.dto import AuthenticatedAccount
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 from learn_fastapi.src.shared.presentation.exceptions import user_doesnt_exist_exception
 from learn_fastapi.src.users.application.queries import GetUserByIdQuery
@@ -92,7 +93,9 @@ class ItemsService(BaseService):
         """Initialize the service with an async database session."""
         self.use_cases = use_cases
 
-    async def _resolve_owner(self, current_user: User, owner_id: UserId | None) -> User:
+    async def _resolve_owner(
+        self, current_user: AuthenticatedAccount, owner_id: UserId | None
+    ) -> User:
         """Resolve the owner for user-scoped item reads.
 
         Non-admin users can only query their own items. Admin users can target
@@ -112,7 +115,14 @@ class ItemsService(BaseService):
 
         """
         if owner_id is None or owner_id == current_user.id:
-            return current_user
+            # Cache helpers still require the legacy ORM shape until items migrates.
+            return User(
+                id=current_user.id,
+                email=current_user.email,
+                password_hash=current_user.password_hash,
+                is_active=current_user.is_active,
+                is_superuser=current_user.is_superuser,
+            )
 
         if not current_user.is_superuser:
             raise only_user_owner_is_authorized()
@@ -132,7 +142,9 @@ class ItemsService(BaseService):
             raise user_doesnt_exist_exception() from exc
         return owner
 
-    async def resolve_owner(self, current_user: User, owner_id: UserId | None) -> User:
+    async def resolve_owner(
+        self, current_user: AuthenticatedAccount, owner_id: UserId | None
+    ) -> User:
         """Resolve the owner for user-scoped item reads."""  # noqa: DOC201
         return await self._resolve_owner(current_user, owner_id)
 
@@ -436,7 +448,7 @@ class ItemsService(BaseService):
 
         return schema
 
-    async def delete_item(self, item_id: ItemId, owner: User) -> None:
+    async def delete_item(self, item_id: ItemId, owner: AuthenticatedAccount) -> None:
         """Delete an item owned by the given user.
 
         Args:
@@ -467,7 +479,7 @@ class ItemsService(BaseService):
         item_id: ItemId,
         image_file: UploadFile,
         caption: str,
-        owner: User,
+        owner: AuthenticatedAccount,
     ) -> ItemSchema:
         """Upload an image and associate it with an existing item.
 
