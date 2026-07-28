@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from learn_fastapi.src.items.domain.entities import ImageUploadFile, Item
+from learn_fastapi.src.items.application.ports import ImageUpload
+from learn_fastapi.src.items.domain.entities import Item
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 
 
@@ -39,7 +40,7 @@ class CreateItemWithImageCommand:
     name: str
     price: float
     tax: float
-    image_file: ImageUploadFile
+    image_file: ImageUpload
     caption: str
     description: str = "No description provided"
 
@@ -49,5 +50,5 @@ class UpdateItemImageCommand:
     item_id: ItemId
     owner_id: UserId
     is_superuser: bool
-    image_file: ImageUploadFile
+    image_file: ImageUpload
     caption: str | None

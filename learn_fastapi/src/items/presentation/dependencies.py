@@ -1,56 +1,65 @@
+from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends
 
 from learn_fastapi.src.database import AsyncSessionDep
 from learn_fastapi.src.items.application.use_cases import (
-    CreateItemUseCase,
+    CreateBaseItemsUseCase,
     CreateItemWithImageUseCase,
-    DeleteItemUseCase,
+    DeleteItemUseCaseBase,
     GetItemUseCase,
     GetOwnerItemUseCase,
     ListItemsUseCase,
     ListOwnerItemsUseCase,
-    PatchItemUseCase,
+    PatchItemUseCaseBase,
+    UpdateBaseItemsUseCase,
     UpdateItemImageUseCase,
-    UpdateItemUseCase,
 )
+from learn_fastapi.src.items.infrastructure.cache import RedisItemCache
+from learn_fastapi.src.items.infrastructure.events import SSEItemEventPublisher
 from learn_fastapi.src.items.infrastructure.image_storage import CloudinaryImageStorage
 from learn_fastapi.src.items.infrastructure.repository import SQLAlchemyItemsRepository
-from learn_fastapi.src.items.service import ItemsService, ItemsUseCases
-from learn_fastapi.src.users.application.use_cases import GetUserByIdUseCase
-from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
 
 
-def get_items_service(session: AsyncSessionDep) -> ItemsService:
-    """Build an ``ItemsService`` for the current request.
+@dataclass(frozen=True, slots=True)
+class ItemsUseCases:
+    """Application use cases required by the items router."""
 
-    Args:
-        session: The database session dependency for the request.
+    list_items: ListItemsUseCase
+    get_item: GetItemUseCase
+    list_owner_items: ListOwnerItemsUseCase
+    get_owner_item: GetOwnerItemUseCase
+    create_item: CreateBaseItemsUseCase
+    update_item: UpdateBaseItemsUseCase
+    patch_item: PatchItemUseCaseBase
+    delete_item: DeleteItemUseCaseBase
+    create_item_with_image: CreateItemWithImageUseCase
+    update_item_image: UpdateItemImageUseCase
 
-    Returns:
-        A configured ``AuthService`` instance.
 
-    """
-    clean_users_repository = SQLAlchemyUsersRepository(session)
-    clean_items_repository = SQLAlchemyItemsRepository(session)
+def get_items_use_cases(session: AsyncSessionDep) -> ItemsUseCases:
+    repo = SQLAlchemyItemsRepository(session)
     image_storage = CloudinaryImageStorage()
+    cache = RedisItemCache()
+    event_publisher = SSEItemEventPublisher()
 
-    return ItemsService(
-        ItemsUseCases(
-            GetUserByIdUseCase(clean_users_repository),
-            ListItemsUseCase(clean_items_repository),
-            GetItemUseCase(clean_items_repository),
-            ListOwnerItemsUseCase(clean_items_repository),
-            GetOwnerItemUseCase(clean_items_repository),
-            CreateItemUseCase(clean_items_repository),
-            UpdateItemUseCase(clean_items_repository),
-            PatchItemUseCase(clean_items_repository),
-            DeleteItemUseCase(clean_items_repository),
-            CreateItemWithImageUseCase(clean_items_repository, image_storage),
-            UpdateItemImageUseCase(clean_items_repository, image_storage),
-        )
+    base = repo, cache
+    with_event = *base, event_publisher
+    with_image = *with_event, image_storage
+
+    return ItemsUseCases(
+        list_items=ListItemsUseCase(*base),
+        get_item=GetItemUseCase(*base),
+        list_owner_items=ListOwnerItemsUseCase(*base),
+        get_owner_item=GetOwnerItemUseCase(*base),
+        create_item=CreateBaseItemsUseCase(*with_event),
+        update_item=UpdateBaseItemsUseCase(*with_event),
+        patch_item=PatchItemUseCaseBase(*with_event),
+        delete_item=DeleteItemUseCaseBase(*with_event),
+        create_item_with_image=CreateItemWithImageUseCase(*with_image),
+        update_item_image=UpdateItemImageUseCase(*with_image),
     )
 
 
-ItemsServiceDep = Annotated[ItemsService, Depends(get_items_service)]
+ItemsUseCasesDep = Annotated[ItemsUseCases, Depends(get_items_use_cases)]

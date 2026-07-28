@@ -138,7 +138,7 @@ The API base path is `/api` (configured in `src/main.py`), and the main topics c
 | Concept                                      | Where                                                                            |
 |----------------------------------------------|----------------------------------------------------------------------------------|
 | `APIRouter` with prefix & tags               | [`router.py`](src/items/presentation/router.py)                                               |
-| Pydantic model with `Field` validation       | [`schema.py`](src/items/schema.py)                                               |
+| Pydantic model with `Field` validation       | [`schema.py`](src/items/presentation/schemas.py)                                               |
 | `Annotated` aliases                          | [`annotations.py`](src/items/annotations.py)                                     |
 | Cross-field business rule validation         | [`validators.py`](src/items/validators.py)                                       |
 | Repository + Service pattern                 | [`repository.py`](src/items/repository.py), [`service.py`](src/items/service.py) |

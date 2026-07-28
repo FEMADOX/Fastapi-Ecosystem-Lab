@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter
 from fastapi_versionizer.versionizer import api_version
 from starlette.status import HTTP_204_NO_CONTENT
 
@@ -13,118 +13,129 @@ from learn_fastapi.src.items.annotations import (
     ItemPrice,
     ItemTax,
 )
-from learn_fastapi.src.items.cache import invalidate_items_namespace
-from learn_fastapi.src.items.presentation.dependencies import ItemsServiceDep
-from learn_fastapi.src.items.schema import (
+from learn_fastapi.src.items.application.commands import (
+    CreateItemCommand,
+    CreateItemWithImageCommand,
+    DeleteItemCommand,
+    PatchItemCommand,
+    UpdateItemCommand,
+    UpdateItemImageCommand,
+)
+from learn_fastapi.src.items.application.errors import InvalidImageUploadError
+from learn_fastapi.src.items.application.queries import (
+    GetItemQuery,
+    GetOwnerItemQuery,
+    ListOwnerItemsQuery,
+)
+from learn_fastapi.src.items.domain.errors import (
+    ItemDuplicatedNameError,
+    ItemNotFoundError,
+    ItemNotFoundForUserError,
+    ItemsForbiddenOwnerAccessError,
+    ItemsNotFoundForUserError,
+)
+from learn_fastapi.src.items.presentation.dependencies import ItemsUseCasesDep
+from learn_fastapi.src.items.presentation.exceptions import (
+    duplicate_item_name_exception,
+    item_not_found_exception,
+    item_not_found_or_not_belong_to_user_exception,
+)
+from learn_fastapi.src.items.presentation.mappers import (
+    current_actor_from_user,
+    item_from_update_schema,
+    persisted_item_to_schema,
+    persisted_item_with_image_to_schema,
+    persisted_items_to_schema,
+)
+from learn_fastapi.src.items.presentation.schemas import (
     ItemPatchSchema,
     ItemSchema,
     ItemUpdateSchema,
 )
 from learn_fastapi.src.shared.presentation.dependencies import CurrentUserDep
+from learn_fastapi.src.shared.presentation.exceptions import (
+    image_filename_required_exception,
+)
+from learn_fastapi.src.users.presentation.exceptions import (
+    only_user_owner_is_authorized,
+)
 
 router = APIRouter(prefix="/items", tags=["items"])
 
 
 @api_version(1)
 @router.get("/")
-async def read_items(service: ItemsServiceDep) -> list[ItemSchema]:
-    """Return all items stored in the database.
-
-    Args:
-        service: Injected ItemService dependency.
-
-    Returns:
-        A list of all ItemSchema objects (maybe empty).
-
-    """
-    return await service.list_all_items()
+async def read_items(use_cases: ItemsUseCasesDep) -> list[ItemSchema]:
+    items = await use_cases.list_items.execute()
+    return persisted_items_to_schema(items)
 
 
 @api_version(1)
 @router.get("/owner")
 async def read_owner_items(
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     current_user: CurrentUserDep,
     owner_id: AnnotatedOwnerId = None,
 ) -> list[ItemSchema]:
-    """Return items for the authenticated user or an admin-selected owner.
+    try:
+        items = await use_cases.list_owner_items.execute(
+            ListOwnerItemsQuery(current_actor_from_user(current_user), owner_id)
+        )
+    except ItemsForbiddenOwnerAccessError as exc:
+        raise only_user_owner_is_authorized() from exc
+    except ItemsNotFoundForUserError as exc:
+        raise item_not_found_or_not_belong_to_user_exception() from exc
 
-    Args:
-        service: Injected ItemService dependency.
-        current_user: Authenticated user making the request.
-        owner_id: Optional owner UUID. Only superusers can target another owner.
-
-    Returns:
-        A list of ItemSchema objects for the effective owner.
-
-    """
-    owner = await service.resolve_owner(current_user, owner_id)
-    return await service.list_user_items(owner)
+    return persisted_items_to_schema(items)
 
 
 @api_version(1)
 @router.get("/owner/{id_param}")
 async def read_owner_item(
     id_param: UUID,
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     current_user: CurrentUserDep,
     owner_id: AnnotatedOwnerId = None,
 ) -> ItemSchema:
-    """Return one item for the authenticated user or an admin-selected owner.
+    try:
+        item = await use_cases.get_owner_item.execute(
+            GetOwnerItemQuery(
+                id_param,
+                current_actor_from_user(current_user),
+                owner_id,
+            )
+        )
+    except ItemsForbiddenOwnerAccessError as exc:
+        raise only_user_owner_is_authorized() from exc
+    except ItemNotFoundForUserError as exc:
+        raise item_not_found_or_not_belong_to_user_exception() from exc
 
-    Args:
-        id_param: UUID of the item to retrieve.
-        service: Injected ItemService dependency.
-        current_user: Authenticated user making the request.
-        owner_id: Optional owner UUID. Only superusers can target another owner.
-
-    Returns:
-        The matching ItemSchema for the effective owner.
-
-    """
-    owner = await service.resolve_owner(current_user, owner_id)
-    return await service.get_user_item(id_param, owner)
+    return persisted_item_to_schema(item)
 
 
 @api_version(1)
 @router.get("/{id_param}")
-async def read_item(id_param: UUID, service: ItemsServiceDep) -> ItemSchema:
-    """Return a single item by its UUID.
+async def read_item(id_param: UUID, use_cases: ItemsUseCasesDep) -> ItemSchema:
+    try:
+        item = await use_cases.get_item.execute(GetItemQuery(id_param))
+    except ItemNotFoundError as exc:
+        raise item_not_found_exception() from exc
 
-    Args:
-        id_param: UUID of the item to retrieve.
-        service: Injected ItemService dependency.
-
-    Returns:
-        The matching ItemSchema.
-
-    """
-    return await service.get_item(id_param)
+    return persisted_item_to_schema(item)
 
 
 @api_version(1)
 @router.post("/")
 async def create_item(
     item: ItemUpdateSchema,
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     current_user: CurrentUserDep,
-    background_tasks: BackgroundTasks,
 ) -> ItemSchema:
-    """Create a new item owned by the authenticated user.
-
-    Args:
-        item: Validated item payload.
-        service: Injected ItemService dependency.
-        current_user: The authenticated user who will own the item.
-        background_tasks: Background tasks manager.
-
-    Returns:
-        The newly created ItemSchema.
-
-    """
-    result = await service.create_item(item, current_user.id)
-    background_tasks.add_task(invalidate_items_namespace)
-    return result
+    domain_item = item_from_update_schema(item, current_user.id)
+    created = await use_cases.create_item.execute(
+        CreateItemCommand(domain_item, current_user.id)
+    )
+    return persisted_item_to_schema(created)
 
 
 @api_version(1)
@@ -132,31 +143,20 @@ async def create_item(
 async def update_item(
     id_param: UUID,
     item_param: ItemUpdateSchema,
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     current_user: CurrentUserDep,
-    background_tasks: BackgroundTasks,
 ) -> ItemSchema:
-    """Replace all fields of an item owned by the authenticated user.
+    domain_item = item_from_update_schema(item_param, current_user.id)
+    try:
+        updated = await use_cases.update_item.execute(
+            UpdateItemCommand(
+                id_param, current_user.id, current_user.is_superuser, domain_item
+            )
+        )
+    except ItemNotFoundError as exc:
+        raise item_not_found_or_not_belong_to_user_exception() from exc
 
-    All fields are written, including those omitted from the request body
-    (which receive their schema default values).
-
-    Args:
-        id_param: UUID of the item to update.
-        item_param: Complete field values for the item.
-        service: Injected ItemService dependency.
-        current_user: Must be the owner of the item.
-        background_tasks: Background tasks manager.
-
-    Returns:
-        The updated ItemSchema.
-
-    """
-    result = await service.update_item(
-        id_param, item_param, bool(current_user.is_superuser), current_user.id
-    )
-    background_tasks.add_task(invalidate_items_namespace)
-    return result
+    return persisted_item_to_schema(updated)
 
 
 @api_version(1)
@@ -164,55 +164,36 @@ async def update_item(
 async def patch_item(
     id_param: UUID,
     item_param: ItemPatchSchema,
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     current_user: CurrentUserDep,
-    background_tasks: BackgroundTasks,
 ) -> ItemSchema:
-    """Apply a partial update to an item owned by the authenticated user.
+    fields = item_param.model_dump(exclude_unset=True, exclude_none=True)
+    try:
+        patched = await use_cases.patch_item.execute(
+            PatchItemCommand(
+                id_param, current_user.id, current_user.is_superuser, fields
+            )
+        )
+    except ItemNotFoundError as exc:
+        raise item_not_found_or_not_belong_to_user_exception() from exc
 
-    Only fields explicitly included in the request body are modified;
-    omitted fields retain their current values.
-
-    Args:
-        id_param: UUID of the item to update.
-        item_param: Partial field values to apply.
-        service: Injected ItemService dependency.
-        current_user: Must be the owner of the item.
-        background_tasks: Background tasks manager.
-
-    Returns:
-        The updated ItemSchema.
-
-    """
-    result = await service.patch_item(
-        id_param, item_param, bool(current_user.is_superuser), current_user.id
-    )
-    background_tasks.add_task(invalidate_items_namespace)
-    return result
+    return persisted_item_to_schema(patched)
 
 
 @api_version(1)
 @router.delete("/{id_param}")
 async def delete_item(
     id_param: UUID,
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     current_user: CurrentUserDep,
-    background_tasks: BackgroundTasks,
 ) -> dict[str, str | int]:
-    """Delete an item owned by the authenticated user.
+    try:
+        await use_cases.delete_item.execute(
+            DeleteItemCommand(id_param, current_user.id, current_user.is_superuser)
+        )
+    except ItemNotFoundError as exc:
+        raise item_not_found_or_not_belong_to_user_exception() from exc
 
-    Args:
-        id_param: UUID of the item to delete.
-        service: Injected ItemService dependency.
-        current_user: Must be the owner of the item.
-        background_tasks: Background tasks manager.
-
-    Returns:
-        Confirmation message with HTTP 200 status code.
-
-    """
-    await service.delete_item(id_param, current_user)
-    background_tasks.add_task(invalidate_items_namespace)
     return {"detail": "Item deleted successfully", "status_code": HTTP_204_NO_CONTENT}
 
 
@@ -220,39 +201,34 @@ async def delete_item(
 @router.post("/image/{id_param}")
 async def submit_an_item_image(  # noqa: PLR0913, PLR0917
     id_param: UUID,
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     image_file: ImageFile,
-    background_tasks: BackgroundTasks,
     current_user: CurrentUserDep,
     caption: ImageCaption = "No description provided",
 ) -> ItemSchema:
-    """Upload an image to the configured media storage and attach it to an item.
+    try:
+        item = await use_cases.update_item_image.execute(
+            UpdateItemImageCommand(
+                id_param,
+                current_user.id,
+                current_user.is_superuser,
+                image_file,
+                caption,
+            )
+        )
+    except ItemNotFoundError as exc:
+        raise item_not_found_or_not_belong_to_user_exception() from exc
+    except InvalidImageUploadError as exc:
+        raise image_filename_required_exception() from exc
 
-    Args:
-        id_param: UUID of the target item.
-        service: Injected ItemService dependency.
-        image_file: Image file to upload (multipart/form-data).
-        background_tasks: Background tasks manager.
-        current_user: Authenticated user who must own the item.
-        caption: Optional alt-text or description for the image.
-
-    Returns:
-        The updated item with its new ``image_url``.
-
-    """
-    result = await service.update_item_image(
-        id_param, image_file, caption, current_user
-    )
-    background_tasks.add_task(invalidate_items_namespace)
-    return result
+    return persisted_item_with_image_to_schema(item)
 
 
 @api_version(1)
 @router.post("/with-image/")
 async def create_item_with_image(  # noqa: PLR0913, PLR0917
-    service: ItemsServiceDep,
+    use_cases: ItemsUseCasesDep,
     current_user: CurrentUserDep,
-    background_tasks: BackgroundTasks,
     name: ItemName,
     image_file: ImageFile,
     description: ItemDescription = "No description provided",
@@ -260,36 +236,15 @@ async def create_item_with_image(  # noqa: PLR0913, PLR0917
     tax: ItemTax = 0.00,
     caption: ImageCaption = "No description provided",
 ) -> ItemSchema:
-    """Create an item with an optional image in a single multipart request.
+    try:
+        new_item = await use_cases.create_item_with_image.execute(
+            CreateItemWithImageCommand(
+                current_user.id, name, price, tax, image_file, caption, description
+            )
+        )
+    except ItemDuplicatedNameError as exc:
+        raise duplicate_item_name_exception() from exc
+    except InvalidImageUploadError as exc:
+        raise image_filename_required_exception() from exc
 
-    Validates that no other item shares the same name before creation.
-    If an image file is supplied it is uploaded and its URL stored on
-    the newly created item.
-
-    Args:
-        service: Injected ItemService dependency.
-        current_user: The authenticated user who will own the item.
-        background_tasks: Background tasks manager.
-        name: Display name for the item (must be unique).
-        description: Human-readable description.
-        price: Base price.
-        tax: Tax rate.
-        image_file: Optional image to attach.
-        caption: Alt-text for the image.
-
-    Returns:
-        The newly created ItemSchema, with ``image_url`` set when an image
-        was provided.
-
-    """
-    result = await service.create_item_with_image(
-        name=name,
-        description=description,
-        price=price,
-        tax=tax,
-        owner_id=current_user.id,
-        image_file=image_file,
-        caption=caption,
-    )
-    background_tasks.add_task(invalidate_items_namespace)
-    return result
+    return persisted_item_with_image_to_schema(new_item)

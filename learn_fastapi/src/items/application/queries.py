@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from learn_fastapi.src.shared.application.dto import CurrentActor
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 
 
@@ -18,7 +19,8 @@ class GetItemQuery:
 class ListOwnerItemsQuery:
     """Query for retrieving all items belonging to a specific owner."""
 
-    owner_id: UserId
+    actor: CurrentActor
+    owner_id: UserId | None
 
 
 @dataclass(slots=True, frozen=True)
@@ -26,4 +28,5 @@ class GetOwnerItemQuery:
     """Query for retrieving a specific item belonging to a specific owner."""
 
     item_id: ItemId
-    owner_id: UserId
+    actor: CurrentActor
+    owner_id: UserId | None

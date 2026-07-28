@@ -8,7 +8,7 @@
 #   If any of these checks fail, a `ValueError` is raised with an appropriate message.
 #   If all checks pass, the original `Item` instance is returned.
 
-from .schema import ItemSchema
+from learn_fastapi.src.items.presentation.schemas import ItemSchema
 
 
 def validate_item(item: ItemSchema) -> ItemSchema:

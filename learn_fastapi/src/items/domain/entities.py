@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import BinaryIO, Protocol
 
 from learn_fastapi.src.items.domain.value_objects import (
     ImagePublicId,
@@ -59,16 +58,6 @@ class ItemImage:
     url: ImageUrl
     public_id: ImagePublicId
     description: str | None = "No description provided"
-
-
-class ImageUploadFile(Protocol):
-    """Domain entity representing an upload file associated with an item."""
-
-    filename: str | None
-    content_type: str | None
-    file: BinaryIO
-
-    async def seek(self, offset: int) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
