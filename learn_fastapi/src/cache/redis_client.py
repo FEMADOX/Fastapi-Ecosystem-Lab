@@ -17,12 +17,10 @@ from typing import cast
 from redis import RedisError
 from redis import asyncio as aioredis
 
+from learn_fastapi.src.shared.infrastructure.json_types import JSONValue
 from learn_fastapi.src.utils.alembic import app_logger
 
 logger = app_logger
-
-type JSONPrimitive = str | int | float | bool | None
-type JSONValue = JSONPrimitive | list[JSONValue] | dict[str, JSONValue]
 
 
 @dataclass

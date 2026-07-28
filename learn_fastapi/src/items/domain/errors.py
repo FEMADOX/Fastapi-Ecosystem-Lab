@@ -20,3 +20,7 @@ class ItemNotFoundForUserError(ItemDomainError):
 
 class ItemsNotFoundForUserError(ItemDomainError):
     """Raised when no items are found for the user."""
+
+
+class ItemsForbiddenOwnerAccessError(ItemDomainError):
+    """Raised when an item does not belong to the user."""

@@ -1,13 +1,11 @@
 from typing import Protocol
 
+from learn_fastapi.src.items.domain.entities import Item as ItemDomain
 from learn_fastapi.src.items.domain.entities import (
-    ImageUploadFile,
     ItemImage,
     PersistedItem,
     PersistedItemWithImage,
 )
-from learn_fastapi.src.items.domain.entities import Item as ItemDomain
-from learn_fastapi.src.items.domain.value_objects import ImagePublicId
 from learn_fastapi.src.shared.domain.value_object import ItemId, UserId
 
 
@@ -56,12 +54,3 @@ class ItemsRepository(Protocol):
         owner_id: UserId | None,
         image: ItemImage,
     ) -> PersistedItemWithImage | None: ...
-
-
-class ImageStorage(Protocol):
-    """Protocol for image storage operations."""
-
-    async def upload(
-        self, image_file: ImageUploadFile, caption: str | None
-    ) -> ItemImage: ...
-    async def delete(self, image_public_id: ImagePublicId) -> bool: ...

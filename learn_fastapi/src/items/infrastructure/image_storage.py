@@ -8,14 +8,12 @@ import cloudinary.uploader
 
 from learn_fastapi.src.config import settings
 from learn_fastapi.src.constants import CLOUDINARY_ASSET_FOLDER
+from learn_fastapi.src.items.application.errors import InvalidImageUploadError
+from learn_fastapi.src.items.application.ports import ImageUpload
 from learn_fastapi.src.items.domain.entities import (
-    ImageUploadFile,
     ItemImage,
 )
 from learn_fastapi.src.items.domain.value_objects import ImagePublicId
-from learn_fastapi.src.shared.presentation.exceptions import (
-    image_filename_required_exception,
-)
 
 CLOUDINARY_UPLOAD_TIMEOUT: int = 60
 
@@ -49,7 +47,7 @@ class CloudinaryImageStorage:
 
     async def upload(
         self,
-        image_file: ImageUploadFile,
+        image_file: ImageUpload,
         caption: str | None,
     ) -> ItemImage:
         """Upload the image to Cloudinary and return an ImageSchema.
@@ -59,10 +57,10 @@ class CloudinaryImageStorage:
             caption: A description for the image.
 
         Returns:
-            ItemImage domain entitie with the saved file metadata.
+            ItemImage domain entities with the saved file metadata.
 
         Raises:
-            image_filename_required_exception:
+            InvalidImageUploadError:
                 If the image file does not have a filename.
             TypeError:
                 If the Cloudinary upload response does not include a valid secure_url
@@ -70,7 +68,7 @@ class CloudinaryImageStorage:
 
         """
         if not image_file.filename:
-            raise image_filename_required_exception()
+            raise InvalidImageUploadError
 
         self._configure()
         timestamp = int(time())
