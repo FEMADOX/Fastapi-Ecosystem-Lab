@@ -3,8 +3,8 @@ from learn_fastapi.src.items.models import Item
 from learn_fastapi.src.shared.domain.value_object import ItemId, RefreshTokenId
 from learn_fastapi.src.users.domain.entities import PersistedUser
 from learn_fastapi.src.users.domain.entities import User as UserDomain
+from learn_fastapi.src.users.domain.value_objects import PasswordHash
 from learn_fastapi.src.users.models import User as UserModel
-from learn_fastapi.src.users.schema import UserResponse
 
 
 def obtain_items_and_refresh_tokens_ids(
@@ -54,7 +54,7 @@ def domain_user_from_orm(
         items_ids=items_ids,
         refresh_tokens_ids=refresh_tokens_ids,
         email=orm_user.email,
-        password_hash=orm_user.password_hash,
+        password_hash=PasswordHash(orm_user.password_hash),
         is_active=orm_user.is_active,
         is_superuser=orm_user.is_superuser,
         created_at=orm_user.created_at,
@@ -69,6 +69,7 @@ def persisted_user_from_orm(
 
     Args:
         orm_user: The ORM user to convert.
+        include_relationships: Whether to include relationships.
 
     Returns:
         PersistedUser: The corresponding persisted user.
@@ -84,25 +85,7 @@ def persisted_user_from_orm(
         items_ids,
         refresh_tokens_ids,
         orm_user.email,
-        orm_user.password_hash,
+        PasswordHash(orm_user.password_hash),
         orm_user.is_active,
         orm_user.is_superuser,
-    )
-
-
-def persisted_user_to_schema(persisted_user: PersistedUser) -> UserResponse:
-    """Convert a Domain user to a schema user.
-
-    Args:
-        persisted_user: The domain user to convert.
-
-    Returns:
-        UserResponse: The corresponding schema user.
-
-    """
-    return UserResponse(
-        id=persisted_user.id,
-        email=persisted_user.email,
-        is_active=persisted_user.is_active,
-        is_superuser=persisted_user.is_superuser,
     )

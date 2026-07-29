@@ -3,34 +3,45 @@ from typing import Annotated
 from fastapi import Depends
 
 from learn_fastapi.src.database import AsyncSessionDep
+from learn_fastapi.src.shared.infrastructure.argon2_password_hasher import (
+    Argon2PasswordHasher,
+)
 from learn_fastapi.src.users.application.use_cases import (
+    DeleteAccountUseCase,
     DeleteUserUseCase,
+    GetAccountUseCase,
     GetUserByIdUseCase,
     UpdateUserUseCase,
 )
+from learn_fastapi.src.users.infrastructure.events import SSEUsersEventPublisher
 from learn_fastapi.src.users.infrastructure.repository import SQLAlchemyUsersRepository
-from learn_fastapi.src.users.service import UsersService, UsersUseCases
 
 
-def get_users_service(session: AsyncSessionDep) -> UsersService:
-    """Build a ``UsersService`` for the current request.
+def get_account_use_case(session: AsyncSessionDep) -> GetAccountUseCase:
+    return GetAccountUseCase(GetUserByIdUseCase(SQLAlchemyUsersRepository(session)))
 
-    Args:
-        session: The database session dependency for the request.
 
-    Returns:
-        A configured ``UsersService`` instance.
-
-    """
-    clean_user_repository = SQLAlchemyUsersRepository(session)
-
-    return UsersService(
-        UsersUseCases(
-            GetUserByIdUseCase(clean_user_repository),
-            UpdateUserUseCase(clean_user_repository),
-            DeleteUserUseCase(clean_user_repository),
-        )
+def get_update_user_use_case(session: AsyncSessionDep) -> UpdateUserUseCase:
+    password_hasher = Argon2PasswordHasher()
+    return UpdateUserUseCase(
+        SQLAlchemyUsersRepository(session),
+        password_hasher,
+        SSEUsersEventPublisher(),
     )
 
 
-UsersServiceDep = Annotated[UsersService, Depends(get_users_service)]
+def get_delete_account_use_case(session: AsyncSessionDep) -> DeleteAccountUseCase:
+    repo = SQLAlchemyUsersRepository(session)
+    return DeleteAccountUseCase(
+        get_user_by_id=GetUserByIdUseCase(repo),
+        delete_user=DeleteUserUseCase(repo),
+        event_publisher=SSEUsersEventPublisher(),
+        password_hasher=Argon2PasswordHasher(),
+    )
+
+
+GetAccountUseCaseDep = Annotated[GetAccountUseCase, Depends(get_account_use_case)]
+UpdateUserUseCaseDep = Annotated[UpdateUserUseCase, Depends(get_update_user_use_case)]
+DeleteAccountUseCaseDep = Annotated[
+    DeleteAccountUseCase, Depends(get_delete_account_use_case)
+]

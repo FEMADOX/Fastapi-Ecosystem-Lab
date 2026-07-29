@@ -3,8 +3,10 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from learn_fastapi.src.auth.infrastructure.refresh_token_verifier import (
+    verify_refresh_token,
+)
 from learn_fastapi.src.auth.models import RefreshToken as RefreshTokenORM
-from learn_fastapi.src.auth.utils import verify_refresh_token
 from learn_fastapi.src.shared.domain.value_object import UserId
 from learn_fastapi.src.shared.infrastructure.repository import BaseSQLAlchemyRepository
 from learn_fastapi.src.users.domain.entities import (
