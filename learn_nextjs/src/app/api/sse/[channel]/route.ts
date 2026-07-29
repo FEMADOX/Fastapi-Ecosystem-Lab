@@ -23,6 +23,17 @@ const handler = async (
       }
     )
 
+    if (!fastapiResponse.ok) {
+      // Preserve FastAPI's status so EventSource follows its error path.
+      return new NextResponse(fastapiResponse.body, {
+        status: fastapiResponse.status,
+        headers: {
+          'Content-Type':
+            fastapiResponse.headers.get('Content-Type') ?? 'application/json'
+        }
+      })
+    }
+
     const readable = fastapiResponse.body
     if (!readable) throw new Error('No stream found in response')
 

@@ -2,17 +2,24 @@ import { EventSourcePolyfill } from 'event-source-polyfill'
 import { useEffect, useRef, useState } from 'react'
 import { NEXT_API_PROXY_PREFIX } from '@/common/const'
 import type { SSEBaseEvent } from '../api/sse/[channel]/types'
+import { createSSEMessageHandler } from './sse.helpers'
 
 export const useSSE = <T extends SSEBaseEvent>(
   channel: string,
-  enabled: boolean
+  enabled: boolean,
+  onEvent: (event: T) => void
 ) => {
   const eventSourceRef = useRef<EventSourcePolyfill | null>(null)
+  const onEventRef = useRef(onEvent)
 
-  const [events, setEvents] = useState<T[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState<boolean>(false)
+
+  useEffect(() => {
+    // Keep callback changes from reconnecting an otherwise healthy SSE stream.
+    onEventRef.current = onEvent
+  }, [onEvent])
 
   useEffect(() => {
     if (!enabled) {
@@ -44,10 +51,9 @@ export const useSSE = <T extends SSEBaseEvent>(
       setError(null)
     }
 
-    eventSource.onmessage = (event) => {
-      const data: T = JSON.parse(event.data)
-      setEvents((prevEvents) => [...prevEvents, data])
-    }
+    eventSource.onmessage = createSSEMessageHandler((event: T) =>
+      onEventRef.current(event)
+    )
 
     eventSource.onerror = () => {
       setIsConnected(false)
@@ -63,5 +69,5 @@ export const useSSE = <T extends SSEBaseEvent>(
     }
   }, [channel, enabled])
 
-  return { events, error, isConnected, isLoading }
+  return { error, isConnected, isLoading }
 }

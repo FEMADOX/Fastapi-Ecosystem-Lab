@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useCallback } from 'react'
 import type {
   SSEEvent,
   SSEEventMap,
@@ -12,11 +12,12 @@ import { globalEventMap, userEventMap } from './events'
 import { invokeHandler } from './toasts.helpers'
 
 const NotificationListener = ({ channel, eventMap }: SSEToastProps) => {
-  const { events } = useSSE<SSEEvent>(channel, true)
+  const handleEvent = useCallback(
+    (event: SSEEvent) => invokeHandler(eventMap, event),
+    [eventMap]
+  )
 
-  useEffect(() => {
-    for (const event of events) invokeHandler(eventMap, event)
-  }, [events, eventMap])
+  useSSE<SSEEvent>(channel, true, handleEvent)
 
   return null
 }

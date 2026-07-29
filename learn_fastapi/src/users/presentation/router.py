@@ -121,4 +121,5 @@ async def delete_account(
     except UserDoesntExistError as exc:
         raise user_doesnt_exist_exception() from exc
 
-    clear_auth_cookies(response)
+    if current_user.id == user_id:
+        clear_auth_cookies(response)

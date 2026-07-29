@@ -14,6 +14,21 @@ from learn_fastapi.src.utils.alembic import app_logger as logger
 router = APIRouter(prefix="/events", tags=["events"])
 
 
+async def _queue_messages(queue: asyncio.Queue) -> AsyncGenerator[str]:
+    """Yield queued SSE messages and periodic keep-alive frames.
+
+    Yields:
+        SSE messages from the event generator.
+
+    """
+    while True:
+        try:
+            yield await asyncio.wait_for(queue.get(), timeout=30.0)
+        except TimeoutError:
+            # Keep the connection alive while the queue has no new events.
+            yield ": keep-alive\n\n"
+
+
 async def event_generator(
     queue: asyncio.Queue,
 ) -> AsyncGenerator[str]:
@@ -32,15 +47,9 @@ async def event_generator(
 
     """
     try:
-        # why: emit a first frame immediately so clients/tests do not block
-        # while waiting for the first timeout cycle.
         yield ": connected\n\n"
-        while True:
-            try:
-                yield await asyncio.wait_for(queue.get(), timeout=30.0)
-            except TimeoutError:
-                # Send a keep-alive comment to detect disconnections
-                yield ": keep-alive\n\n"
+        async for message in _queue_messages(queue):
+            yield message
     except asyncio.CancelledError:
         logger.debug("[SSE] Client disconnected from event stream")
         raise

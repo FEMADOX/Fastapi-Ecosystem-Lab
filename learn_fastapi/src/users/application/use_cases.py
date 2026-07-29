@@ -61,9 +61,8 @@ class GetAccountUseCase:
     async def execute(self, query: GetAccountQuery) -> PersistedUser:
         """Return the requested account when the actor is authorized.
 
-        Raises:
-            OnlyOwnerIsAuthorizedError: If the actor cannot read the account.
-            UserDoesntExistError: If the requested account does not exist.
+        Returns:
+            PersistedUser: The requested account.
 
         """
         _authorize_account(query.actor, query.user_id)
@@ -158,8 +157,6 @@ class UpdateUserUseCase(BaseUsersUseCase):
             changed_fields: A list of the fields to update.
 
         Raises:
-            OnlyOwnerIsAuthorizedError: If the actor cannot update the account.
-            IncorrectPasswordError: If the actor password is incorrect.
             UserDoesntExistError: Raised when the user doesn't exist.
             UserAlreadyExistsError: Raised when account with that email already exist.
 
@@ -230,27 +227,36 @@ class DeleteAccountUseCase:
         """Authorize, verify, delete, and publish the account event.
 
         Raises:
-            OnlyOwnerIsAuthorizedError: If the actor cannot delete the account.
-            IncorrectPasswordError: If the actor password is incorrect.
             UserDoesntExistError: If the requested account does not exist.
 
         """
-        _authorize_account(command.actor.to_actor(), command.user_id)
+        actor = command.actor.to_actor()
+        user_id = command.user_id
+        _authorize_account(actor, user_id)
+
         _verify_password(
             command.current_password,
             command.actor,
             self.password_hasher,
         )
-        user_to_delete = await self.get_user_by_id.execute(
-            GetUserByIdQuery(command.user_id)
-        )
+
+        try:
+            user_to_delete = await self.get_user_by_id.execute(
+                GetUserByIdQuery(command.user_id)
+            )
+        except UserDoesntExistError as exc:
+            raise UserDoesntExistError from exc
         await self.delete_user.execute(command.user_id)
         await self.event_publisher.account_deleted(user_to_delete)
 
 
 def _authorize_account(actor: CurrentActor, user_id: UserId) -> None:
-    """Enforce owner-or-superuser access for account operations."""
-    # Keeping this rule in application makes it consistent across HTTP and future APIs.
+    """Enforce owner-or-superuser access for account operations.
+
+    Raises:
+        OnlyOwnerIsAuthorizedError: If the actor cannot read the account.
+
+    """
     if not actor.is_superuser and actor.id != user_id:
         raise OnlyOwnerIsAuthorizedError
 
@@ -260,6 +266,11 @@ def _verify_password(
     actor: AuthenticatedAccount,
     password_hasher: PasswordHasher,
 ) -> None:
-    """Verify the authenticated actor's current password."""
+    """Verify the authenticated actor's current password.
+
+    Raises:
+        IncorrectPasswordError: If the password is incorrect.
+
+    """
     if not password_hasher.verify(password, actor.password_hash):
         raise IncorrectPasswordError
