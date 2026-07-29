@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from learn_fastapi.src.shared.domain.value_object import ItemId, RefreshTokenId, UserId
+from learn_fastapi.src.users.domain.value_objects import PasswordHash
 
 
 @dataclass(slots=True)
@@ -12,7 +13,7 @@ class User:
     items_ids: list[ItemId]
     refresh_tokens_ids: list[RefreshTokenId]
     email: str
-    password_hash: str | None
+    password_hash: PasswordHash | None
     is_active: bool
     is_superuser: bool
     created_at: datetime | None = None
@@ -27,7 +28,7 @@ class AuthenticatedUser:
     items_ids: list[ItemId]
     refresh_tokens_ids: list[RefreshTokenId]
     email: str
-    password_hash: str
+    password_hash: PasswordHash
     is_active: bool
     is_superuser: bool
 
@@ -40,7 +41,7 @@ class PersistedUser:
     items_ids: list[ItemId]
     refresh_tokens_ids: list[RefreshTokenId]
     email: str
-    password_hash: str
+    password_hash: PasswordHash
     is_active: bool
     is_superuser: bool
 

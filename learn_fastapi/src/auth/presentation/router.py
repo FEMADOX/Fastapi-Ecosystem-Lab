@@ -33,7 +33,8 @@ from learn_fastapi.src.users.domain.errors import (
     UserAlreadyExistsError,
     UserInactiveError,
 )
-from learn_fastapi.src.users.schema import UserCreate, UserResponse
+from learn_fastapi.src.users.presentation.mappers import persisted_user_to_schema
+from learn_fastapi.src.users.presentation.schemas import UserCreate, UserResponse
 
 from .dependencies import (
     FullLoginUseCaseDep,
@@ -58,13 +59,7 @@ async def register(
     except UserAlreadyExistsError as exc:
         raise email_already_registered_exception() from exc
 
-    # Users presentation has not moved yet, so map the cross-app result here.
-    return UserResponse(
-        id=new_user.id,
-        email=new_user.email,
-        is_active=new_user.is_active,
-        is_superuser=new_user.is_superuser,
-    )
+    return persisted_user_to_schema(new_user)
 
 
 @api_version(1)

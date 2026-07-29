@@ -98,9 +98,8 @@ def get_register_account_use_case(
 ) -> RegisterAccountUseCase:
     return RegisterAccountUseCase(
         register_user=RegisterUserUseCase(
-            # RegisterUserUseCase receives PasswordHasher in the later users
-            # migration; this branch keeps its current one-argument contract.
-            SQLAlchemyUsersRepository(session)
+            SQLAlchemyUsersRepository(session),
+            Argon2PasswordHasher(),
         ),
         event_publisher=SSEAuthEventPublisher(),
     )
