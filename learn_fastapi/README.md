@@ -1,179 +1,188 @@
 # learn_fastapi
 
-A personal learning module for exploring FastAPI concepts, patterns, and best practices.
+A FastAPI learning backend that now applies Clean Architecture to the `auth`,
+`users`, and `items` features while preserving the existing versioned HTTP API.
 
 ## Table of Contents
 
 - [learn\_fastapi](#learn_fastapi)
   - [Table of Contents](#table-of-contents)
-  - [Structure](#structure)
-  - [Topics Covered](#topics-covered)
-  - [API Version 1: Core Concepts and Patterns](#api-version-1-core-concepts-and-patterns)
-    - [`items` App](#items-app)
-      - [`items` Endpoints](#items-endpoints)
-      - [`items` media uploads with Cloudinary](#items-media-uploads-with-cloudinary)
-      - [`items` cacheing with Redis](#items-cacheing-with-redis)
-      - [`items` SSE (Server-Sent Events)](#items-sse-server-sent-events)
-    - [`auth` App](#auth-app)
-      - [`auth` Endpoints (Authentication flows only)](#auth-endpoints-authentication-flows-only)
-    - [`users` App](#users-app)
-      - [`users` Endpoints (Account management only)](#users-endpoints-account-management-only)
-  - [API Version 2:  Core Concepts and Patterns](#api-version-2--core-concepts-and-patterns)
-    - [`auth` App (V2)](#auth-app-v2)
+  - [Architecture](#architecture)
+    - [Dependency rule](#dependency-rule)
+    - [Project structure](#project-structure)
+    - [Layer responsibilities](#layer-responsibilities)
+    - [Request flow](#request-flow)
+  - [Features](#features)
+    - [`items`](#items)
+      - [Cloudinary media](#cloudinary-media)
+      - [Redis cache](#redis-cache)
+    - [`auth`](#auth)
+    - [`users`](#users)
+    - [Server-Sent Events](#server-sent-events)
   - [Running](#running)
-  - [Local PostgreSQL with Docker Compose](#local-postgresql-with-docker-compose)
+  - [Local Services with Docker Compose](#local-services-with-docker-compose)
   - [Database Migrations with Alembic](#database-migrations-with-alembic)
-    - [How It Works](#how-it-works)
-    - [Common Migration Commands](#common-migration-commands)
-      - [Generate a new migration after updating models](#generate-a-new-migration-after-updating-models)
-      - [Apply all pending migrations](#apply-all-pending-migrations)
-      - [Check the current migration version](#check-the-current-migration-version)
-      - [View all migration revisions](#view-all-migration-revisions)
-      - [Downgrade to the previous migration](#downgrade-to-the-previous-migration)
-      - [Downgrade all the way to the start](#downgrade-all-the-way-to-the-start)
-    - [How Migrations Run at Startup](#how-migrations-run-at-startup)
-    - [Best Practices](#best-practices)
-    - [Alembic Configuration Details](#alembic-configuration-details)
-  - [Testing](#testing)
-  - [Docs](#docs)
-    - [Reference Materials](#reference-materials)
+  - [Testing and Quality Checks](#testing-and-quality-checks)
+  - [Documentation](#documentation)
 
-## Structure
+## Architecture
+
+The backend is organized by feature. The core features use four explicit
+layers rather than a repository/service structure:
+
+```text
+presentation -> application -> domain
+infrastructure -> application -> domain
+```
+
+### Dependency rule
+
+- `domain` contains business entities, value objects, domain errors, and
+  persistence contracts. It does not import FastAPI, Pydantic, SQLAlchemy,
+  Redis, Cloudinary, or SSE.
+- `application` coordinates commands, queries, and use cases. It depends on
+  domain abstractions and declares ports for external effects.
+- `infrastructure` implements those ports with SQLAlchemy, Redis, Cloudinary,
+  JWT/Argon2, the system clock, and SSE publishers.
+- `presentation` is the FastAPI boundary. It owns routers, Pydantic schemas,
+  dependency wiring, HTTP exceptions, cookies, headers, and response mapping.
+
+SQLAlchemy models remain at each feature root (`models.py`) so Alembic can
+discover them explicitly. Mappers prevent those ORM models from leaking into
+domain entities or application use-case signatures.
+
+### Project structure
 
 ```text
 learn_fastapi/
-├── alembic/
-|   ├── versions/        # Auto-generated migration scripts
-|   ├── env.py           # Alembic configuration and setup
-|   └── script.py.mako   # Template for generating migration scripts
-├── docs/
-|   ├── fastapi-best-practices.md
-|   ├── awesome-fastapi.md
-|   └── fastapi-new.md
-├── src/
-│   ├── auth/           # Authentication module (login, register, tokens only)
-│   │   ├── annotations.py  # Annotated type aliases for auth models
-│   │   ├── config.py       # Auth-specific settings (JWT, cookies)
-│   │   ├── dependencies.py # OAuth2 and auth service dependencies
-│   │   ├── exceptions.py   # Auth-specific exceptions
-│   │   ├── models.py       # SQLAlchemy models (RefreshToken only)
-│   │   ├── repository.py   # Auth data access layer (refresh tokens)
-│   │   ├── router.py       # Auth endpoints (register, login, refresh, logout)
-│   │   ├── schema.py       # Auth Pydantic models (Token, UserCreate, etc.)
-│   │   ├── service.py      # Auth business logic layer
-│   │   └── utils.py        # Utility functions (hashing, token creation, etc.)
-│   ├── cache/          # Cache module (e.g. Redis integration)
-│   │   └── redis_client.py        # Redis client integration
-│   ├── users/          # User account management module
-│   │   ├── annotations.py  # Annotated type aliases for users models
-│   │   ├── dependencies.py # User service dependency wiring
-│   │   ├── exceptions.py   # User-specific exceptions
-│   │   ├── models.py       # SQLAlchemy models (User)
-│   │   ├── repository.py   # User account data access layer
-│   │   ├── router.py       # User endpoints (profile, update, delete)
-│   │   ├── schema.py       # User Pydantic models (UserResponse, UserUpdate, etc.)
-│   │   └── service.py      # User account business logic layer
-│   ├── items/          # Items module (example domain)
-│   │   ├── annotations.py  # Annotated type aliases
-│   │   ├── cache.py        # Item-specific caching logic (e.g. Redis caching for item retrieval)
-│   │   ├── dependencies.py # Item service dependency wiring
-│   │   ├── exceptions.py   # Item-specific exceptions
-│   │   ├── models.py       # SQLAlchemy models
-│   │   ├── repository.py   # Data access layer
-│   │   ├── router.py       # CRUD endpoints for /items
-│   │   ├── schema.py       # Item Pydantic model
-│   │   ├── service.py      # Business logic layer
-│   │   ├── utils.py        # Item helpers (Cloudinary image upload, etc.)
-│   │   └── validators.py   # Custom validation logic (Not used in this example, but good for complex business rules)
-|   ├── sse/
-│   │   ├── manager.py      # Server-Sent Events manager for handling connections and broadcasting
-│   │   └── router.py       # SSE endpoints for clients to subscribe to events 
-|   ├── static/js/      # Static files (e.g. CSS, JS)
-│   ├── utils/          # Shared utilities
-│   │   ├── alembic.py      # Alembic integration helpers
-│   │   ├── annotations.py  # Shared type annotations
-│   │   ├── dependencies.py # Shared dependencies (e.g. CurrentUserDep)
-│   │   └── hot_reload.py   # Development hot-reload WebSocket
-│   ├── config.py       # Global configuration and lifespan
-│   ├── constants.py    # Project paths and constants
-│   ├── database.py     # SQLAlchemy engine and session setup
-│   ├── main.py         # uvicorn runner (__main__)
-│   └── middleware.py   # Custom middleware (e.g. Swagger hot reload, CORS, etc.)
-├── tests/
-|   ├── v1/
-|   |   ├── auth/
-|   |   |   ├── conftest.py     # Auth fixtures (seeded user)
-|   |   |   └── test_router.py  # Authentication endpoints tests
-|   |   ├── users/
-|   |   |   ├── conftest.py     # User fixtures (user_data, registered_user, access_token, auth_headers)
-|   |   |   └── test_router.py  # User account endpoints tests
-|   |   ├── items/
-|   |   |   ├── conftest.py     # Item fixtures (test_user, sample_item, seeded_item)
-|   |   |   ├── test_router.py  # Item CRUD endpoints tests
-|   |   |   └── test_utils.py   # Cloudinary image helper tests
-|   |   ├── conftest.py # V1 global fixtures (if needed)
-|   |   └── test_items_authorization.py # Authorization tests for item ownership
-|   ├── v2/
-|   |   ├── auth/
-|   |   |   ├── conftest.py     # Auth fixtures (seeded user)
-|   |   |   └── test_router.py  # Authentication endpoints tests
-|   |   └── conftest.py # V2 global fixtures (if needed)
-|   ├── conftest.py     # Global test fixtures (test_async_engine, test_session, client)
-|   └── test_main.py    # Basic smoke test for app startup
-├── .env.example
-├── alembic.ini
-└── README.md
+|-- alembic/
+|   |-- versions/                  # Database migration scripts
+|   `-- env.py                     # Alembic model registration and configuration
+|-- docs/                          # FastAPI reference material
+|-- src/
+|   |-- auth/
+|   |   |-- domain/                # Tokens, auth entities, errors, repository ports
+|   |   |-- application/           # Login/refresh/logout commands, queries, use cases
+|   |   |-- infrastructure/        # JWT, Argon2, token repository, SSE adapters
+|   |   |-- presentation/          # Auth routes, cookies, schemas, HTTP dependencies
+|   |   |-- config.py              # JWT and cookie settings
+|   |   `-- models.py              # RefreshToken SQLAlchemy model
+|   |-- users/
+|   |   |-- domain/                # User entities, value objects, errors, ports
+|   |   |-- application/           # Account commands, queries, use cases, event port
+|   |   |-- infrastructure/        # SQLAlchemy repository, mappers, SSE adapter
+|   |   |-- presentation/          # Account routes, schemas, mappers, dependencies
+|   |   `-- models.py              # User SQLAlchemy model
+|   |-- items/
+|   |   |-- domain/                # Item entities, value objects, rules, repository port
+|   |   |-- application/           # CRUD commands/queries, use cases, external-effect ports
+|   |   |-- infrastructure/        # SQLAlchemy, Redis, Cloudinary, SSE adapters
+|   |   |-- presentation/          # Item routes, schemas, mappers, dependency composition
+|   |   `-- models.py              # Item SQLAlchemy model
+|   |-- shared/
+|   |   |-- domain/                # Shared IDs and value objects
+|   |   |-- application/           # Shared DTOs, security concepts, base use cases
+|   |   |-- infrastructure/        # Clock, password hasher, repository helpers
+|   |   `-- presentation/          # Current-user dependency and shared HTTP errors
+|   |-- cache/                     # Fault-tolerant Redis client
+|   |-- sse/
+|   |   |-- manager.py             # Subscription and broadcast manager
+|   |   `-- presentation/router.py # Authenticated event streams
+|   |-- utils/                     # Operational helpers such as Alembic integration
+|   |-- config.py                  # Settings and application lifespan
+|   |-- database.py                # Async SQLAlchemy engine and session dependency
+|   `-- main.py                    # FastAPI app, routers, and API versioning
+`-- tests/
+    |-- unit/                       # Application tests with fakes
+    |-- v1/                         # Version 1 HTTP/integration tests
+    |-- v2/                         # Version 2 auth HTTP tests
+    `-- conftest.py                 # Shared test app and in-memory database fixtures
 ```
 
-## Topics Covered
+### Layer responsibilities
 
-The API base path is `/api` (configured in `src/main.py`), and the main topics covered include:
+| Concern | Contract | Current adapter / boundary |
+| :-- | :-- | :-- |
+| Item persistence | `domain/ports.py` | `items/infrastructure/repository.py` |
+| Item cache | `application/ports.py` | `items/infrastructure/cache.py` |
+| Item image storage | `application/ports.py` | `items/infrastructure/image_storage.py` |
+| Item events | `application/ports.py` | `items/infrastructure/events.py` |
+| Auth token issue/verification | `auth/application/ports.py` | `auth/infrastructure/jwt_access_token_*.py` |
+| Refresh token hashing/verification | `auth/application/ports.py` | `auth/infrastructure/argon2_*.py` |
+| User persistence | `users/domain/ports.py` | `users/infrastructure/repository.py` |
+| User events | `users/application/ports.py` | `users/infrastructure/events.py` |
+| HTTP input/output | Commands, queries, domain results | `*/presentation/` |
 
-## API Version 1: Core Concepts and Patterns
+### Request flow
 
-`/v1` is the main versioned API prefix for all endpoints in this project. It includes three main "apps" or modules:
+An HTTP operation follows the same direction across migrated features:
 
-### `items` App
+```text
+FastAPI router
+  -> request schema / authenticated actor
+  -> command or query
+  -> application use case
+  -> domain and declared ports
+  -> injected infrastructure adapters
+  -> presentation mapper / HTTP response
+```
 
-| Concept                                      | Where                                                                            |
-|----------------------------------------------|----------------------------------------------------------------------------------|
-| `APIRouter` with prefix & tags               | [`router.py`](src/items/presentation/router.py)                                               |
-| Pydantic model with `Field` validation       | [`schema.py`](src/items/presentation/schemas.py)                                               |
-| `Annotated` aliases                          | [`annotations.py`](src/items/annotations.py)                                     |
-| Cross-field business rule validation         | [`validators.py`](src/items/validators.py)                                       |
-| Repository + Service pattern                 | [`repository.py`](src/items/repository.py), [`service.py`](src/items/service.py) |
-| Ownership-aware CRUD (`User` -> `Item`)      | [`models.py`](src/items/models.py), [`router.py`](src/items/presentation/router.py)           |
-| Full CRUD: GET / POST / PUT / PATCH / DELETE | [`router.py`](src/items/presentation/router.py)                                               |
-| HTTP status codes via `starlette.status`     | [`router.py`](src/items/presentation/router.py)                                               |
-| `HTTPException` for 404 responses            | [`router.py`](src/items/presentation/router.py)                                               |
-| Integration tests with `httpx.AsyncClient`   | [`tests/items/test_router.py`](tests/v1/items/test_router.py)                    |
-| Authorization and ownership tests            | [`tests/test_items_authorization.py`](tests/v1/items/test_items_authorization.py)      |
+`*/presentation/dependencies.py` is the composition root for each feature. For
+example, `items` wires its use cases to `SQLAlchemyItemsRepository`,
+`RedisItemCache`, `CloudinaryImageStorage`, and `SSEItemEventPublisher`.
 
-#### `items` Endpoints
+## Features
+
+The application uses `root_path="/api"` and
+[`fastapi-versionizer`](https://github.com/DeanWay/fastapi-versionizer).
+Versioned endpoints are available under `/api/v1`, `/api/v2`, and the
+`/api/latest` alias.
+
+### `items`
+
+The `items` feature demonstrates ownership-aware CRUD, cache-aside reads,
+Cloudinary image storage, and domain events without coupling its application
+use cases to those concrete technologies.
+
+| Concept | Where |
+| :-- | :-- |
+| Domain entities and ownership rules | [`domain/entities.py`](src/items/domain/entities.py) |
+| Commands and queries | [`application/commands.py`](src/items/application/commands.py), [`application/queries.py`](src/items/application/queries.py) |
+| Use cases | [`application/use_cases.py`](src/items/application/use_cases.py) |
+| External-effect ports | [`application/ports.py`](src/items/application/ports.py) |
+| SQLAlchemy adapter | [`infrastructure/repository.py`](src/items/infrastructure/repository.py) |
+| Redis adapter | [`infrastructure/cache.py`](src/items/infrastructure/cache.py) |
+| Cloudinary adapter | [`infrastructure/image_storage.py`](src/items/infrastructure/image_storage.py) |
+| SSE adapter | [`infrastructure/events.py`](src/items/infrastructure/events.py) |
+| FastAPI boundary | [`presentation/router.py`](src/items/presentation/router.py) |
 
 Base prefix: `/items`
 
-| Method   | Path                | Description                            |                           Body Params                           |
-|:---------|:--------------------|:---------------------------------------|:---------------------------------------------------------------:|
-| `GET`    | `/`                 | List all items                         |                                                                 |
-| `GET`    | `/{id_param}`       | Get item by `UUID`                     |                                                                 |
-| `POST`   | `/`                 | Create a new item                      |                             `Item`                              |
-| `PUT`    | `/{id_param}`       | Replace fields of an existing item     |                `ItemUpdate` (`image_url` allowed)                |
-| `PATCH`  | `/{id_param}`       | Partially update an existing item      |                 `ItemPatch` (`image_url` allowed)                |
-| `DELETE` | `/{id_param}`       | Delete an item                         |                                                                 |
-| `POST`   | `/image/{id_param}` | Upload/update image for an item        | `image_file` (`UploadFile`), `caption`, authenticated item owner |
-| `POST`   | `/with-image/`      | Create item with optional image upload | `name`, `description`, `price`, `tax`, `image_file?`, `caption` |
+| Method | Path | Description |
+| :-- | :-- | :-- |
+| `GET` | `/` | List all items |
+| `GET` | `/owner` | List the authenticated owner's items; admins may request `owner_id` |
+| `GET` | `/owner/{id_param}` | Get one owner-scoped item |
+| `GET` | `/{id_param}` | Get one item |
+| `POST` | `/` | Create an item |
+| `PUT` | `/{id_param}` | Replace an owned item |
+| `PATCH` | `/{id_param}` | Partially update an owned item |
+| `DELETE` | `/{id_param}` | Delete an owned item |
+| `POST` | `/image/{id_param}` | Upload or replace an item's image |
+| `POST` | `/with-image/` | Create an item and upload its image |
 
-#### `items` media uploads with Cloudinary
+Owner authorization is decided in application use cases using the current
+actor, not in a repository or a presentation helper. Regular users can operate
+on their own resources; superusers can request another owner explicitly.
 
-The items module now uploads item images to Cloudinary instead of persisting new uploads in the local
-`src/media/images` folder. This keeps the API stateless for media files, lets frontend clients render the
-Cloudinary-hosted `secure_url` stored on each item as `image_url`, and stores Cloudinary's `public_id` internally as
-`image_public_id` so replacements can delete the previous asset without parsing URLs.
+#### Cloudinary media
 
-**Configuration:**
+`CloudinaryImageStorage` implements the application `ImageStorage` port.
+Uploaded `secure_url` and `public_id` values are stored as `image_url` and
+`image_public_id`; keeping the public ID lets replacements delete the previous
+remote asset without parsing its URL.
 
-Add these variables to the repository root `.env` file:
+Configure these values in the repository-root `.env`:
 
 ```.env
 CLOUDINARY_CLOUD_NAME=your-cloud-name
@@ -181,397 +190,164 @@ CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret
 ```
 
-Uploaded assets are sent to the Cloudinary folder:
+Uploads use the `FastAPI-Ecosystem-Lab/media` Cloudinary asset folder.
+Configuration is validated only when an upload or deletion is attempted.
 
-```text
-FastAPI-Ecosystem-Lab/media
-```
+#### Redis cache
 
-**Upload flow:**
+`RedisItemCache` implements the application `ItemsCache` port. Reads follow the
+cache-aside pattern and return domain records to use cases:
 
-1. `POST /items/image/{id_param}` receives `multipart/form-data` with `image_file` and optional `caption`.
-2. The route requires `CurrentUserDep`; regular users can only update images for their own items, while superusers can
-   update any item.
-3. If the item already has an `image_public_id`, the service deletes that Cloudinary asset first.
-4. `src/items/utils.py` configures the Cloudinary Python SDK and uploads the file with `cloudinary.uploader.upload`.
-5. Cloudinary returns a `secure_url` and `public_id`, which are saved on the item as `image_url` and `image_public_id`.
-6. Item cache entries are invalidated and an `item.image_updated` SSE event is broadcast to the owner.
+- `items:all`
+- `items:by-id:<item_id>`
+- `items:owner:<owner_id>`
+- `items:owner:<owner_id>:item:<item_id>`
 
-`POST /items/with-image/` uses the same Cloudinary helper when an image is included during item creation.
+Entries use a 600-second TTL. Mutations invalidate `items:*` so global and
+owner-scoped representations cannot become stale. Redis failures are logged
+and disable caching for the current process instead of breaking API requests.
+Pattern invalidation currently uses Redis `KEYS`, which is suitable for this
+learning/low-traffic environment; a production high-traffic deployment should
+prefer `SCAN`.
 
-**Notes:**
+### `auth`
 
-- Missing Cloudinary variables raise a runtime error only when an image upload is attempted.
-- `PUT /items/{id_param}` and `PATCH /items/{id_param}` accept `image_url` for API compatibility, but normal user-facing
-  image changes should go through the upload endpoint so the backend controls media storage.
-- Direct `image_url` edits clear `image_public_id` because those URLs did not come from the backend Cloudinary upload
-  flow.
+The `auth` feature keeps authentication workflows in application use cases and
+places cryptography and persistence behind ports.
 
-#### `items` cacheing with Redis
-
-The items module implements a Redis-backed caching layer to improve read performance and reduce database load. The cache follows a cache-aside pattern where the service first attempts to read from Redis, falling back to the database on a cache miss, and then populates the cache with the fresh data.
-
-**Key Architecture:**
-
-- **Namespace**: All item-related keys use the `items:` prefix
-- **TTL**: 600 seconds (10 minutes) for all cached entries
-- **Key Patterns**:
-  - `items:all` → Serialized list of all items (`list[ItemSchema]`)
-  - `items:<uuid>` → Serialized single item (`ItemSchema`) by UUID
-  - `items:<user_id>` → All items belonging to a specific user
-  - `items:<item_id>:<user_id>` → User-scoped single item (for ownership verification)
-
-**Cache Flow:**
-
-1. **Read Operations** (`get_all_items`, `get_item`, `get_user_items`, `get_user_item`):
-   - Attempt to retrieve data from Redis using the appropriate key
-   - If found (cache hit): deserialize and return immediately
-   - If not found (cache miss): query database, serialize result, store in Redis, then return
-
-2. **Write Operations** (`create_item`, `update_item`, `delete_item`, etc.):
-   - Perform the database operation
-   - Invalidate the entire `items:*` namespace using `delete_cache_pattern("items:*")`
-   - This ensures cache consistency by forcing fresh reads on subsequent requests
-
-**Implementation Details:**
-
-- The cache layer lives in `src/items/cache.py` and uses the generic Redis client from `src/cache/redis_client.py`
-- The Redis client is fault-tolerant: all operations catch exceptions and log warnings instead of propagating errors, ensuring a missing/unreachable Redis never breaks the API
-- Data is serialized/deserialized using JSON (with `default=str` to handle UUID/datetime objects)
-- Cache invalidation uses Redis `KEYS` pattern matching (suitable for development/low-traffic; production high-traffic scenarios should consider migrating to `SCAN`-based iteration)
-
-**Performance Benefits:**
-
-- Eliminates repeated database queries for frequently accessed item lists
-- Reduces latency for item retrieval operations
-- Scales read traffic across Redis instances (in clustered setups)
-
-#### `items` SSE (Server-Sent Events)
-
-The items module includes a Server-Sent Events (SSE) implementation to provide real-time updates to clients when items are created, updated, or deleted. This allows clients to subscribe to a stream of events and receive immediate notifications without polling.
-
-**SSE Architecture:**
-
-- **Global Events**: Broadcast to all connected clients (e.g., when any item is created)
-- **User-Scoped Events**: Sent only to clients connected for a specific user (e.g., when that user's item is updated/deleted)
-- **Fault Tolerant**: SSE failures are logged but never interrupt the main API flow
-- **Authenticated**: All SSE endpoints require valid JWT authentication
-
-**Implementation Details:**
-
-1. **SSE Manager** (`src/sse/manager.py`):
-   - Singleton `SSEManager` class managing two types of channels:
-     - `_global`: List of `asyncio.Queue` for global event subscribers
-     - `_users`: Dictionary mapping `user_id` → list of `asyncio.Queue` for user-scoped subscribers
-   - Each client connection gets its own `asyncio.Queue` to receive events
-   - Methods for subscription/unsubscription and broadcasting events
-   - SSE message format: `"data: {json}\n\n"` (per SSE spec)
-
-2. **SSE Endpoints** (`src/sse/router.py`):
-   - `GET /api/v1/events/global` - Stream global events
-   - `GET /api/v1/events/me` - Stream events for the authenticated user
-   - Both endpoints:
-     - Require authentication via `CurrentUserDep` (valid JWT)
-     - Return `StreamingResponse` with `media_type="text/event-stream"`
-     - Include proper headers: `Cache-Control: no-cache`, `X-Accel-Buffering: no`
-     - Use keep-alive comments (`: keep-alive\n\n`) to detect disconnections
-     - Clean up subscriptions automatically when clients disconnect
-
-3. **Service Integration** (`src/items/service.py`):
-   - Static `_broadcast_sse_event()` method wraps SSE calls with exception handling
-   - Events broadcasted on item operations:
-     - `item.created`: Global broadcast + to item owner
-     - `item.updated`: To item owner only
-     - `item.deleted`: To item owner only
-     - `item.image_updated`: To item owner only
-   - Payload: Serialized `ItemSchema` using `model_dump(mode="json")` (handles UUID/datetime)
-
-**How to Use SSE from Clients:**
-
-1. **Connect to Global Events** (all item creations):
-
-   ```javascript
-   const eventSource = new EventSource('/api/v1/events/global', {
-     headers: {
-       'Authorization': 'Bearer <your-jwt-token>'
-     }
-   });
-   
-   eventSource.onmessage = (event) => {
-     const data = JSON.parse(event.data);
-     console.log('Global event:', data.event, data.payload);
-     // Handle item.created events from any user
-   };
-   ```
-
-2. **Connect to User-Specific Events** (your own item updates/deletes):
-
-   ```javascript
-   const eventSource = new EventSource('/api/v1/events/me', {
-     headers: {
-       'Authorization': 'Bearer <your-jwt-token>'
-     }
-   });
-   
-   eventSource.onmessage = (event) => {
-     const data = JSON.parse(event.data);
-     console.log('User event:', data.event, data.payload);
-     // Handle item.updated/deleted events for your items
-   };
-   ```
-
-3. **Event Types** you'll receive:
-   - `{"event": "item.created", "payload": {item data}}`
-   - `{"event": "item.updated", "payload": {item data}}`
-   - `{"event": "item.deleted", "payload": {item data}}`
-   - `{"event": "item.image_updated", "payload": {item data}}`
-
-**Benefits:**
-
-- Eliminates need for polling to get real-time updates
-- Low-latency push notifications from server to client
-- Efficient: only sends data when events occur
-- Scalable: each connection is lightweight (HTTP-based)
-- Secure: same JWT authentication as REST API
-
-**Note:** The SSE implementation uses HTTP/1.1 chunked encoding and works through most proxies and firewalls since it's standard HTTP GET requests.
-
-### `auth` App
-
-| Concept                                      | Where                                                                                         |
-|:---------------------------------------------|:----------------------------------------------------------------------------------------------|
-| JWT authentication with refresh tokens       | [`service.py`](src/auth/service.py), [`utils.py`](src/auth/utils.py)                          |
-| Password hashing with Argon2                 | [`utils.py`](src/auth/utils.py)                                                               |
-| OAuth2 Password Flow with Bearer tokens      | [`dependencies.py`](src/auth/dependencies.py)                                                 |
-| Repository + Service pattern                 | [`repository.py`](src/auth/infrastructure/repository.py), [`service.py`](src/auth/service.py) |
-| CSRF token protection                        | [`service.py`](src/auth/service.py), [`router.py`](src/auth/presentation/router.py)           |
-| Refresh token rotation with expiration       | [`service.py`](src/auth/service.py), [`models.py`](src/auth/models.py)                        |
-| Secure HTTP-only cookie handling             | [`utils.py`](src/auth/utils.py), [`config.py`](src/auth/config.py)                            |
-| Custom exceptions for auth errors            | [`exceptions.py`](src/auth/presentation/exceptions.py)                                        |
-| RefreshToken model with SQLAlchemy ORM       | [`models.py`](src/auth/models.py)                                                             |
-| Circular import avoidance with TYPE_CHECKING | [`models.py`](src/auth/models.py)                                                             |
-| Integration tests for authentication flow    | [`tests/auth/test_router.py`](tests/v1/auth/test_router.py)                                   |
-
-#### `auth` Endpoints (Authentication flows only)
+| Concept | Where |
+| :-- | :-- |
+| Auth entities and errors | [`domain/`](src/auth/domain/) |
+| Login, refresh, and logout use cases | [`application/use_cases.py`](src/auth/application/use_cases.py) |
+| Token/clock/hash/event ports | [`application/ports.py`](src/auth/application/ports.py) |
+| JWT and Argon2 adapters | [`infrastructure/`](src/auth/infrastructure/) |
+| Cookie and CSRF handling | [`presentation/cookies.py`](src/auth/presentation/cookies.py), [`presentation/router.py`](src/auth/presentation/router.py) |
+| Dependency composition | [`presentation/dependencies.py`](src/auth/presentation/dependencies.py) |
 
 Base prefix: `/auth`
 
-| Method | Path        | Description                        | Body Params                                            | Headers/Cookies                                          |
-|:-------|:------------|:-----------------------------------|:-------------------------------------------------------|:---------------------------------------------------------|
-| `POST` | `/register` | Register a new user account        | `UserCreate` (email, password)                         | —                                                        |
-| `POST` | `/token`    | Login and receive JWT access token | `OAuth2PasswordRequestForm` (username/email, password) | —                                                        |
-| `POST` | `/refresh`  | Refresh and rotate access token    | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies) |
-| `POST` | `/logout`   | Logout and revoke refresh token    | —                                                      | `X-CSRF-Token`, `refresh_token` + `csrf_token` (cookies) |
+| Method | Path | Version | Description |
+| :-- | :-- | :-- | :-- |
+| `POST` | `/register` | v1 | Register a user |
+| `POST` | `/token` | v1 | Return an access token and set refresh/CSRF cookies |
+| `POST` | `/token` | v2 | Return access and refresh token details |
+| `POST` | `/refresh` | v1 | Issue a new access token from refresh and CSRF cookies |
+| `POST` | `/logout` | v1 | Revoke the refresh token and clear auth cookies |
 
-**Authentication Flow:**
+The typical v1 flow is register, login, use the bearer access token, refresh
+with the HttpOnly refresh cookie plus `X-CSRF-Token`, and logout.
 
-1. **Register** → Create account with email/password
-2. **Login** → Get `access_token` (JWT), `refresh_token` (cookie), `csrf_token` (cookie + response body)
-3. **Use APIs** → Include `Authorization: Bearer <access_token>` header
-4. **Refresh** → Exchange expired access token for new one using refresh token
-5. **Logout** → Revoke refresh token and clear cookies
+### `users`
 
-### `users` App
+The `users` feature owns account management. Application use cases enforce
+identity/administrator rules and publish account events through a port.
 
-| Concept                                       | Where                                                                            |
-|:----------------------------------------------|:---------------------------------------------------------------------------------|
-| Repository + Service pattern                  | [`repository.py`](src/users/repository.py), [`service.py`](src/users/service.py) |
-| User model with SQLAlchemy ORM                | [`models.py`](src/users/models.py)                                               |
-| Ownership-aware operations (user only access) | [`service.py`](src/users/service.py), [`router.py`](src/users/presentation/router.py)         |
-| Superuser override capability                 | [`service.py`](src/users/service.py), [`router.py`](src/users/presentation/router.py)         |
-| Account update (email + password with verify) | [`service.py`](src/users/service.py)                                             |
-| Account deletion with cascading cleanup       | [`service.py`](src/users/service.py), [`repository.py`](src/users/repository.py) |
-| Test fixtures with dependency chains          | [`conftest.py`](tests/v1/users/conftest.py)                                      |
-| Integration tests for account flows           | [`tests/users/test_router.py`](tests/v1/users/test_router.py)                    |
+| Method | Path | Description |
+| :-- | :-- | :-- |
+| `GET` | `/users/me` | Return the current profile |
+| `GET` | `/users/{user_id}` | Return an authorized account |
+| `PATCH` | `/users/{user_id}` | Update email and/or password after verification |
+| `DELETE` | `/users/{user_id}` | Delete an account and related records |
 
-#### `users` Endpoints (Account management only)
+See [`users/application/use_cases.py`](src/users/application/use_cases.py) for
+the workflows and
+[`users/presentation/router.py`](src/users/presentation/router.py) for HTTP
+mapping.
 
-Base prefix: `/users`
+### Server-Sent Events
 
-| Method   | Path         | Description                                | Body Params     | Headers                         |
-|:---------|:-------------|:-------------------------------------------|:----------------|:--------------------------------|
-| `GET`    | `/me`        | Get current user profile                   | —               | `Authorization: Bearer <token>` |
-| `GET`    | `/{user_id}` | Get specific user account (if owner/admin) | —               | `Authorization: Bearer <token>` |
-| `PATCH`  | `/{user_id}` | Update user email and/or password          | `UserUpdate`    | `Authorization: Bearer <token>` |
-| `DELETE` | `/{user_id}` | Delete user account permanently            | `DeleteAccount` | `Authorization: Bearer <token>` |
+Authenticated clients can subscribe to:
 
-## API Version 2:  Core Concepts and Patterns
+- `GET /api/v1/events/global`
+- `GET /api/v1/events/me`
 
-### `auth` App (V2)
+The presentation router owns streaming responses and connection cleanup. The
+feature-specific infrastructure publishers translate domain/application
+results into JSON-safe SSE payloads. Current event families include
+`item.*`, `auth.*`, and `user.*`.
 
-Base prefix: `/auth`
-
-| Method | Path        | Description                                        | Body Params                                            |
-|:-------|:------------|:---------------------------------------------------|:-------------------------------------------------------|
-| `POST` | `/token`    | Login and receive: access token, refresh token,    | `OAuth2PasswordRequestForm` (username/email, password) |
-|        |             | (access & refresh tokens)_expires_in and CSRFtoken |                                                        |
+`item.created` is sent globally and to its owner; item updates, image updates,
+deletions, and auth/account events are user-scoped. Delivery failures are
+external-effect failures and do not move SSE concerns into domain code.
 
 ## Running
-
-```bash
-uv run run-api-server
-```
-
-## Local PostgreSQL with Docker Compose
-
-The Docker Compose file is located at the repository root (`../docker-compose.yaml`).
 
 From the repository root:
 
 ```bash
-docker compose up -d
+uv sync
+uv run run-api-server
 ```
 
-Stop and remove the container:
+The API is available at <http://localhost:8000>, with Swagger UI at
+<http://localhost:8000/api/docs>.
+
+## Local Services with Docker Compose
+
+From the repository root:
 
 ```bash
-docker compose down
+docker compose up -d redis
 ```
 
-The configured database settings are:
-
-- Host: `localhost`
-- Port: `5432`
-- Database: `learn_fastapi`
-- User: `postgres`
-- Password: `postgres`
-
-Connection URL example:
-
-```text
-postgresql://postgres:postgres@localhost:5432/learn_fastapi
-```
+The active Compose services are the API and Redis. The PostgreSQL service is an
+opt-in, commented example in `docker-compose.yaml`; run PostgreSQL separately
+or enable that service and keep its credentials aligned with `DATABASE_URL`.
+Use [`.env.example`](../.env.example) as the configuration template.
 
 ## Database Migrations with Alembic
 
-This project uses [Alembic](https://alembic.sqlalchemy.org/) for database schema version control and migrations.
+SQLAlchemy models are imported explicitly in `alembic/env.py`. At startup, the
+application checks for pending revisions and logs a warning; it does not apply
+migrations automatically.
 
-### How It Works
-
-- Models are defined in `src/auth/models.py`, `src/users/models.py`, and `src/items/models.py`
-- Migrations are generated automatically from model changes
-- Migrations are checked when the FastAPI app starts (via `lifespan`)
-- Each migration is tracked with a revision ID in `alembic/versions/`
-
-### Common Migration Commands
-
-#### Generate a new migration after updating models
+Run Alembic from `learn_fastapi/`:
 
 ```bash
-uv run alembic revision --autogenerate -m "description of changes"
-```
-
-Example:
-
-```bash
-uv run alembic revision --autogenerate -m "add status field to items"
-```
-
-#### Apply all pending migrations
-
-```bash
+uv run alembic revision --autogenerate -m "description"
 uv run alembic upgrade head
-```
-
-#### Check the current migration version
-
-```bash
 uv run alembic current
-```
-
-#### View all migration revisions
-
-```bash
 uv run alembic heads
 ```
 
-#### Downgrade to the previous migration
+Always review autogenerated migrations and test both upgrade and downgrade
+paths before deployment.
+
+## Testing and Quality Checks
+
+From the repository root:
 
 ```bash
-uv run alembic downgrade -1
+uv run ruff check learn_fastapi
+uv run ruff format --check learn_fastapi
+uv run ty check learn_fastapi
 ```
 
-#### Downgrade all the way to the start
+Run tests with `DEBUG=True`. On PowerShell:
+
+```powershell
+$env:DEBUG = "True"
+uv run pytest --config-file=pyproject.toml
+```
+
+On POSIX shells:
 
 ```bash
-uv run alembic downgrade base
+DEBUG=True uv run pytest --config-file=pyproject.toml
 ```
 
-### How Migrations Run at Startup
+Tests use in-memory SQLite by default. The suite includes pure application
+tests with fake ports plus v1/v2 HTTP tests against the FastAPI app.
 
-When the FastAPI app starts:
+## Documentation
 
-1. The `lifespan` function in `src/config.py` is called
-2. It checks for pending migrations using `check_pending_migrations()` from `src/utils/alembic.py`
-3. If migrations are pending, a warning is logged (manual migration required)
-4. The app then starts normally
-
-**Note:** Migrations are **checked** at startup, but not automatically applied. You must run `alembic upgrade head`
-manually to apply pending migrations.
-
-### Best Practices
-
-- **Always review generated migrations** before committing them
-- **Never manually edit migration files** after they've been applied to production
-- **Test migrations locally** before deploying to production
-- **Keep models and migrations in sync** — always regenerate migrations after model changes
-- **Use descriptive revision messages** to document what changed
-- **Import all models in `alembic/env.py`** — ensures Alembic can detect all table changes
-- **Commit migrations to version control** — essential for team collaboration and production deployments
-
-### Alembic Configuration Details
-
-The project includes several Alembic enhancements in `alembic/env.py`:
-
-- **Explicit model imports** — All SQLAlchemy models are imported directly to ensure Alembic detects schema changes
-- **Logger preservation** — `disable_existing_loggers=False` keeps uvicorn and app loggers active during migrations
-- **SQLite compatibility** — Automatic configuration for SQLite-specific features:
-  - `render_as_batch=True` — enables batch mode for better ALTER TABLE support
-  - `check_same_thread=False` — allows SQLite access from multiple threads
-- **Server default comparison** — Detects changes in column default values
-
-## Testing
-
-To run the test normally use:
-
-```bash
-pytest
-```
-
-If you want to run the tests in parallel (faster):
-
-```bash
-pytest -n auto
-```
-
-Using the `-n auto` flag with pytest-xdist will automatically run tests in parallel across multiple CPU cores,
-significantly reducing test execution time for larger test suites.
-
-`xdist` plugin docs: <https://pytest-xdist.readthedocs.io/en/stable/index.html>
-
-Tests use an **in-memory SQLite database** (`sqlite+aiosqlite:///:memory:`) which:
-
-- Is fast and isolated per test
-- Doesn't require PostgreSQL to be running
-- Automatically creates/drops all tables from models
-- Doesn't use Alembic (migrations are only for production PostgreSQL)
-- Includes dedicated auth tests, items CRUD tests, and item authorization/ownership tests
-
-If you want to run tests against PostgreSQL instead, change the `TEST_DATABASE_URL` variable inside `tests/conftest.py`
-to point to your local PostgreSQL instance:
-
-```python
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/fastapi_db"
-```
-
-And run the tests
-
-## Docs
-
-### Reference Materials
-
-- [`docs/fastapi-best-practices.md`](docs/fastapi-best-practices.md) — Opinionated best practices: project structure,
-  async routes, Pydantic, dependency injection.
-- [`docs/awesome-fastapi.md`](docs/awesome-fastapi.md) — Curated list of FastAPI third-party extensions, resources, and
-  open source projects.
-- [`docs/fastapi-new.md`](docs/fastapi-new.md) — Additional FastAPI patterns and modern approaches.
+- [`../docs/clean-architecture-roadmap.md`](../docs/clean-architecture-roadmap.md)
+  — migration rationale and original phased plan.
+- [`../docs/clean-architecture-explanations.md`](../docs/clean-architecture-explanations.md)
+  — supporting explanations of commands, queries, entities, and ownership.
+- [`docs/fastapi-best-practices.md`](docs/fastapi-best-practices.md)
+  — FastAPI project and dependency-injection practices.
+- [`docs/awesome-fastapi.md`](docs/awesome-fastapi.md)
+  — FastAPI ecosystem references.
+- [`docs/fastapi-new.md`](docs/fastapi-new.md)
+  — additional patterns and modern approaches.
