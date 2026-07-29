@@ -1,5 +1,6 @@
 """Tests for SSE (Server-Sent Events) functionality."""
 
+import asyncio
 import json
 from uuid import uuid4
 
@@ -114,6 +115,25 @@ class TestSSEBroadcast:
         # Clean up
         sse_manager.unsubscribe_global(queue1)
         sse_manager.unsubscribe_global(queue2)
+
+    @pytest.mark.asyncio
+    async def test_full_global_queue_does_not_block_broadcast(
+        self,
+        test_item_data: dict[str, str | float],
+    ) -> None:
+        """Verify that a slow global subscriber cannot block publishers."""
+        queue = sse_manager.subscribe_global()
+        for _ in range(queue.maxsize):
+            queue.put_nowait("queued event")
+
+        try:
+            await asyncio.wait_for(
+                sse_manager.broadcast_global("item.created", test_item_data),
+                timeout=1.0,
+            )
+            assert queue.full()
+        finally:
+            sse_manager.unsubscribe_global(queue)
 
 
 class TestSSEConnectionCleanup:

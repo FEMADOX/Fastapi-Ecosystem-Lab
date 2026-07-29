@@ -13,7 +13,7 @@ class ItemEventRecord(BaseModel):
     """Public payload sent from SSE for an item."""
 
     id: ItemId
-    owner_id: UserId
+    user_id: UserId
     name: str
     description: str
     price: float
@@ -25,7 +25,7 @@ class ItemEventRecord(BaseModel):
     def from_domain(cls, item: PublishableItem) -> ItemEventRecord:
         return cls(
             id=item.id,
-            owner_id=item.owner_id,
+            user_id=item.owner_id,
             name=item.name,
             description=item.description,
             price=item.price,

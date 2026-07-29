@@ -52,7 +52,7 @@ class SSEManager:
             A new asyncio.Queue that will receive all global events.
 
         """
-        queue: asyncio.Queue[str] = asyncio.Queue()
+        queue: asyncio.Queue[str] = asyncio.Queue(maxsize=100)
         self._global.append(queue)
         logger.debug(f"[SSE] Global subscription created. Total: {len(self._global)}")
         return queue
@@ -141,6 +141,13 @@ class SSEManager:
         """
         return user_id in self._users
 
+    def _enqueue(self, queue: asyncio.Queue[str], message: str) -> None:
+        """Enqueue without allowing a slow SSE client to block publishers."""
+        try:
+            queue.put_nowait(message)
+        except asyncio.QueueFull:
+            logger.warning(f"[SSE] Queue full or slow connection for {queue}")
+
     async def broadcast_global(self, event: str, payload: JSONObject) -> None:
         """Broadcast an event to all globally connected clients.
 
@@ -151,10 +158,10 @@ class SSEManager:
         """
         try:
             message = self.build_event_message(event, payload)
-            tasks = [queue.put(message) for queue in self._global]
-            if tasks:
-                await asyncio.gather(*tasks, return_exceptions=True)
-                logger.debug(f"[SSE] Broadcast global: {event} to {len(tasks)} clients")
+            for queue in self._global:
+                self._enqueue(queue, message)
+
+            logger.debug(f"[SSE] Broadcast global: {event}")
         except Exception:
             logger.exception(f"[SSE] Error broadcasting global event: {event}")
 

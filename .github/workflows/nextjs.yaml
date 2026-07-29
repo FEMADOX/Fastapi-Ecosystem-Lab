@@ -40,4 +40,4 @@ jobs:
         run: bun tsc
 
       - name: Run Vitest
-        run: bun test
+        run: bun run test
