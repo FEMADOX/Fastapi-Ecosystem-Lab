@@ -61,3 +61,7 @@ next-env.d.ts
 # User
 run_checks.py
 /docs
+
+# CodeGraph local index and runtime
+.codegraph/
+.codegraph-cli/
